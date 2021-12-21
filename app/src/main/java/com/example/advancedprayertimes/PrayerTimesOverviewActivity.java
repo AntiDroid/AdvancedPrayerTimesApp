@@ -154,7 +154,10 @@ public class PrayerTimesOverviewActivity extends AppCompatActivity
                 {
                     DateFormat dateFormat = new SimpleDateFormat("HH:mm");
 
-
+                    if(AppEnvironment.Instance().DayPrayerTimeSettings.containsKey(EPrayerTimeType.FajrBeginning))
+                    {
+                        AppEnvironment.Instance().DayPrayerTimeSettings.get(EPrayerTimeType.FajrBeginning).
+                    }
 
                     binding.fajrTimeBeginningTextLabel.setText(dateFormat.format(currentTimes.get_fajrTimeBeginning()));
                     binding.fajrTimeEndTextLabel.setText(dateFormat.format(currentTimes.get_fajrTimeEnd()));
