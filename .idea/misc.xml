@@ -3,8 +3,10 @@
   <component name="DesignSurface">
     <option name="filePathToZoomLevelMap">
       <map>
-        <entry key="..\:/Users/talip/AndroidStudioProjects/AdvancedPrayerTimes/app/src/main/res/layout/activity_main.xml" value="0.36684782608695654" />
+        <entry key="..\:/Users/talip/AndroidStudioProjects/AdvancedPrayerTimes/app/src/main/res/layout/activity_main.xml" value="0.23227206946454415" />
         <entry key="..\:/Users/talip/AndroidStudioProjects/AdvancedPrayerTimes/app/src/main/res/layout/fragment_main.xml" value="0.36684782608695654" />
+        <entry key="..\:/Users/talip/AndroidStudioProjects/AdvancedPrayerTimes/app/src/main/res/layout/settings_activity.xml" value="0.2797567332754127" />
+        <entry key="..\:/Users/talip/AndroidStudioProjects/AdvancedPrayerTimes/app/src/main/res/xml/root_preferences.xml" value="0.2" />
       </map>
     </option>
   </component>

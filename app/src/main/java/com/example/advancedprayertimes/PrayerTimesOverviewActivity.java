@@ -2,6 +2,7 @@ package com.example.advancedprayertimes;
 
 import android.Manifest;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Address;
 import android.location.Geocoder;
@@ -19,6 +20,7 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
+import com.example.advancedprayertimes.Logic.DayPrayerTimeEntity;
 import com.example.advancedprayertimes.databinding.ActivityMainBinding;
 import com.example.advancedprayertimes.ui.main.SectionsPagerAdapter;
 
@@ -44,7 +46,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class MainActivity extends AppCompatActivity
+public class PrayerTimesOverviewActivity extends AppCompatActivity
 {
     private static ActivityMainBinding binding = null;
 
@@ -56,22 +58,39 @@ public class MainActivity extends AppCompatActivity
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
-        Spinner spinner = (Spinner) binding.spinner;
+        Spinner apiSelectionSpinner = (Spinner) binding.apiSelectionSpinner;
 
         String [] arrmile ={"Muwaqqit","Diyanet"};
         ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,android.R.layout.simple_spinner_item,arrmile);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        spinner.setAdapter(adapter);
+        apiSelectionSpinner.setAdapter(adapter);
 
-        spinner.setEnabled(true);
+        apiSelectionSpinner.setEnabled(true);
 
         SectionsPagerAdapter sectionsPagerAdapter = new SectionsPagerAdapter(this, getSupportFragmentManager());
+
+        binding.ishaTextLabel.setOnClickListener(new View.OnClickListener()
+        {
+            public void onClick(View view)
+            {
+                try
+                {
+                    Intent myIntent = new Intent(PrayerTimesOverviewActivity.this, PrayerTimeSettingsActivity.class);
+                    myIntent.putExtra("key", "value"); //Optional parameters
+                    PrayerTimesOverviewActivity.this.startActivity(myIntent);
+                }
+                catch(Exception e)
+                {
+                    e.printStackTrace();
+                }
+            }
+        });
 
         binding.showStuffButton.setOnClickListener(new View.OnClickListener()
         {
             public void onClick(View view)
             {
-                    Thread asyncRetrievePrayerTimesThread = new Thread(new Runnable() {
+                Thread asyncRetrievePrayerTimesThread = new Thread(new Runnable() {
 
                     @Override
                     public void run()
@@ -97,7 +116,7 @@ public class MainActivity extends AppCompatActivity
     public void retrievePrayerTimes() throws Exception
     {
         Location targetLocation = this.RetrieveLocation();
-        String selectedItem = binding.spinner.getSelectedItem().toString();
+        String selectedItem = binding.apiSelectionSpinner.getSelectedItem().toString();
 
         switch(selectedItem)
         {
@@ -133,17 +152,26 @@ public class MainActivity extends AppCompatActivity
             {
                 try
                 {
-                    DateFormat dateFormat = new SimpleDateFormat("HH:mm:ss");
+                    DateFormat dateFormat = new SimpleDateFormat("HH:mm");
 
-                    binding.fajrTimeTextLabel.setText(dateFormat.format(currentTimes.get_fajrTime()));
-                    binding.dhuhrTimeTextLabel.setText(dateFormat.format(currentTimes.get_dhuhrTime()));
-                    binding.asrTimeTextLabel.setText(dateFormat.format(currentTimes.get_asrTime()));
-                    binding.maghribTimeTextLabel.setText(dateFormat.format(currentTimes.get_maghribTime()));
-                    binding.ishaTimeTextLabel.setText(dateFormat.format(currentTimes.get_ishaTime()));
+                    binding.fajrTimeBeginningTextLabel.setText(dateFormat.format(currentTimes.get_fajrTimeBeginning()));
+                    binding.fajrTimeEndTextLabel.setText(dateFormat.format(currentTimes.get_fajrTimeEnd()));
+
+                    binding.dhuhrTimeBeginningTextLabel.setText(dateFormat.format(currentTimes.get_dhuhrTimeBeginning()));
+                    binding.dhuhrTimeEndTextLabel.setText(dateFormat.format(currentTimes.get_dhuhrTimeEnd()));
+
+                    binding.asrTimeBeginningTextLabel.setText(dateFormat.format(currentTimes.get_asrTimeBeginning()));
+                    binding.asrTimeEndTextLabel.setText(dateFormat.format(currentTimes.get_asrTimeEnd()));
+
+                    binding.maghribTimeBeginningTextLabel.setText(dateFormat.format(currentTimes.get_maghribTimeBeginning()));
+                    binding.maghribTimeEndTextLabel.setText(dateFormat.format(currentTimes.get_maghribTimeEnd()));
+
+                    binding.ishaTimeBeginningTextLabel.setText(dateFormat.format(currentTimes.get_ishaTimeBeginning()));
+                    binding.ishaTimeEndTextLabel.setText(dateFormat.format(currentTimes.get_ishaTimeEnd()));
                 }
                 catch(Exception e)
                 {
-
+                    e.printStackTrace();
                 }
             }
         });
@@ -218,19 +246,38 @@ public class MainActivity extends AppCompatActivity
             {
                 SimpleDateFormat sdf = new SimpleDateFormat("HH:mm");
 
-                Date fajrTime = sdf.parse(obj.getString("Imsak"));
-                Date dhuhrTime = sdf.parse(obj.getString("Ogle"));
-                Date asrTime = sdf.parse(obj.getString("Ikindi"));
-                Date maghribTime = sdf.parse(obj.getString("Aksam"));
-                Date ishaTime = sdf.parse(obj.getString("Yatsi"));
+                Date fajrTimeBeginning = sdf.parse(obj.getString("Imsak"));
+                Date fajrTimeEnd = sdf.parse(obj.getString("Gunes"));
 
-                return new DayPrayerTimeEntity(fajrTime, dhuhrTime, asrTime, maghribTime, ishaTime);
+                Date dhuhrTimeBeginning = sdf.parse(obj.getString("Ogle"));
+                Date dhuhrTimeEnd = sdf.parse(obj.getString("Ikindi"));
+
+                Date asrTimeBeginning = sdf.parse(obj.getString("Ikindi"));
+                Date asrTimeEnd = sdf.parse(obj.getString("Aksam"));
+
+                Date maghribTimeBeginning = sdf.parse(obj.getString("Aksam"));
+                Date maghribTimeEnd = sdf.parse(obj.getString("Yatsi"));
+
+                Date ishaTimeBeginning = sdf.parse(obj.getString("Yatsi"));
+                Date ishaTimeEnd = sdf.parse(obj.getString("Imsak"));
+
+                return new DayPrayerTimeEntity(
+                        fajrTimeBeginning,
+                        fajrTimeEnd,
+                        dhuhrTimeBeginning,
+                        dhuhrTimeEnd,
+                        asrTimeBeginning,
+                        asrTimeEnd,
+                        maghribTimeBeginning,
+                        maghribTimeEnd,
+                        ishaTimeBeginning,
+                        ishaTimeEnd
+                );
             }
         }
 
         return null;
     }
-
 
     public DayPrayerTimeEntity RetrieveMuwaqqitTimes(Location targetLocation) throws JSONException, ParseException
     {
@@ -254,7 +301,7 @@ public class MainActivity extends AppCompatActivity
             // do permission failed check stuff...
         }
 
-        return locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+        return locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
     }
 
     public Address RetrieveCityByLocation(Location location)
@@ -387,13 +434,33 @@ public class MainActivity extends AppCompatActivity
             {
                 SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss");
 
-                Date fajrTime = sdf.parse(obj.getString("fajr_time"));
-                Date dhuhrTime = sdf.parse(obj.getString("zohr_time"));
-                Date asrTime = sdf.parse(obj.getString("mithl_time"));
-                Date maghribTime = sdf.parse(obj.getString("sunset_time"));
-                Date ishaTime = sdf.parse(obj.getString("esha_time"));
+                Date fajrTimeBeginning = sdf.parse(obj.getString("fajr_time"));
+                Date fajrTimeEnd = sdf.parse(obj.getString("sunrise_time"));
 
-                return new DayPrayerTimeEntity(fajrTime, dhuhrTime, asrTime, maghribTime, ishaTime);
+                Date dhuhrTimeBeginning = sdf.parse(obj.getString("zohr_time"));
+                Date dhuhrTimeEnd = sdf.parse(obj.getString("mithl_time"));
+
+                Date asrTimeBeginning = sdf.parse(obj.getString("mithl_time"));
+                Date asrTimeEnd = sdf.parse(obj.getString("sunset_time"));
+
+                Date maghribTimeBeginning = sdf.parse(obj.getString("sunset_time"));
+                Date maghribTimeEnd = sdf.parse(obj.getString("esha_time"));
+
+                Date ishaTimeBeginning = sdf.parse(obj.getString("esha_time"));
+                Date ishaTimeEnd = sdf.parse(obj.getString("fajr_time"));
+
+                return new DayPrayerTimeEntity(
+                        fajrTimeBeginning,
+                        fajrTimeEnd,
+                        dhuhrTimeBeginning,
+                        dhuhrTimeEnd,
+                        asrTimeBeginning,
+                        asrTimeEnd,
+                        maghribTimeBeginning,
+                        maghribTimeEnd,
+                        ishaTimeBeginning,
+                        ishaTimeEnd
+                );
             }
         }
 

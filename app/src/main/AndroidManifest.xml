@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.advancedprayertimes">
-    <uses-permission android:name="android.permission.INTERNET"/>
+
+    <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
@@ -11,7 +14,11 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.AdvancedPrayerTimes">
         <activity
-            android:name=".MainActivity"
+            android:name=".PrayerTimeSettingsActivity"
+            android:exported="false"
+            android:label="@string/title_activity_settings" />
+        <activity
+            android:name=".PrayerTimesOverviewActivity"
             android:exported="true"
             android:label="@string/app_name"
             android:theme="@style/Theme.AdvancedPrayerTimes.NoActionBar">
