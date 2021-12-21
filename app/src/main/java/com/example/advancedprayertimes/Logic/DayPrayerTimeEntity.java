@@ -1,5 +1,7 @@
 package com.example.advancedprayertimes.Logic;
 
+import com.example.advancedprayertimes.Logic.Enums.EPrayerTimeType;
+
 import java.util.Date;
 
 public class DayPrayerTimeEntity
@@ -48,15 +50,48 @@ public class DayPrayerTimeEntity
         this._ishaTimeEnd = ishaTimeEnd;
     }
 
+    public Date GetTimeByType(EPrayerTimeType prayerTimeType)
+    {
+        switch (prayerTimeType)
+        {
+            case FajrBeginning:
+                return this.get_fajrTimeBeginning();
+            case FajrEnd:
+                return this.get_fajrTimeEnd();
+
+            case DhuhrBeginning:
+                return this.get_dhuhrTimeBeginning();
+            case DhuhrEnd:
+                return this.get_dhuhrTimeEnd();
+
+            case AsrBeginning:
+                return this.get_asrTimeBeginning();
+            case AsrEnd:
+                return this.get_asrTimeEnd();
+
+            case MaghribBeginning:
+                return this.get_maghribTimeBeginning();
+            case MaghribEnd:
+                return this.get_maghribTimeEnd();
+
+            case IshaBeginning:
+                return this.get_ishaTimeBeginning();
+            case IshaEnd:
+                return this.get_ishaTimeEnd();
+
+            default:
+                return new Date(0);
+        }
+    }
+
+    // #########################################################
+
     public Date get_fajrTimeBeginning()
     {
         return _fajrTimeBeginning;
     }
 
-    public void set_fajrTimeBeginning(Date _fajrTimeBeginning)
-    {
-        this._fajrTimeBeginning = _fajrTimeBeginning;
-    }
+    public void set_fajrTimeBeginning(Date _fajrTimeBeginning) { this._fajrTimeBeginning = _fajrTimeBeginning; }
 
     public Date get_fajrTimeEnd()
     {
@@ -73,10 +108,7 @@ public class DayPrayerTimeEntity
         return _dhuhrTimeBeginning;
     }
 
-    public void set_dhuhrTimeBeginning(Date _dhuhrTimeBeginning)
-    {
-        this._dhuhrTimeBeginning = _dhuhrTimeBeginning;
-    }
+    public void set_dhuhrTimeBeginning(Date _dhuhrTimeBeginning) { this._dhuhrTimeBeginning = _dhuhrTimeBeginning; }
 
     public Date get_dhuhrTimeEnd()
     {
@@ -93,10 +125,7 @@ public class DayPrayerTimeEntity
         return _asrTimeBeginning;
     }
 
-    public void set_asrTimeBeginning(Date _asrTimeBeginning)
-    {
-        this._asrTimeBeginning = _asrTimeBeginning;
-    }
+    public void set_asrTimeBeginning(Date _asrTimeBeginning) { this._asrTimeBeginning = _asrTimeBeginning; }
 
     public Date get_asrTimeEnd()
     {
@@ -113,10 +142,7 @@ public class DayPrayerTimeEntity
         return _maghribTimeBeginning;
     }
 
-    public void set_maghribTimeBeginning(Date _maghribTimeBeginning)
-    {
-        this._maghribTimeBeginning = _maghribTimeBeginning;
-    }
+    public void set_maghribTimeBeginning(Date _maghribTimeBeginning) { this._maghribTimeBeginning = _maghribTimeBeginning; }
 
     public Date get_maghribTimeEnd()
     {
@@ -133,10 +159,7 @@ public class DayPrayerTimeEntity
         return _ishaTimeBeginning;
     }
 
-    public void set_ishaTimeBeginning(Date _ishaTimeBeginning)
-    {
-        this._ishaTimeBeginning = _ishaTimeBeginning;
-    }
+    public void set_ishaTimeBeginning(Date _ishaTimeBeginning) { this._ishaTimeBeginning = _ishaTimeBeginning; }
 
     public Date get_ishaTimeEnd()
     {

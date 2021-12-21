@@ -11,22 +11,16 @@ import android.net.Uri;
 
 import androidx.core.app.ActivityCompat;
 
-import com.example.advancedprayertimes.PrayerTimesOverviewActivity;
-import com.google.firebase.crashlytics.buildtools.api.net.Constants;
-
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;

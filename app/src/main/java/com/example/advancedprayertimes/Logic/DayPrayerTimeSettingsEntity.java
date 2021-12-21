@@ -8,9 +8,8 @@ public class DayPrayerTimeSettingsEntity
     private ESupportedAPIs _api;
     private int _minuteAdjustment;
 
-    public DayPrayerTimeSettingsEntity(EPrayerTimeType prayerTimeType, ESupportedAPIs api, int minuteAdjustment)
+    public DayPrayerTimeSettingsEntity(ESupportedAPIs api, int minuteAdjustment)
     {
-        this._prayerTimeType = prayerTimeType;
         this._api = api;
         this._minuteAdjustment = minuteAdjustment;
     }

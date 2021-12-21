@@ -2,18 +2,20 @@ package com.example.advancedprayertimes.Logic.Enums;
 
 public enum EPrayerTimeType
 {
+    Undefined,
+
     FajrBeginning,
-    FajrStop,
+    FajrEnd,
 
     DhuhrBeginning,
-    DhuhrStop,
+    DhuhrEnd,
 
     AsrBeginning,
-    AsrStop,
+    AsrEnd,
 
     MaghribBeginning,
-    MaghribStop,
+    MaghribEnd,
 
     IshaBeginning,
-    IshaStop
+    IshaEnd
 }
