@@ -37,7 +37,7 @@ import java.util.Map;
 
 public class HttpAPIRequestUtil
 {
-    public static Location RetrieveLocation(Context context)
+    public static Location RetrieveLocation(Context context) throws Exception
     {
         LocationManager locationManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
 
@@ -49,33 +49,26 @@ public class HttpAPIRequestUtil
         return locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
     }
 
-    public static Address RetrieveCityByLocation(Context context, Location location)
+    public static Address RetrieveCityByLocation(Context context, Location location) throws Exception
     {
         Geocoder geocoder = new Geocoder(context);
 
-        try
-        {
-            List<Address> addresses = geocoder.getFromLocation(location.getLatitude(),location.getLongitude(),1);
+        List<Address> addresses = geocoder.getFromLocation(location.getLatitude(),location.getLongitude(),1);
 
-            if (geocoder.isPresent())
+        if (geocoder.isPresent())
+        {
+            StringBuilder stringBuilder = new StringBuilder();
+
+            if (addresses.size() > 0)
             {
-                StringBuilder stringBuilder = new StringBuilder();
-
-                if (addresses.size() > 0)
-                {
-                    return addresses.get(0);
-                }
+                return addresses.get(0);
             }
-        }
-        catch (IOException e)
-        {
-            e.printStackTrace();
         }
 
         return null;
     }
 
-    public static DayPrayerTimeEntity RetrieveDiyanetTimes(Context context, Location targetLocation) throws JSONException, ParseException
+    public static DayPrayerTimeEntity RetrieveDiyanetTimes(Context context, Location targetLocation) throws Exception
     {
         Address cityAddress = HttpAPIRequestUtil.RetrieveCityByLocation(context, targetLocation);
 
@@ -177,7 +170,7 @@ public class HttpAPIRequestUtil
         return null;
     }
 
-    public static DayPrayerTimeEntity RetrieveMuwaqqitTimes(Location targetLocation) throws JSONException, ParseException
+    public static DayPrayerTimeEntity RetrieveMuwaqqitTimes(Location targetLocation) throws Exception
     {
         HashMap<String, String> queryParameters = new HashMap<>();
         queryParameters.put("d", "2021-12-13");
@@ -279,7 +272,7 @@ public class HttpAPIRequestUtil
         return apiFeedback;
     }
 
-    public static DayPrayerTimeEntity ReadMuwaqqitTimeJSONAsDayPrayerTime(String jsonText) throws JSONException, ParseException
+    public static DayPrayerTimeEntity ReadMuwaqqitTimeJSONAsDayPrayerTime(String jsonText) throws Exception
     {
         JSONObject jsonObject = new JSONObject(jsonText);
         JSONArray list = (JSONArray)jsonObject.get("list");
@@ -326,5 +319,4 @@ public class HttpAPIRequestUtil
 
         return null;
     }
-
 }

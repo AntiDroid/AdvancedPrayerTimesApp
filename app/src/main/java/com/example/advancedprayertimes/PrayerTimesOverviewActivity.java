@@ -20,7 +20,9 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
+import com.example.advancedprayertimes.Logic.AppEnvironment;
 import com.example.advancedprayertimes.Logic.DayPrayerTimeEntity;
+import com.example.advancedprayertimes.Logic.Enums.EPrayerTimeType;
 import com.example.advancedprayertimes.Logic.Enums.ESupportedAPIs;
 import com.example.advancedprayertimes.Logic.HttpAPIRequestUtil;
 import com.example.advancedprayertimes.databinding.ActivityMainBinding;
@@ -113,7 +115,8 @@ public class PrayerTimesOverviewActivity extends AppCompatActivity
         });
     }
 
-    DayPrayerTimeEntity currentTimes = null;
+    DayPrayerTimeEntity muwaqqitTimes = null;
+    DayPrayerTimeEntity diyanetTimes = null;
 
     public void retrievePrayerTimes() throws Exception
     {
@@ -122,12 +125,12 @@ public class PrayerTimesOverviewActivity extends AppCompatActivity
 
         switch(selectedItem)
         {
-            case "Diyanet":
-                currentTimes = HttpAPIRequestUtil.RetrieveDiyanetTimes(this, targetLocation);
+            case "Muwaqqit":
+                muwaqqitTimes = HttpAPIRequestUtil.RetrieveMuwaqqitTimes(targetLocation);
                 break;
 
-            case "Muwaqqit":
-                currentTimes = HttpAPIRequestUtil.RetrieveMuwaqqitTimes(targetLocation);
+            case "Diyanet":
+                diyanetTimes = HttpAPIRequestUtil.RetrieveDiyanetTimes(this, targetLocation);
                 break;
 
             default:
@@ -150,6 +153,8 @@ public class PrayerTimesOverviewActivity extends AppCompatActivity
                 try
                 {
                     DateFormat dateFormat = new SimpleDateFormat("HH:mm");
+
+
 
                     binding.fajrTimeBeginningTextLabel.setText(dateFormat.format(currentTimes.get_fajrTimeBeginning()));
                     binding.fajrTimeEndTextLabel.setText(dateFormat.format(currentTimes.get_fajrTimeEnd()));

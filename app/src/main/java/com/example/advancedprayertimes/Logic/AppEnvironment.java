@@ -19,5 +19,5 @@ public class AppEnvironment
         return _instance;
     }
 
-    public static HashMap<EPrayerTimeType, DayPrayerTimeEntity> DayPrayerTimeSettings = new HashMap<EPrayerTimeType, DayPrayerTimeEntity>();
+    public HashMap<EPrayerTimeType, DayPrayerTimeSettingsEntity> DayPrayerTimeSettings = new HashMap<EPrayerTimeType, DayPrayerTimeSettingsEntity>();
 }
