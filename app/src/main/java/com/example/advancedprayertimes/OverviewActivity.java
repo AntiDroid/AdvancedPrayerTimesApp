@@ -23,6 +23,8 @@ import org.json.JSONObject;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.Map;
 import java.util.stream.Stream;
@@ -72,6 +74,8 @@ public class OverviewActivity extends AppCompatActivity
         editor.putString(EPrayerTimeType.IshaBeginning.toString() + "value", binding.ishaTimeBeginningTextLabel.getText().toString());
         editor.putString(EPrayerTimeType.IshaEnd.toString() + "value", binding.ishaTimeEndTextLabel.getText().toString());
 
+        editor.putString("displayedTime", binding.displayedDateTextLabel.getText().toString());
+
         Gson gson = new Gson();
 
         for(Map.Entry<EPrayerTimeType, DayPrayerTimeSettingsEntity> entry : AppEnvironment.Instance().DayPrayerTimeSettings.entrySet())
@@ -104,6 +108,8 @@ public class OverviewActivity extends AppCompatActivity
 
         binding.ishaTimeBeginningTextLabel.setText(sharedPref.getString(EPrayerTimeType.IshaBeginning.toString() + "value", "xx:xx"));
         binding.ishaTimeEndTextLabel.setText(sharedPref.getString(EPrayerTimeType.IshaEnd.toString() + "value", "xx:xx"));
+
+        binding.displayedDateTextLabel.setText(sharedPref.getString("displayedTime", "xx.xx.xxxx"));
 
         String[] enumStrings = Stream.of(EPrayerTimeType.values()).map(EPrayerTimeType::name).toArray(String[]::new);
 
@@ -234,6 +240,8 @@ public class OverviewActivity extends AppCompatActivity
     {
         try
         {
+            binding.displayedDateTextLabel.setText(DateTimeFormatter.ofPattern("dd.MM.yyyy").format(LocalDateTime.now()));
+
             binding.fajrTimeBeginningTextLabel.setText(getCorrectText(EPrayerTimeType.FajrBeginning));
             binding.fajrTimeEndTextLabel.setText(getCorrectText(EPrayerTimeType.FajrEnd));
 
