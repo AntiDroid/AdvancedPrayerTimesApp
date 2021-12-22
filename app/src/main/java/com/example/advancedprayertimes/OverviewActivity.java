@@ -1,6 +1,7 @@
 package com.example.advancedprayertimes;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.location.Location;
 import android.os.Bundle;
 import android.os.Handler;
@@ -16,10 +17,15 @@ import com.example.advancedprayertimes.Logic.Enums.EPrayerTimeType;
 import com.example.advancedprayertimes.Logic.Enums.ESupportedAPIs;
 import com.example.advancedprayertimes.Logic.HttpAPIRequestUtil;
 import com.example.advancedprayertimes.databinding.OverviewActivityBinding;
+import com.google.gson.Gson;
+
+import org.json.JSONObject;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Map;
+import java.util.stream.Stream;
 
 public class OverviewActivity extends AppCompatActivity
 {
@@ -43,6 +49,87 @@ public class OverviewActivity extends AppCompatActivity
             binding.showStuffButton.setEnabled(false);
             asyncRetrievePrayerTimesThread.start();
         });
+    }
+
+    @Override
+    protected void onPause()
+    {
+        SharedPreferences sharedPref = this.getPreferences(MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+
+        editor.putString(EPrayerTimeType.FajrBeginning.toString() + "value", binding.fajrTimeBeginningTextLabel.getText().toString());
+        editor.putString(EPrayerTimeType.FajrEnd.toString() + "value", binding.fajrTimeEndTextLabel.getText().toString());
+
+        editor.putString(EPrayerTimeType.DhuhrBeginning.toString() + "value", binding.dhuhrTimeBeginningTextLabel.getText().toString());
+        editor.putString(EPrayerTimeType.DhuhrEnd.toString() + "value", binding.dhuhrTimeEndTextLabel.getText().toString());
+
+        editor.putString(EPrayerTimeType.AsrBeginning.toString() + "value", binding.asrTimeBeginningTextLabel.getText().toString());
+        editor.putString(EPrayerTimeType.AsrEnd.toString() + "value", binding.asrTimeEndTextLabel.getText().toString());
+
+        editor.putString(EPrayerTimeType.MaghribBeginning.toString() + "value", binding.maghribTimeBeginningTextLabel.getText().toString());
+        editor.putString(EPrayerTimeType.MaghribEnd.toString() + "value", binding.maghribTimeEndTextLabel.getText().toString());
+
+        editor.putString(EPrayerTimeType.IshaBeginning.toString() + "value", binding.ishaTimeBeginningTextLabel.getText().toString());
+        editor.putString(EPrayerTimeType.IshaEnd.toString() + "value", binding.ishaTimeEndTextLabel.getText().toString());
+
+        Gson gson = new Gson();
+
+        for(Map.Entry<EPrayerTimeType, DayPrayerTimeSettingsEntity> entry : AppEnvironment.Instance().DayPrayerTimeSettings.entrySet())
+        {
+            String jsonString = gson.toJson(entry.getValue());
+            editor.putString(entry.getKey().toString() + "settings", jsonString);
+        }
+
+        editor.apply();
+
+        super.onPause();
+    }
+
+    @Override
+    protected void onResume()
+    {
+        SharedPreferences sharedPref = this.getPreferences(MODE_PRIVATE);
+
+        binding.fajrTimeBeginningTextLabel.setText(sharedPref.getString(EPrayerTimeType.FajrBeginning.toString() + "value", "xx:xx"));
+        binding.fajrTimeEndTextLabel.setText(sharedPref.getString(EPrayerTimeType.FajrEnd.toString() + "value", "xx:xx"));
+
+        binding.dhuhrTimeBeginningTextLabel.setText(sharedPref.getString(EPrayerTimeType.DhuhrBeginning.toString() + "value", "xx:xx"));
+        binding.dhuhrTimeEndTextLabel.setText(sharedPref.getString(EPrayerTimeType.DhuhrEnd.toString() + "value", "xx:xx"));
+
+        binding.asrTimeBeginningTextLabel.setText(sharedPref.getString(EPrayerTimeType.AsrBeginning.toString() + "value", "xx:xx"));
+        binding.asrTimeEndTextLabel.setText(sharedPref.getString(EPrayerTimeType.AsrEnd.toString() + "value", "xx:xx"));
+
+        binding.maghribTimeBeginningTextLabel.setText(sharedPref.getString(EPrayerTimeType.MaghribBeginning.toString() + "value", "xx:xx"));
+        binding.maghribTimeEndTextLabel.setText(sharedPref.getString(EPrayerTimeType.MaghribEnd.toString() + "value", "xx:xx"));
+
+        binding.ishaTimeBeginningTextLabel.setText(sharedPref.getString(EPrayerTimeType.IshaBeginning.toString() + "value", "xx:xx"));
+        binding.ishaTimeEndTextLabel.setText(sharedPref.getString(EPrayerTimeType.IshaEnd.toString() + "value", "xx:xx"));
+
+        String[] enumStrings = Stream.of(EPrayerTimeType.values()).map(EPrayerTimeType::name).toArray(String[]::new);
+
+        Gson gson = new Gson();
+
+        for(String enumName : enumStrings)
+        {
+            String value = sharedPref.getString(enumName + "settings", null);
+
+            if(value != null)
+            {
+                try
+                {
+                    EPrayerTimeType prayerTimeType = EPrayerTimeType.valueOf(enumName);
+                    DayPrayerTimeSettingsEntity settings = gson.fromJson(value, DayPrayerTimeSettingsEntity.class);
+
+                    AppEnvironment.Instance().DayPrayerTimeSettings.put(prayerTimeType, settings);
+                }
+                catch(Exception e)
+                {
+                    continue;
+                }
+            }
+        }
+
+        super.onResume();
     }
 
     private void configureTimeClickEvents()

@@ -269,7 +269,7 @@ public class HttpAPIRequestUtil
     public static DayPrayerTimeEntity ReadMuwaqqitTimeJSONAsDayPrayerTime(String jsonText) throws Exception
     {
         JSONObject jsonObject = new JSONObject(jsonText);
-        JSONArray list = (JSONArray)jsonObject.get("list");
+        JSONArray list = (JSONArray) jsonObject.get("list");
 
         String todayDate = DateTimeFormatter.ofPattern("yyyy-MM-dd").format(LocalDateTime.now());
 
