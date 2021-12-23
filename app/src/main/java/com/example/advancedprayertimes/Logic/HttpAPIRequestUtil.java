@@ -34,6 +34,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 
 public class HttpAPIRequestUtil
@@ -185,7 +186,7 @@ public class HttpAPIRequestUtil
         queryParameters.put("d", todayDate);
         queryParameters.put("ln", Double.toString(targetLocation.getLongitude()));
         queryParameters.put("lt", Double.toString(targetLocation.getLatitude()));
-        queryParameters.put("tz", "Europe/Berlin");
+        queryParameters.put("tz", TimeZone.getDefault().getID());
 
         if(fajrDegree != null)
         {
