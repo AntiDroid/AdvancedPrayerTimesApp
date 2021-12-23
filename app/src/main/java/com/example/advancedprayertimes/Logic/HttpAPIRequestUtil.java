@@ -11,6 +11,8 @@ import android.net.Uri;
 
 import androidx.core.app.ActivityCompat;
 
+import com.example.advancedprayertimes.Logic.Enums.EHttpRequestMethod;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -21,6 +23,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -28,10 +31,16 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 public class HttpAPIRequestUtil
 {
-    public static Location RetrieveLocation(Context context) throws Exception
+    private static final String MUWAQQIT_JSON_URL = "https://www.muwaqqit.com/api.json";
+    private static final String DIYANET_JSON_URL = "https://ezanvakti.herokuapp.com";
+
+    private static final int MUWAQQIT_API_COOLDOWN_SECONDS = 11;
+
+    public static Location RetrieveLocation(Context context)
     {
         LocationManager locationManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
 
@@ -49,14 +58,9 @@ public class HttpAPIRequestUtil
 
         List<Address> addresses = geocoder.getFromLocation(location.getLatitude(),location.getLongitude(),1);
 
-        if (geocoder.isPresent())
+        if (Geocoder.isPresent() && addresses.size() > 0)
         {
-            StringBuilder stringBuilder = new StringBuilder();
-
-            if (addresses.size() > 0)
-            {
-                return addresses.get(0);
-            }
+            return addresses.get(0);
         }
 
         return null;
@@ -68,7 +72,7 @@ public class HttpAPIRequestUtil
 
         // ######################
 
-        String ulkelerList = HttpAPIRequestUtil.RetrieveAPIFeedback("https://ezanvakti.herokuapp.com/ulkeler", "GET");
+        String ulkelerList = HttpAPIRequestUtil.RetrieveAPIFeedback(HttpAPIRequestUtil.DIYANET_JSON_URL + "/ulkeler", EHttpRequestMethod.GET);
         JSONArray ulkelerJSONArray = new JSONArray(ulkelerList);
 
         String ulkeID = null;
@@ -85,7 +89,7 @@ public class HttpAPIRequestUtil
 
         // ######################
 
-        String sehirlerList = HttpAPIRequestUtil.RetrieveAPIFeedback("https://ezanvakti.herokuapp.com/sehirler/" + ulkeID, "GET");
+        String sehirlerList = HttpAPIRequestUtil.RetrieveAPIFeedback(HttpAPIRequestUtil.DIYANET_JSON_URL + "/sehirler/" + ulkeID, EHttpRequestMethod.GET);
         JSONArray sehirlerJSONArray = new JSONArray(sehirlerList);
 
         String sehirID = null;
@@ -99,7 +103,7 @@ public class HttpAPIRequestUtil
 
         // ######################
 
-        String ilcelerList = HttpAPIRequestUtil.RetrieveAPIFeedback("https://ezanvakti.herokuapp.com/ilceler/" + sehirID, "GET");
+        String ilcelerList = HttpAPIRequestUtil.RetrieveAPIFeedback(HttpAPIRequestUtil.DIYANET_JSON_URL + "/ilceler/" + sehirID, EHttpRequestMethod.GET);
         JSONArray ilcelerJSONArray = new JSONArray(ilcelerList);
 
         String ilceID = null;
@@ -116,12 +120,10 @@ public class HttpAPIRequestUtil
 
         // ######################
 
-        String vakitlerList = HttpAPIRequestUtil.RetrieveAPIFeedback("https://ezanvakti.herokuapp.com/vakitler/" + ilceID, "GET");
+        String vakitlerList = HttpAPIRequestUtil.RetrieveAPIFeedback(HttpAPIRequestUtil.DIYANET_JSON_URL + "/vakitler/" + ilceID, EHttpRequestMethod.GET);
         JSONArray vakitlerJSONArray = new JSONArray(vakitlerList);
 
         String todayDate = DateTimeFormatter.ofPattern("dd.MM.yyyy").format(LocalDateTime.now());
-
-        DayPrayerTimeEntity time = null;
 
         for (int i = 0; i < vakitlerJSONArray.length(); i++)
         {
@@ -164,26 +166,48 @@ public class HttpAPIRequestUtil
         return null;
     }
 
-    public static DayPrayerTimeEntity RetrieveMuwaqqitTimes(Location targetLocation) throws Exception
+    public static DayPrayerTimeEntity RetrieveMuwaqqitTimes(Location targetLocation, Double fajrDegree, Double ishaDegree) throws Exception
     {
+        String todayDate = DateTimeFormatter.ofPattern("yyyy-MM-dd").format(LocalDateTime.now());
+
         HashMap<String, String> queryParameters = new HashMap<>();
-        queryParameters.put("d", "2021-12-13");
+
+        queryParameters.put("d", todayDate);
         queryParameters.put("ln", Double.toString(targetLocation.getLongitude()));
         queryParameters.put("lt", Double.toString(targetLocation.getLatitude()));
         queryParameters.put("tz", "Europe/Berlin");
 
-        String response = HttpAPIRequestUtil.RetrieveAPIFeedback("https://www.muwaqqit.com/api.json", "POST", queryParameters);
+        if(fajrDegree != null)
+        {
+            queryParameters.put("fa", "-" + fajrDegree.toString());
+        }
 
-        return ReadMuwaqqitTimeJSONAsDayPrayerTime(response);
+        if(ishaDegree != null)
+        {
+            queryParameters.put("ea", "-" + ishaDegree.toString());
+        }
+
+        String response = null;
+
+        response = HttpAPIRequestUtil.RetrieveAPIFeedback(HttpAPIRequestUtil.MUWAQQIT_JSON_URL, EHttpRequestMethod.POST, queryParameters);
+
+        // After two consecutive api calls, the next one is only possible after 11 seconds.
+        if(response.equals("429 TOO MANY REQUESTS"))
+        {
+            TimeUnit.SECONDS.sleep(HttpAPIRequestUtil.MUWAQQIT_API_COOLDOWN_SECONDS);
+            response = HttpAPIRequestUtil.RetrieveAPIFeedback(HttpAPIRequestUtil.MUWAQQIT_JSON_URL, EHttpRequestMethod.POST, queryParameters);
+        }
+
+        return HttpAPIRequestUtil.ReadMuwaqqitTimeJSONAsDayPrayerTime(response);
     }
 
-    public static String RetrieveAPIFeedback(String urlText, String requestMethod)
+    public static String RetrieveAPIFeedback(String urlText, EHttpRequestMethod requestMethod)
     {
         HashMap<String, String> queryParameters = new HashMap<>();
-        return RetrieveAPIFeedback(urlText, requestMethod, queryParameters);
+        return HttpAPIRequestUtil.RetrieveAPIFeedback(urlText, requestMethod, queryParameters);
     }
 
-    public static String RetrieveAPIFeedback(String urlText, String requestMethod, Map<String, String> queryParameters)
+    public static String RetrieveAPIFeedback(String urlText, EHttpRequestMethod requestMethod, Map<String, String> queryParameters)
     {
         HttpURLConnection conn = null;
         String apiFeedback = null;
@@ -198,7 +222,7 @@ public class HttpAPIRequestUtil
             conn = (HttpURLConnection) url.openConnection();
 
             // Request setup
-            conn.setRequestMethod(requestMethod);
+            conn.setRequestMethod(requestMethod.toString());
             conn.setConnectTimeout(5000);// 5000 milliseconds = 5 seconds
             conn.setReadTimeout(5000);
 
@@ -211,10 +235,10 @@ public class HttpAPIRequestUtil
 
             String query = builder.build().getEncodedQuery();
 
-            if(requestMethod == "POST")
+            if(requestMethod.equals(EHttpRequestMethod.POST))
             {
                 OutputStream os = conn.getOutputStream();
-                BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(os, "UTF-8"));
+                BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(os, StandardCharsets.UTF_8));
 
                 if(queryParameters.size() != 0)
                 {
@@ -232,25 +256,18 @@ public class HttpAPIRequestUtil
             if (status >= 300)
             {
                 reader = new BufferedReader(new InputStreamReader(conn.getErrorStream()));
-
-                while ((line = reader.readLine()) != null)
-                {
-                    responseContent.append(line);
-                }
-
-                reader.close();
             }
             else
             {
                 reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-
-                while ((line = reader.readLine()) != null)
-                {
-                    responseContent.append(line);
-                }
-
-                reader.close();
             }
+
+            while ((line = reader.readLine()) != null)
+            {
+                responseContent.append(line);
+            }
+
+            reader.close();
 
             apiFeedback = responseContent.toString();
         }
@@ -260,7 +277,10 @@ public class HttpAPIRequestUtil
         }
         finally
         {
-            conn.disconnect();
+            if(conn != null)
+            {
+                conn.disconnect();
+            }
         }
 
         return apiFeedback;

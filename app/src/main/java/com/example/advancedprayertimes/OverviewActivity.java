@@ -7,7 +7,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 
-import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.advancedprayertimes.Logic.AppEnvironment;
@@ -19,14 +18,14 @@ import com.example.advancedprayertimes.Logic.HttpAPIRequestUtil;
 import com.example.advancedprayertimes.databinding.OverviewActivityBinding;
 import com.google.gson.Gson;
 
-import org.json.JSONObject;
-
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class OverviewActivity extends AppCompatActivity
@@ -78,7 +77,7 @@ public class OverviewActivity extends AppCompatActivity
 
         Gson gson = new Gson();
 
-        for(Map.Entry<EPrayerTimeType, DayPrayerTimeSettingsEntity> entry : AppEnvironment.Instance().DayPrayerTimeSettings.entrySet())
+        for(Map.Entry<EPrayerTimeType, DayPrayerTimeSettingsEntity> entry : AppEnvironment.DayPrayerTimeSettings.entrySet())
         {
             String jsonString = gson.toJson(entry.getValue());
             editor.putString(entry.getKey().toString() + "settings", jsonString);
@@ -126,11 +125,11 @@ public class OverviewActivity extends AppCompatActivity
                     EPrayerTimeType prayerTimeType = EPrayerTimeType.valueOf(enumName);
                     DayPrayerTimeSettingsEntity settings = gson.fromJson(value, DayPrayerTimeSettingsEntity.class);
 
-                    AppEnvironment.Instance().DayPrayerTimeSettings.put(prayerTimeType, settings);
+                    AppEnvironment.DayPrayerTimeSettings.put(prayerTimeType, settings);
                 }
                 catch(Exception e)
                 {
-                    continue;
+                    e.printStackTrace();
                 }
             }
         }
@@ -168,8 +167,8 @@ public class OverviewActivity extends AppCompatActivity
         }
     }
 
-    DayPrayerTimeEntity muwaqqitTimes = null;
-    DayPrayerTimeEntity diyanetTimes = null;
+    Map<EPrayerTimeType, DayPrayerTimeEntity> muwaqqitTimesHashMap = new HashMap<>();
+    Map<EPrayerTimeType, DayPrayerTimeEntity> diyanetTimesHashMap = new HashMap<>();
 
     public void retrievePrayerTimes()
     {
@@ -177,16 +176,10 @@ public class OverviewActivity extends AppCompatActivity
         {
             Location targetLocation = HttpAPIRequestUtil.RetrieveLocation(this);
 
-            muwaqqitTimes = HttpAPIRequestUtil.RetrieveMuwaqqitTimes(targetLocation);
-            diyanetTimes = HttpAPIRequestUtil.RetrieveDiyanetTimes(this, targetLocation);
+            Map<EPrayerTimeType, DayPrayerTimeSettingsEntity> toBeCalculatedPrayerTimes = AppEnvironment.DayPrayerTimeSettings;
 
-            if(muwaqqitTimes == null && diyanetTimes == null)
-            {
-                new AlertDialog.Builder(this)
-                        .setTitle("FEHLER")
-                        .setMessage("Daten konnten nicht geladen werden!")
-                        .show();
-            }
+            retrieveDiyanetTimes(toBeCalculatedPrayerTimes, targetLocation);
+            retrieveMuwaqqitTimes(toBeCalculatedPrayerTimes, targetLocation);
 
             new Handler(Looper.getMainLooper()).post(() ->
             {
@@ -202,25 +195,146 @@ public class OverviewActivity extends AppCompatActivity
         }
     }
 
+    private void retrieveDiyanetTimes(Map<EPrayerTimeType, DayPrayerTimeSettingsEntity> toBeCalculatedPrayerTimes, Location targetLocation) throws Exception
+    {
+        // reset values
+        diyanetTimesHashMap = new HashMap<>();
+
+        Map<EPrayerTimeType, DayPrayerTimeSettingsEntity> diyanetTimes =
+                toBeCalculatedPrayerTimes.entrySet().stream()
+                        .filter(x -> x.getValue().get_api() == ESupportedAPIs.Diyanet)
+                        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+        // ADD ALL DIYANET TIME CALCULATIONS
+        if(diyanetTimes.size() > 0)
+        {
+            DayPrayerTimeEntity diyanetTime = HttpAPIRequestUtil.RetrieveDiyanetTimes(this, targetLocation);
+
+            if(diyanetTime != null)
+            {
+                diyanetTimesHashMap = diyanetTimes.entrySet().stream()
+                        .collect(Collectors.toMap(Map.Entry::getKey, y -> diyanetTime));
+            }
+        }
+    }
+
+    private void retrieveMuwaqqitTimes(Map<EPrayerTimeType, DayPrayerTimeSettingsEntity> toBeCalculatedPrayerTimes, Location targetLocation) throws Exception
+    {
+        // reset values
+        muwaqqitTimesHashMap = new HashMap<>();
+
+        Map<EPrayerTimeType, DayPrayerTimeSettingsEntity> muwaqqitTimesHashMap =
+                toBeCalculatedPrayerTimes.entrySet().stream()
+                        .filter(x -> x.getValue().get_api() == ESupportedAPIs.Muwaqqit)
+                        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+        Map<EPrayerTimeType, DayPrayerTimeSettingsEntity> degreeMuwaqqitTimesHashMap =
+                muwaqqitTimesHashMap.entrySet().stream()
+                        .filter(x -> DayPrayerTimeSettingsEntity.DEGREE_TYPES.contains(x.getKey()))
+                        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+        Map<EPrayerTimeType, DayPrayerTimeSettingsEntity> nonDegreeMuwaqqitTimesHashMap =
+                muwaqqitTimesHashMap.entrySet().stream()
+                        .filter(x -> !DayPrayerTimeSettingsEntity.DEGREE_TYPES.contains(x.getKey()))
+                        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+        if(degreeMuwaqqitTimesHashMap.size() > 0)
+        {
+            Map<EPrayerTimeType, DayPrayerTimeSettingsEntity> fajrDegreeMuwaqqitTimesHashMap =
+                    degreeMuwaqqitTimesHashMap.entrySet().stream()
+                            .filter(x -> DayPrayerTimeSettingsEntity.FAJR_DEGREE_TYPES.contains(x.getKey()))
+                            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+            Map<EPrayerTimeType, DayPrayerTimeSettingsEntity> ishaDegreeMuwaqqitTimesHashMap =
+                    degreeMuwaqqitTimesHashMap.entrySet().stream()
+                            .filter(x -> DayPrayerTimeSettingsEntity.ISHA_DEGREE_TYPES.contains(x.getKey()))
+                            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+            // MERGE CALCULATIONS FOR MERGABLE TIMES
+            while(fajrDegreeMuwaqqitTimesHashMap.size() > 0 && ishaDegreeMuwaqqitTimesHashMap.size() > 0)
+            {
+                Map.Entry<EPrayerTimeType, DayPrayerTimeSettingsEntity> fajrDegreeEntry = fajrDegreeMuwaqqitTimesHashMap.entrySet().stream().findFirst().get();
+                Map.Entry<EPrayerTimeType, DayPrayerTimeSettingsEntity> ishaDegreeEntry = ishaDegreeMuwaqqitTimesHashMap.entrySet().stream().findFirst().get();
+
+                DayPrayerTimeSettingsEntity fajrDegreeSettingsEntity = fajrDegreeEntry.getValue();
+                DayPrayerTimeSettingsEntity ishaDegreeSettingsEntity = ishaDegreeEntry.getValue();
+
+                Double fajrDegree = fajrDegreeSettingsEntity.getFajrCalculationDegree();
+                Double ishaDegree = ishaDegreeSettingsEntity.getIshaCalculationDegree();
+
+                DayPrayerTimeEntity degreeMuwaqqitTimeEntity = HttpAPIRequestUtil.RetrieveMuwaqqitTimes(targetLocation, fajrDegree, ishaDegree);
+
+                this.muwaqqitTimesHashMap.put(fajrDegreeEntry.getKey(), degreeMuwaqqitTimeEntity);
+                this.muwaqqitTimesHashMap.put(ishaDegreeEntry.getKey(), degreeMuwaqqitTimeEntity);
+
+                // remove handled entries from the lists
+                fajrDegreeMuwaqqitTimesHashMap.remove(fajrDegreeEntry.getKey());
+                ishaDegreeMuwaqqitTimesHashMap.remove(ishaDegreeEntry.getKey());
+
+                degreeMuwaqqitTimesHashMap.remove(fajrDegreeEntry.getKey());
+                degreeMuwaqqitTimesHashMap.remove(ishaDegreeEntry.getKey());
+            }
+
+            // ADD REMAINING CALCULATIONS FOR NON MERGABLE DEGREE TIMES
+            for(Map.Entry<EPrayerTimeType, DayPrayerTimeSettingsEntity> entry : degreeMuwaqqitTimesHashMap.entrySet())
+            {
+                EPrayerTimeType prayerTimeType = (EPrayerTimeType) entry.getKey();
+                DayPrayerTimeSettingsEntity settingsEntity = (DayPrayerTimeSettingsEntity) entry.getValue();
+
+                Double fajrDegree = settingsEntity.getFajrCalculationDegree();
+                Double ishaDegree = settingsEntity.getIshaCalculationDegree();
+
+                DayPrayerTimeEntity degreeMuwaqqitTimeEntity = HttpAPIRequestUtil.RetrieveMuwaqqitTimes(targetLocation, fajrDegree, ishaDegree);
+
+                this.muwaqqitTimesHashMap.put(prayerTimeType, degreeMuwaqqitTimeEntity);
+            }
+        }
+
+        // ADD CALCULATIONS FOR NON DEGREE TIMES
+        if(nonDegreeMuwaqqitTimesHashMap.size() > 0)
+        {
+            DayPrayerTimeEntity nonDegreeMuwaqqitTimeEntity = null;
+
+            // any other muwaqqit request will suffice
+            if(this.muwaqqitTimesHashMap.size() > 0)
+            {
+                nonDegreeMuwaqqitTimeEntity = this.muwaqqitTimesHashMap.values().stream().findFirst().get();
+            }
+            else
+            {
+                nonDegreeMuwaqqitTimeEntity = HttpAPIRequestUtil.RetrieveMuwaqqitTimes(targetLocation, null, null);
+            }
+
+            for(EPrayerTimeType prayerTimeType : nonDegreeMuwaqqitTimesHashMap.keySet())
+            {
+                this.muwaqqitTimesHashMap.put(prayerTimeType, nonDegreeMuwaqqitTimeEntity);
+            }
+        }
+    }
+
     private static final DateFormat dateFormat = new SimpleDateFormat("HH:mm");
 
     private String getCorrectText(EPrayerTimeType prayerTimeType)
     {
-        if(AppEnvironment.Instance().DayPrayerTimeSettings.containsKey(prayerTimeType))
+        if(AppEnvironment.DayPrayerTimeSettings.containsKey(prayerTimeType))
         {
-            DayPrayerTimeSettingsEntity settings = AppEnvironment.Instance().DayPrayerTimeSettings.get(prayerTimeType);
+            DayPrayerTimeSettingsEntity settings = AppEnvironment.DayPrayerTimeSettings.get(prayerTimeType);
 
             Date targetDate = null;
 
             if(settings != null)
             {
-                if (settings.get_api() == ESupportedAPIs.Muwaqqit)
+                if (settings.get_api() == ESupportedAPIs.Muwaqqit
+                        && muwaqqitTimesHashMap.containsKey(prayerTimeType)
+                        && muwaqqitTimesHashMap.get(prayerTimeType) != null)
                 {
-                    targetDate = muwaqqitTimes.GetTimeByType(prayerTimeType);
+                    targetDate = muwaqqitTimesHashMap.get(prayerTimeType).GetTimeByType(prayerTimeType);
                 }
-                else if (settings.get_api() == ESupportedAPIs.Diyanet)
+                else if (settings.get_api() == ESupportedAPIs.Diyanet
+                        && diyanetTimesHashMap.containsKey(prayerTimeType)
+                        && diyanetTimesHashMap.get(prayerTimeType) != null)
                 {
-                    targetDate = diyanetTimes.GetTimeByType(prayerTimeType);
+                    targetDate = diyanetTimesHashMap.get(prayerTimeType).GetTimeByType(prayerTimeType);
                 }
             }
 
