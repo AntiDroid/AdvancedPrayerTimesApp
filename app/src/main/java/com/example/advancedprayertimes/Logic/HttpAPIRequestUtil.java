@@ -11,12 +11,11 @@ import android.location.LocationManager;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
-
 import androidx.core.app.ActivityCompat;
 
 import com.example.advancedprayertimes.Logic.Enums.EHttpRequestMethod;
-
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
@@ -34,7 +33,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 
 public class HttpAPIRequestUtil
@@ -44,6 +42,9 @@ public class HttpAPIRequestUtil
 
     private static final int MUWAQQIT_API_COOLDOWN_SECONDS = 11;
 
+    private static final String BING_MAPS_URL = "https://dev.virtualearth.net/REST/v1/timezone/";
+    private static final String BING_MAPS_API_KEY = "AmlyD3G1euqPpGehI1B9s55Pzr2nE-joqnfgBM5ZvHUSn49p-WpQJbrr3NlAE_nw";
+
     public static Location RetrieveLocation(Context context)
     {
         LocationManager locationManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
@@ -52,12 +53,10 @@ public class HttpAPIRequestUtil
             &&  ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED)
         {
             new Handler(Looper.getMainLooper()).post(() ->
-            {
-                new AlertDialog.Builder(context)
-                        .setTitle("MISSING PERMISSION")
-                        .setMessage("Location permission was not granted!")
-                        .show();
-            });
+                    new AlertDialog.Builder(context)
+                            .setTitle("MISSING PERMISSION")
+                            .setMessage("Location permission was not granted!")
+                            .show());
         }
 
         return locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
@@ -183,10 +182,21 @@ public class HttpAPIRequestUtil
 
         HashMap<String, String> queryParameters = new HashMap<>();
 
+        String timeZone = null;
+
+        try
+        {
+            timeZone = retrieveTimeZoneByLocation(targetLocation);
+        }
+        catch(Exception e)
+        {
+            timeZone = "Europe/Berlin";
+        }
+
         queryParameters.put("d", todayDate);
         queryParameters.put("ln", Double.toString(targetLocation.getLongitude()));
         queryParameters.put("lt", Double.toString(targetLocation.getLatitude()));
-        queryParameters.put("tz", TimeZone.getDefault().getID());
+        queryParameters.put("tz", timeZone);
 
         if(fajrDegree != null)
         {
@@ -210,6 +220,20 @@ public class HttpAPIRequestUtil
         }
 
         return HttpAPIRequestUtil.ReadMuwaqqitTimeJSONAsDayPrayerTime(response);
+    }
+
+    private static String retrieveTimeZoneByLocation(Location targetLocation) throws JSONException
+    {
+        String urlText =
+                HttpAPIRequestUtil.BING_MAPS_URL +
+                targetLocation.getLatitude() + "," + targetLocation.getLongitude() +
+                        "?key="+HttpAPIRequestUtil.BING_MAPS_API_KEY;
+
+        String response = HttpAPIRequestUtil.RetrieveAPIFeedback(urlText, EHttpRequestMethod.GET);
+
+        JSONObject obj = new JSONObject(response);
+
+        return obj.getJSONArray("resourceSets").getJSONObject(0).getJSONArray("resources").getJSONObject(0).getJSONObject("timeZone").getString("ianaTimeZoneId");
     }
 
     public static String RetrieveAPIFeedback(String urlText, EHttpRequestMethod requestMethod)
