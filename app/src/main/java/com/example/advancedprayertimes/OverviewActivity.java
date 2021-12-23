@@ -190,7 +190,11 @@ public class OverviewActivity extends AppCompatActivity
         }
         catch (Exception e)
         {
-            binding.statusTextLabel.setText("Error!");
+            new Handler(Looper.getMainLooper()).post(() ->
+            {
+                binding.statusTextLabel.setText("Error!");
+                binding.showStuffButton.setEnabled(true);
+            });
             e.printStackTrace();
         }
     }

@@ -1,6 +1,7 @@
 package com.example.advancedprayertimes.Logic;
 
 import android.Manifest;
+import android.app.AlertDialog;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.location.Address;
@@ -8,6 +9,8 @@ import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationManager;
 import android.net.Uri;
+import android.os.Handler;
+import android.os.Looper;
 
 import androidx.core.app.ActivityCompat;
 
@@ -44,9 +47,16 @@ public class HttpAPIRequestUtil
     {
         LocationManager locationManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
 
-        if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED)
+        if (    ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
+            &&  ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED)
         {
-            // do permission failed check stuff...
+            new Handler(Looper.getMainLooper()).post(() ->
+            {
+                new AlertDialog.Builder(context)
+                        .setTitle("MISSING PERMISSION")
+                        .setMessage("Location permission was not granted!")
+                        .show();
+            });
         }
 
         return locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
