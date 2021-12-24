@@ -3,7 +3,6 @@ package com.example.advancedprayertimes.Logic;
 import com.example.advancedprayertimes.Logic.Enums.EPrayerTimeType;
 import com.example.advancedprayertimes.Logic.Enums.ESupportedAPIs;
 
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;

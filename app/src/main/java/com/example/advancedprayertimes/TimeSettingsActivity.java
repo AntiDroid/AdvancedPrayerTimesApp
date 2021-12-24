@@ -13,32 +13,29 @@ import com.example.advancedprayertimes.Logic.AppEnvironment;
 import com.example.advancedprayertimes.Logic.DayPrayerTimeSettingsEntity;
 import com.example.advancedprayertimes.Logic.Enums.EPrayerTimeType;
 import com.example.advancedprayertimes.Logic.Enums.ESupportedAPIs;
-import com.example.advancedprayertimes.databinding.OverviewActivityBinding;
-import com.example.advancedprayertimes.databinding.PrayerTimeSettingsActivityBinding;
+import com.example.advancedprayertimes.databinding.TimeSettingsActivityBinding;
 
 import java.util.ArrayList;
-import java.util.Map;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class PrayerTimeSettingsActivity extends AppCompatActivity
+public class TimeSettingsActivity extends AppCompatActivity
 {
     EPrayerTimeType prayerTimeType;
     SettingsFragment settingsFragment = new SettingsFragment();
 
-    PrayerTimeSettingsActivityBinding binding = null;
+    TimeSettingsActivityBinding binding = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.prayer_time_settings_activity);
+        setContentView(R.layout.time_settings_activity);
 
-        binding = PrayerTimeSettingsActivityBinding.inflate(getLayoutInflater());
+        binding = TimeSettingsActivityBinding.inflate(getLayoutInflater());
 
         // Get the Intent that started this activity and extract the string
         Intent intent = this.getIntent();
-        prayerTimeType = (EPrayerTimeType) intent.getSerializableExtra(OverviewActivity.INTENT_EXTRA);
+        prayerTimeType = (EPrayerTimeType) intent.getSerializableExtra(TimeOverviewActivity.INTENT_EXTRA);
 
         if (savedInstanceState == null)
         {
@@ -104,7 +101,7 @@ public class PrayerTimeSettingsActivity extends AppCompatActivity
         {
             setPreferencesFromResource(R.xml.root_preferences, rootKey);
 
-            EPrayerTimeType prayerTimeType = ((PrayerTimeSettingsActivity) this.requireActivity()).prayerTimeType;
+            EPrayerTimeType prayerTimeType = ((TimeSettingsActivity) this.requireActivity()).prayerTimeType;
 
             ListPreference apiSelectionListPreference = this.findPreference("apiSelection");
             ListPreference minuteAdjustmentListPreference = this.findPreference("minuteAdjustmentSelection");
@@ -189,10 +186,6 @@ public class PrayerTimeSettingsActivity extends AppCompatActivity
                         }
                     }
                     // TODO: Set default configuration values for new configuration
-                    else
-                    {
-
-                    }
                 }
             }
         }

@@ -1,5 +1,6 @@
 package com.example.advancedprayertimes;
 
+import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -18,7 +19,7 @@ import com.example.advancedprayertimes.Logic.DayPrayerTimeSettingsEntity;
 import com.example.advancedprayertimes.Logic.Enums.EPrayerTimeType;
 import com.example.advancedprayertimes.Logic.Enums.ESupportedAPIs;
 import com.example.advancedprayertimes.Logic.HttpAPIRequestUtil;
-import com.example.advancedprayertimes.databinding.OverviewActivityBinding;
+import com.example.advancedprayertimes.databinding.TimeOverviewActivityBinding;
 import com.google.gson.Gson;
 
 import java.text.DateFormat;
@@ -31,9 +32,9 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class OverviewActivity extends AppCompatActivity
+public class TimeOverviewActivity extends AppCompatActivity
 {
-    private OverviewActivityBinding binding = null;
+    private TimeOverviewActivityBinding binding = null;
 
     HashMap<EPrayerTimeType, TextView> prayerTimeTypeWithAssociatedTextView = new HashMap<>();
 
@@ -42,7 +43,7 @@ public class OverviewActivity extends AppCompatActivity
     {
         super.onCreate(savedInstanceState);
 
-        binding = OverviewActivityBinding.inflate(getLayoutInflater());
+        binding = TimeOverviewActivityBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
         configurePrayerTimeTextViews();
@@ -164,9 +165,9 @@ public class OverviewActivity extends AppCompatActivity
     {
         try
         {
-            Intent myIntent = new Intent(OverviewActivity.this, PrayerTimeSettingsActivity.class);
+            Intent myIntent = new Intent(TimeOverviewActivity.this, TimeSettingsActivity.class);
             myIntent.putExtra(INTENT_EXTRA, prayerTimeType); //Optional parameters
-            OverviewActivity.this.startActivity(myIntent);
+            TimeOverviewActivity.this.startActivity(myIntent);
         }
         catch(Exception e)
         {
@@ -181,7 +182,7 @@ public class OverviewActivity extends AppCompatActivity
     {
         try
         {
-            Location targetLocation = HttpAPIRequestUtil.RetrieveLocation(this);
+            Location targetLocation = AppEnvironment.RetrieveLocation(this);
 
             if(targetLocation == null)
             {
@@ -223,7 +224,7 @@ public class OverviewActivity extends AppCompatActivity
     private void retrieveDiyanetTimes(Map<EPrayerTimeType, DayPrayerTimeSettingsEntity> toBeCalculatedPrayerTimes, Location targetLocation) throws Exception
     {
         // reset values
-        diyanetTimesHashMap = new HashMap<>();
+        diyanetTimesHashMap.clear();
 
         Map<EPrayerTimeType, DayPrayerTimeSettingsEntity> diyanetTimes =
                 toBeCalculatedPrayerTimes.entrySet().stream()
@@ -246,7 +247,7 @@ public class OverviewActivity extends AppCompatActivity
     private void retrieveMuwaqqitTimes(Map<EPrayerTimeType, DayPrayerTimeSettingsEntity> toBeCalculatedPrayerTimes, Location targetLocation) throws Exception
     {
         // reset values
-        muwaqqitTimesHashMap = new HashMap<>();
+        muwaqqitTimesHashMap.clear();
 
         Map<EPrayerTimeType, DayPrayerTimeSettingsEntity> muwaqqitTimesHashMap =
                 toBeCalculatedPrayerTimes.entrySet().stream()
@@ -328,7 +329,7 @@ public class OverviewActivity extends AppCompatActivity
         // ADD CALCULATIONS FOR NON DEGREE TIMES
         if(nonDegreeMuwaqqitTimesHashMap.size() > 0)
         {
-            DayPrayerTimeEntity nonDegreeMuwaqqitTimeEntity = null;
+            DayPrayerTimeEntity nonDegreeMuwaqqitTimeEntity;
 
             // any other muwaqqit request will suffice
             if(this.muwaqqitTimesHashMap.values().stream().findFirst().isPresent())
@@ -347,7 +348,7 @@ public class OverviewActivity extends AppCompatActivity
         }
     }
 
-    private static final DateFormat dateFormat = new SimpleDateFormat("HH:mm");
+    @SuppressLint("SimpleDateFormat") private static final DateFormat dateFormat = new SimpleDateFormat("HH:mm");
 
     private String getCorrectText(EPrayerTimeType prayerTimeType)
     {
@@ -359,6 +360,8 @@ public class OverviewActivity extends AppCompatActivity
 
             if(settings != null)
             {
+                // TODO: Isha-Ende muss Fajr des  *Folgetages* sein!
+
                 if (settings.get_api() == ESupportedAPIs.Muwaqqit
                         && muwaqqitTimesHashMap.containsKey(prayerTimeType)
                         && muwaqqitTimesHashMap.get(prayerTimeType) != null)

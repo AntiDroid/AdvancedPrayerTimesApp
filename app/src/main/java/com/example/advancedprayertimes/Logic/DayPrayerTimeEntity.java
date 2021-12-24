@@ -6,168 +6,124 @@ import java.util.Date;
 
 public class DayPrayerTimeEntity
 {
-    private Date _fajrTimeBeginning;
-    private Date _fajrTimeEnd;
+    private Date _fajrTime;
+    private Date _sunRiseTime;
 
-    private Date _dhuhrTimeBeginning;
-    private Date _dhuhrTimeEnd;
+    private Date _dhuhrTime;
+    private Date _asrTime;
 
-    private Date _asrTimeBeginning;
-    private Date _asrTimeEnd;
-
-    private Date _maghribTimeBeginning;
-    private Date _maghribTimeEnd;
-
-    private Date _ishaTimeBeginning;
-    private Date _ishaTimeEnd;
+    private Date _maghribTime;
+    private Date _ishaTime;
 
     public DayPrayerTimeEntity(
-            Date fajrTimeBeginning,
-            Date fajrTimeEnd,
-            Date dhuhrTimeBeginning,
-            Date dhuhrTimeEnd,
-            Date asrTimeBeginning,
-            Date asrTimeEnd,
-            Date maghribTimeBeginning,
-            Date maghribTimeEnd,
-            Date ishaTimeBeginning,
-            Date ishaTimeEnd
+            Date fajrTime,
+            Date sunRiseTime,
+            Date dhuhrTime,
+            Date asrTime,
+            Date maghribTime,
+            Date ishaTime
     )
     {
-        this._fajrTimeBeginning = fajrTimeBeginning;
-        this._fajrTimeEnd = fajrTimeEnd;
+        this._fajrTime = fajrTime;
+        this._sunRiseTime = sunRiseTime;
 
-        this._dhuhrTimeBeginning = dhuhrTimeBeginning;
-        this._dhuhrTimeEnd = dhuhrTimeEnd;
+        this._dhuhrTime = dhuhrTime;
+        this._asrTime = asrTime;
 
-        this._asrTimeBeginning = asrTimeBeginning;
-        this._asrTimeEnd = asrTimeEnd;
-
-        this._maghribTimeBeginning = maghribTimeBeginning;
-        this._maghribTimeEnd = maghribTimeEnd;
-
-        this._ishaTimeBeginning = ishaTimeBeginning;
-        this._ishaTimeEnd = ishaTimeEnd;
+        this._maghribTime = maghribTime;
+        this._ishaTime = ishaTime;
     }
 
     public Date GetTimeByType(EPrayerTimeType prayerTimeType)
     {
         switch (prayerTimeType)
         {
+            case IshaEnd:
             case FajrBeginning:
-                return this.get_fajrTimeBeginning();
+                return this.getFajrTime();
+
             case FajrEnd:
-                return this.get_fajrTimeEnd();
+                return this.getSunRiseTime();
 
             case DhuhrBeginning:
-                return this.get_dhuhrTimeBeginning();
+                return this.getDhuhrTime();
+
             case DhuhrEnd:
-                return this.get_dhuhrTimeEnd();
-
             case AsrBeginning:
-                return this.get_asrTimeBeginning();
+                return this.getAsrTime();
+
             case AsrEnd:
-                return this.get_asrTimeEnd();
-
             case MaghribBeginning:
-                return this.get_maghribTimeBeginning();
-            case MaghribEnd:
-                return this.get_maghribTimeEnd();
+                return this.getMaghribTime();
 
+            case MaghribEnd:
             case IshaBeginning:
-                return this.get_ishaTimeBeginning();
-            case IshaEnd:
-                return this.get_ishaTimeEnd();
+                return this.getIshaTime();
 
             default:
-                return new Date(0);
+                return null;
         }
     }
 
     // #########################################################
 
-    public Date get_fajrTimeBeginning()
+    public Date getFajrTime()
     {
-        return _fajrTimeBeginning;
+        return _fajrTime;
     }
 
-    public void set_fajrTimeBeginning(Date _fajrTimeBeginning) { this._fajrTimeBeginning = _fajrTimeBeginning; }
-
-    public Date get_fajrTimeEnd()
+    public void setFajrTime(Date fajrTime)
     {
-        return _fajrTimeEnd;
+        _fajrTime = fajrTime;
     }
 
-    public void set_fajrTimeEnd(Date _fajrTimeEnd)
+    public Date getSunRiseTime()
     {
-        this._fajrTimeEnd = _fajrTimeEnd;
+        return _sunRiseTime;
     }
 
-    public Date get_dhuhrTimeBeginning()
+    public void setSunRiseTime(Date sunRiseTime)
     {
-        return _dhuhrTimeBeginning;
+        _sunRiseTime = sunRiseTime;
     }
 
-    public void set_dhuhrTimeBeginning(Date _dhuhrTimeBeginning) { this._dhuhrTimeBeginning = _dhuhrTimeBeginning; }
-
-    public Date get_dhuhrTimeEnd()
+    public Date getDhuhrTime()
     {
-        return _dhuhrTimeEnd;
+        return _dhuhrTime;
     }
 
-    public void set_dhuhrTimeEnd(Date _dhuhrTimeEnd)
+    public void setDhuhrTime(Date dhuhrTime)
     {
-        this._dhuhrTimeEnd = _dhuhrTimeEnd;
+        _dhuhrTime = dhuhrTime;
     }
 
-    public Date get_asrTimeBeginning()
+    public Date getAsrTime()
     {
-        return _asrTimeBeginning;
+        return _asrTime;
     }
 
-    public void set_asrTimeBeginning(Date _asrTimeBeginning) { this._asrTimeBeginning = _asrTimeBeginning; }
-
-    public Date get_asrTimeEnd()
+    public void setAsrTime(Date asrTime)
     {
-        return _asrTimeEnd;
+        _asrTime = asrTime;
     }
 
-    public void set_asrTimeEnd(Date _asrTimeEnd)
+    public Date getMaghribTime()
     {
-        this._asrTimeEnd = _asrTimeEnd;
+        return _maghribTime;
     }
 
-    public Date get_maghribTimeBeginning()
+    public void setMaghribTime(Date maghribTime)
     {
-        return _maghribTimeBeginning;
+        _maghribTime = maghribTime;
     }
 
-    public void set_maghribTimeBeginning(Date _maghribTimeBeginning) { this._maghribTimeBeginning = _maghribTimeBeginning; }
-
-    public Date get_maghribTimeEnd()
+    public Date getIshaTime()
     {
-        return _maghribTimeEnd;
+        return _ishaTime;
     }
 
-    public void set_maghribTimeEnd(Date _maghribTimeEnd)
+    public void setIshaTime(Date ishaTime)
     {
-        this._maghribTimeEnd = _maghribTimeEnd;
-    }
-
-    public Date get_ishaTimeBeginning()
-    {
-        return _ishaTimeBeginning;
-    }
-
-    public void set_ishaTimeBeginning(Date _ishaTimeBeginning) { this._ishaTimeBeginning = _ishaTimeBeginning; }
-
-    public Date get_ishaTimeEnd()
-    {
-        return _ishaTimeEnd;
-    }
-
-    public void set_ishaTimeEnd(Date _ishaTimeEnd)
-    {
-        this._ishaTimeEnd = _ishaTimeEnd;
+        _ishaTime = ishaTime;
     }
 }
