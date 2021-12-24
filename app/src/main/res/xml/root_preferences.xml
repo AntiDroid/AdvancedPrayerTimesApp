@@ -24,13 +24,13 @@
         app:title="API-Settings">
         <ListPreference
             app:defaultValue="false"
-            app:key="fajrCalculationDegrees"
-            app:title="Fajr calculation degrees"
+            app:key="fajrCalculationDegree"
+            app:title="Fajr calculation degree"
             app:useSimpleSummaryProvider="true" />
         <ListPreference
             app:defaultValue="false"
-            app:key="ishaCalculationDegrees"
-            app:title="Isha calculation degrees"
+            app:key="ishaCalculationDegree"
+            app:title="Isha calculation degree"
             app:useSimpleSummaryProvider="true" />
     </PreferenceCategory>
 

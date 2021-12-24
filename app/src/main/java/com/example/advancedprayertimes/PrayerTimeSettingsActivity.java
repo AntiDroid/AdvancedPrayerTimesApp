@@ -17,6 +17,8 @@ import com.example.advancedprayertimes.databinding.OverviewActivityBinding;
 import com.example.advancedprayertimes.databinding.PrayerTimeSettingsActivityBinding;
 
 import java.util.ArrayList;
+import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class PrayerTimeSettingsActivity extends AppCompatActivity
@@ -58,12 +60,12 @@ public class PrayerTimeSettingsActivity extends AppCompatActivity
     @Override
     protected void onStop()
     {
-        AppEnvironment.DayPrayerTimeSettings.remove(prayerTimeType);
+        //TODO: Consider that setting values may be "Not set"
 
         ListPreference apiSelectionListPreference = this.settingsFragment.findPreference("apiSelection");
         ListPreference minuteAdjustmentListPreference = this.settingsFragment.findPreference("minuteAdjustmentSelection");
-        ListPreference fajrDegreesListPreference = this.settingsFragment.findPreference("fajrCalculationDegrees");
-        ListPreference ishaDegreesListPreference = this.settingsFragment.findPreference("ishaCalculationDegrees");
+        ListPreference fajrDegreesListPreference = this.settingsFragment.findPreference("fajrCalculationDegree");
+        ListPreference ishaDegreesListPreference = this.settingsFragment.findPreference("ishaCalculationDegree");
 
         ESupportedAPIs api = ESupportedAPIs.Undefined;
         int minuteAdjustment = 0;
@@ -106,8 +108,8 @@ public class PrayerTimeSettingsActivity extends AppCompatActivity
 
             ListPreference apiSelectionListPreference = this.findPreference("apiSelection");
             ListPreference minuteAdjustmentListPreference = this.findPreference("minuteAdjustmentSelection");
-            ListPreference fajrDegreesListPreference = this.findPreference("fajrCalculationDegrees");
-            ListPreference ishaDegreesListPreference = this.findPreference("ishaCalculationDegrees");
+            ListPreference fajrDegreesListPreference = this.findPreference("fajrCalculationDegree");
+            ListPreference ishaDegreesListPreference = this.findPreference("ishaCalculationDegree");
 
             PreferenceCategory apiSettingsPreferenceCategory = this.findPreference("apiSettingsPreferenceCategory");
 
@@ -127,6 +129,7 @@ public class PrayerTimeSettingsActivity extends AppCompatActivity
 
                 apiSelectionListPreference.setEntries(apiNamesArray);
                 apiSelectionListPreference.setEntryValues(apiNamesArray);
+                apiSelectionListPreference.setValue(ESupportedAPIs.Undefined.toString());
 
                 // SET MINUTE ADJUSTMENT VALUES
 
@@ -139,24 +142,29 @@ public class PrayerTimeSettingsActivity extends AppCompatActivity
 
                 minuteAdjustmentListPreference.setEntries(minuteAdjustmentValuesArrayList.toArray(new String[0]));
                 minuteAdjustmentListPreference.setEntryValues(minuteAdjustmentValuesArrayList.toArray(new String[0]));
+                minuteAdjustmentListPreference.setValue("0");
 
                 // SET DEGREE VALUES
 
                 ArrayList<String> degreeValuesArrayList = new ArrayList<>();
 
-                for(double i = 12.0; i < 21.0; i = i + 0.5)
+                for(double i = -12.0; i > -21.0; i -= 0.5)
                 {
                     degreeValuesArrayList.add("" + i);
                 }
 
-                fajrDegreesListPreference.setEntries(degreeValuesArrayList.toArray(new String[0]));
-                fajrDegreesListPreference.setEntryValues(degreeValuesArrayList.toArray(new String[0]));
+                String[] degreeValuesArray = degreeValuesArrayList.toArray(new String[0]);
 
-                ishaDegreesListPreference.setEntries(degreeValuesArrayList.toArray(new String[0]));
-                ishaDegreesListPreference.setEntryValues(degreeValuesArrayList.toArray(new String[0]));
+                fajrDegreesListPreference.setEntries(degreeValuesArray);
+                fajrDegreesListPreference.setEntryValues(degreeValuesArray);
+                fajrDegreesListPreference.setValue("-12.0");
 
-                fajrDegreesListPreference.setVisible(prayerTimeType == EPrayerTimeType.FajrBeginning || prayerTimeType == EPrayerTimeType.IshaEnd);
-                ishaDegreesListPreference.setVisible(prayerTimeType == EPrayerTimeType.IshaBeginning || prayerTimeType == EPrayerTimeType.MaghribEnd);
+                ishaDegreesListPreference.setEntries(degreeValuesArray);
+                ishaDegreesListPreference.setEntryValues(degreeValuesArray);
+                ishaDegreesListPreference.setValue("-12.0");
+
+                fajrDegreesListPreference.setVisible(DayPrayerTimeSettingsEntity.FAJR_DEGREE_TYPES.contains(prayerTimeType));
+                ishaDegreesListPreference.setVisible(DayPrayerTimeSettingsEntity.ISHA_DEGREE_TYPES.contains(prayerTimeType));
                 apiSettingsPreferenceCategory.setVisible(fajrDegreesListPreference.isVisible() || ishaDegreesListPreference.isVisible());
 
                 // SET CURRENT CONFIGURATION FOR PRAYERTIMETYPE
@@ -179,6 +187,11 @@ public class PrayerTimeSettingsActivity extends AppCompatActivity
                         {
                             ishaDegreesListPreference.setValue(settings.getIshaCalculationDegree().toString());
                         }
+                    }
+                    // TODO: Set default configuration values for new configuration
+                    else
+                    {
+
                     }
                 }
             }

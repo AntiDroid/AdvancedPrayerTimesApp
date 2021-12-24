@@ -14,6 +14,7 @@ import android.os.Looper;
 import androidx.core.app.ActivityCompat;
 
 import com.example.advancedprayertimes.Logic.Enums.EHttpRequestMethod;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -47,6 +48,7 @@ public class HttpAPIRequestUtil
 
     public static Location RetrieveLocation(Context context)
     {
+        //TODO: Refactoring of location retrieval
         LocationManager locationManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
 
         if (    ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
@@ -59,7 +61,14 @@ public class HttpAPIRequestUtil
                             .show());
         }
 
-        return locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+        Location loc = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+
+        if(loc == null)
+        {
+            loc = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+        }
+
+        return loc;
     }
 
     public static Address RetrieveCityByLocation(Context context, Location location) throws Exception
@@ -200,12 +209,12 @@ public class HttpAPIRequestUtil
 
         if(fajrDegree != null)
         {
-            queryParameters.put("fa", "-" + fajrDegree.toString());
+            queryParameters.put("fa", fajrDegree.toString());
         }
 
         if(ishaDegree != null)
         {
-            queryParameters.put("ea", "-" + ishaDegree.toString());
+            queryParameters.put("ea", ishaDegree.toString());
         }
 
         String response = null;
@@ -288,6 +297,7 @@ public class HttpAPIRequestUtil
             // Test if the response from the server is successful
             int status = conn.getResponseCode();
 
+            // TODO: Fehlerstatus der einzelnen APIs korrekt behandeln
             if (status >= 300)
             {
                 reader = new BufferedReader(new InputStreamReader(conn.getErrorStream()));

@@ -1,5 +1,6 @@
 package com.example.advancedprayertimes;
 
+import android.app.AlertDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.location.Location;
@@ -34,7 +35,7 @@ public class OverviewActivity extends AppCompatActivity
 {
     private OverviewActivityBinding binding = null;
 
-    HashMap<EPrayerTimeType, TextView> prayerTimeTypeWithAssociatedTextView = new HashMap<EPrayerTimeType, TextView>();
+    HashMap<EPrayerTimeType, TextView> prayerTimeTypeWithAssociatedTextView = new HashMap<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -46,10 +47,12 @@ public class OverviewActivity extends AppCompatActivity
 
         configurePrayerTimeTextViews();
 
-        binding.progressBar.setVisibility(View.INVISIBLE);
+        binding.progressBar.setVisibility(View.GONE);
 
         binding.showStuffButton.setOnClickListener(view ->
         {
+            binding.statusTextLabel.setText("");
+
             Thread asyncRetrievePrayerTimesThread = new Thread(this::retrievePrayerTimes);
 
             binding.showStuffButton.setEnabled(false);
@@ -180,6 +183,19 @@ public class OverviewActivity extends AppCompatActivity
         {
             Location targetLocation = HttpAPIRequestUtil.RetrieveLocation(this);
 
+            if(targetLocation == null)
+            {
+                new Handler(Looper.getMainLooper()).post(() ->
+                        new AlertDialog.Builder(this)
+                                .setTitle("LOCATION NOT AVAILABLE")
+                                .setMessage("Location could not be retrieved!")
+                                .show());
+
+                binding.showStuffButton.setEnabled(true);
+                binding.progressBar.setVisibility(View.GONE);
+                return;
+            }
+
             Map<EPrayerTimeType, DayPrayerTimeSettingsEntity> toBeCalculatedPrayerTimes = AppEnvironment.DayPrayerTimeSettings;
 
             retrieveDiyanetTimes(toBeCalculatedPrayerTimes, targetLocation);
@@ -273,6 +289,11 @@ public class OverviewActivity extends AppCompatActivity
 
                 DayPrayerTimeEntity degreeMuwaqqitTimeEntity = HttpAPIRequestUtil.RetrieveMuwaqqitTimes(targetLocation, fajrDegree, ishaDegree);
 
+                if(degreeMuwaqqitTimeEntity == null)
+                {
+                    throw new Exception();
+                }
+
                 this.muwaqqitTimesHashMap.put(fajrDegreeEntry.getKey(), degreeMuwaqqitTimeEntity);
                 this.muwaqqitTimesHashMap.put(ishaDegreeEntry.getKey(), degreeMuwaqqitTimeEntity);
 
@@ -287,13 +308,18 @@ public class OverviewActivity extends AppCompatActivity
             // ADD REMAINING CALCULATIONS FOR NON MERGABLE DEGREE TIMES
             for(Map.Entry<EPrayerTimeType, DayPrayerTimeSettingsEntity> entry : degreeMuwaqqitTimesHashMap.entrySet())
             {
-                EPrayerTimeType prayerTimeType = (EPrayerTimeType) entry.getKey();
-                DayPrayerTimeSettingsEntity settingsEntity = (DayPrayerTimeSettingsEntity) entry.getValue();
+                EPrayerTimeType prayerTimeType = entry.getKey();
+                DayPrayerTimeSettingsEntity settingsEntity = entry.getValue();
 
                 Double fajrDegree = settingsEntity.getFajrCalculationDegree();
                 Double ishaDegree = settingsEntity.getIshaCalculationDegree();
 
                 DayPrayerTimeEntity degreeMuwaqqitTimeEntity = HttpAPIRequestUtil.RetrieveMuwaqqitTimes(targetLocation, fajrDegree, ishaDegree);
+
+                if(degreeMuwaqqitTimeEntity == null)
+                {
+                    throw new Exception();
+                }
 
                 this.muwaqqitTimesHashMap.put(prayerTimeType, degreeMuwaqqitTimeEntity);
             }
@@ -305,7 +331,7 @@ public class OverviewActivity extends AppCompatActivity
             DayPrayerTimeEntity nonDegreeMuwaqqitTimeEntity = null;
 
             // any other muwaqqit request will suffice
-            if(this.muwaqqitTimesHashMap.size() > 0)
+            if(this.muwaqqitTimesHashMap.values().stream().findFirst().isPresent())
             {
                 nonDegreeMuwaqqitTimeEntity = this.muwaqqitTimesHashMap.values().stream().findFirst().get();
             }
