@@ -2,11 +2,12 @@ package com.example.advancedprayertimes;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.icu.util.TimeZone;
 import android.location.Location;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.view.View;
+import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -33,6 +34,8 @@ public class OverviewActivity extends AppCompatActivity
 {
     private OverviewActivityBinding binding = null;
 
+    HashMap<EPrayerTimeType, TextView> prayerTimeTypeWithAssociatedTextView = new HashMap<EPrayerTimeType, TextView>();
+
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
@@ -41,14 +44,16 @@ public class OverviewActivity extends AppCompatActivity
         binding = OverviewActivityBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
-        configureTimeClickEvents();
+        configurePrayerTimeTextViews();
+
+        binding.progressBar.setVisibility(View.INVISIBLE);
 
         binding.showStuffButton.setOnClickListener(view ->
         {
             Thread asyncRetrievePrayerTimesThread = new Thread(this::retrievePrayerTimes);
 
-            binding.statusTextLabel.setText("Loading!");
             binding.showStuffButton.setEnabled(false);
+            binding.progressBar.setVisibility(View.VISIBLE);
             asyncRetrievePrayerTimesThread.start();
         });
     }
@@ -59,20 +64,13 @@ public class OverviewActivity extends AppCompatActivity
         SharedPreferences sharedPref = this.getPreferences(MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPref.edit();
 
-        editor.putString(EPrayerTimeType.FajrBeginning.toString() + "value", binding.fajrTimeBeginningTextLabel.getText().toString());
-        editor.putString(EPrayerTimeType.FajrEnd.toString() + "value", binding.fajrTimeEndTextLabel.getText().toString());
+        for(Map.Entry<EPrayerTimeType, TextView> entry : this.prayerTimeTypeWithAssociatedTextView.entrySet())
+        {
+            EPrayerTimeType prayerTimeType = entry.getKey();
+            TextView prayerTimeTextLabel = entry.getValue();
 
-        editor.putString(EPrayerTimeType.DhuhrBeginning.toString() + "value", binding.dhuhrTimeBeginningTextLabel.getText().toString());
-        editor.putString(EPrayerTimeType.DhuhrEnd.toString() + "value", binding.dhuhrTimeEndTextLabel.getText().toString());
-
-        editor.putString(EPrayerTimeType.AsrBeginning.toString() + "value", binding.asrTimeBeginningTextLabel.getText().toString());
-        editor.putString(EPrayerTimeType.AsrEnd.toString() + "value", binding.asrTimeEndTextLabel.getText().toString());
-
-        editor.putString(EPrayerTimeType.MaghribBeginning.toString() + "value", binding.maghribTimeBeginningTextLabel.getText().toString());
-        editor.putString(EPrayerTimeType.MaghribEnd.toString() + "value", binding.maghribTimeEndTextLabel.getText().toString());
-
-        editor.putString(EPrayerTimeType.IshaBeginning.toString() + "value", binding.ishaTimeBeginningTextLabel.getText().toString());
-        editor.putString(EPrayerTimeType.IshaEnd.toString() + "value", binding.ishaTimeEndTextLabel.getText().toString());
+            editor.putString(prayerTimeType.toString() + "value", prayerTimeTextLabel.getText().toString());
+        }
 
         editor.putString("displayedTime", binding.displayedDateTextLabel.getText().toString());
 
@@ -94,26 +92,19 @@ public class OverviewActivity extends AppCompatActivity
     {
         SharedPreferences sharedPref = this.getPreferences(MODE_PRIVATE);
 
-        binding.fajrTimeBeginningTextLabel.setText(sharedPref.getString(EPrayerTimeType.FajrBeginning.toString() + "value", "xx:xx"));
-        binding.fajrTimeEndTextLabel.setText(sharedPref.getString(EPrayerTimeType.FajrEnd.toString() + "value", "xx:xx"));
+        for(Map.Entry<EPrayerTimeType, TextView> entry : this.prayerTimeTypeWithAssociatedTextView.entrySet())
+        {
+            EPrayerTimeType prayerTimeType = entry.getKey();
+            TextView prayerTimeTextLabel = entry.getValue();
 
-        binding.dhuhrTimeBeginningTextLabel.setText(sharedPref.getString(EPrayerTimeType.DhuhrBeginning.toString() + "value", "xx:xx"));
-        binding.dhuhrTimeEndTextLabel.setText(sharedPref.getString(EPrayerTimeType.DhuhrEnd.toString() + "value", "xx:xx"));
-
-        binding.asrTimeBeginningTextLabel.setText(sharedPref.getString(EPrayerTimeType.AsrBeginning.toString() + "value", "xx:xx"));
-        binding.asrTimeEndTextLabel.setText(sharedPref.getString(EPrayerTimeType.AsrEnd.toString() + "value", "xx:xx"));
-
-        binding.maghribTimeBeginningTextLabel.setText(sharedPref.getString(EPrayerTimeType.MaghribBeginning.toString() + "value", "xx:xx"));
-        binding.maghribTimeEndTextLabel.setText(sharedPref.getString(EPrayerTimeType.MaghribEnd.toString() + "value", "xx:xx"));
-
-        binding.ishaTimeBeginningTextLabel.setText(sharedPref.getString(EPrayerTimeType.IshaBeginning.toString() + "value", "xx:xx"));
-        binding.ishaTimeEndTextLabel.setText(sharedPref.getString(EPrayerTimeType.IshaEnd.toString() + "value", "xx:xx"));
+            prayerTimeTextLabel.setText(sharedPref.getString(prayerTimeType.toString() + "value", "xx:xx"));
+        }
 
         binding.displayedDateTextLabel.setText(sharedPref.getString("displayedTime", "xx.xx.xxxx"));
 
-        String[] enumStrings = Stream.of(EPrayerTimeType.values()).map(EPrayerTimeType::name).toArray(String[]::new);
-
+        // locally save settings as JSON string objects
         Gson gson = new Gson();
+        String[] enumStrings = Stream.of(EPrayerTimeType.values()).map(EPrayerTimeType::name).toArray(String[]::new);
 
         for(String enumName : enumStrings)
         {
@@ -138,18 +129,30 @@ public class OverviewActivity extends AppCompatActivity
         super.onResume();
     }
 
-    private void configureTimeClickEvents()
+    private void configurePrayerTimeTextViews()
     {
-        binding.fajrTimeBeginningTextLabel      .setOnClickListener(view -> openSettingsForSpecificPrayerTimeType(EPrayerTimeType.FajrBeginning));
-        binding.fajrTimeEndTextLabel            .setOnClickListener(view -> openSettingsForSpecificPrayerTimeType(EPrayerTimeType.FajrEnd));
-        binding.dhuhrTimeBeginningTextLabel     .setOnClickListener(view -> openSettingsForSpecificPrayerTimeType(EPrayerTimeType.DhuhrBeginning));
-        binding.dhuhrTimeEndTextLabel           .setOnClickListener(view -> openSettingsForSpecificPrayerTimeType(EPrayerTimeType.DhuhrEnd));
-        binding.asrTimeBeginningTextLabel       .setOnClickListener(view -> openSettingsForSpecificPrayerTimeType(EPrayerTimeType.AsrBeginning));
-        binding.asrTimeEndTextLabel             .setOnClickListener(view -> openSettingsForSpecificPrayerTimeType(EPrayerTimeType.AsrEnd));
-        binding.maghribTimeBeginningTextLabel   .setOnClickListener(view -> openSettingsForSpecificPrayerTimeType(EPrayerTimeType.MaghribBeginning));
-        binding.maghribTimeEndTextLabel         .setOnClickListener(view -> openSettingsForSpecificPrayerTimeType(EPrayerTimeType.MaghribEnd));
-        binding.ishaTimeBeginningTextLabel      .setOnClickListener(view -> openSettingsForSpecificPrayerTimeType(EPrayerTimeType.IshaBeginning));
-        binding.ishaTimeEndTextLabel            .setOnClickListener(view -> openSettingsForSpecificPrayerTimeType(EPrayerTimeType.IshaEnd));
+        this.prayerTimeTypeWithAssociatedTextView.put(EPrayerTimeType.FajrBeginning, binding.fajrTimeBeginningTextLabel);
+        this.prayerTimeTypeWithAssociatedTextView.put(EPrayerTimeType.FajrEnd, binding.fajrTimeEndTextLabel);
+
+        this.prayerTimeTypeWithAssociatedTextView.put(EPrayerTimeType.DhuhrBeginning, binding.dhuhrTimeBeginningTextLabel);
+        this.prayerTimeTypeWithAssociatedTextView.put(EPrayerTimeType.DhuhrEnd, binding.dhuhrTimeEndTextLabel);
+
+        this.prayerTimeTypeWithAssociatedTextView.put(EPrayerTimeType.AsrBeginning, binding.asrTimeBeginningTextLabel);
+        this.prayerTimeTypeWithAssociatedTextView.put(EPrayerTimeType.AsrEnd, binding.asrTimeEndTextLabel);
+
+        this.prayerTimeTypeWithAssociatedTextView.put(EPrayerTimeType.MaghribBeginning, binding.maghribTimeBeginningTextLabel);
+        this.prayerTimeTypeWithAssociatedTextView.put(EPrayerTimeType.MaghribEnd, binding.maghribTimeEndTextLabel);
+
+        this.prayerTimeTypeWithAssociatedTextView.put(EPrayerTimeType.IshaBeginning, binding.ishaTimeBeginningTextLabel);
+        this.prayerTimeTypeWithAssociatedTextView.put(EPrayerTimeType.IshaEnd, binding.ishaTimeEndTextLabel);
+
+        for(Map.Entry<EPrayerTimeType, TextView> entry : this.prayerTimeTypeWithAssociatedTextView.entrySet())
+        {
+            EPrayerTimeType prayerTimeType = entry.getKey();
+            TextView prayerTimeTextLabel = entry.getValue();
+
+            prayerTimeTextLabel.setOnClickListener(view -> openSettingsForSpecificPrayerTimeType(prayerTimeType));
+        }
     }
 
     public static String INTENT_EXTRA = "prayerTime";
@@ -185,8 +188,8 @@ public class OverviewActivity extends AppCompatActivity
             new Handler(Looper.getMainLooper()).post(() ->
             {
                 applyTimeSettingsToOverview();
-                binding.statusTextLabel.setText("Success!");
                 binding.showStuffButton.setEnabled(true);
+                binding.progressBar.setVisibility(View.GONE);
             });
         }
         catch (Exception e)
@@ -195,6 +198,7 @@ public class OverviewActivity extends AppCompatActivity
             {
                 binding.statusTextLabel.setText("Error!");
                 binding.showStuffButton.setEnabled(true);
+                binding.progressBar.setVisibility(View.GONE);
             });
             e.printStackTrace();
         }
@@ -361,20 +365,13 @@ public class OverviewActivity extends AppCompatActivity
         {
             binding.displayedDateTextLabel.setText(DateTimeFormatter.ofPattern("dd.MM.yyyy").format(LocalDateTime.now()));
 
-            binding.fajrTimeBeginningTextLabel.setText(getCorrectText(EPrayerTimeType.FajrBeginning));
-            binding.fajrTimeEndTextLabel.setText(getCorrectText(EPrayerTimeType.FajrEnd));
+            for(Map.Entry<EPrayerTimeType, TextView> entry : this.prayerTimeTypeWithAssociatedTextView.entrySet())
+            {
+                EPrayerTimeType prayerTimeType = entry.getKey();
+                TextView prayerTimeTextLabel = entry.getValue();
 
-            binding.dhuhrTimeBeginningTextLabel.setText(getCorrectText(EPrayerTimeType.DhuhrBeginning));
-            binding.dhuhrTimeEndTextLabel.setText(getCorrectText(EPrayerTimeType.DhuhrEnd));
-
-            binding.asrTimeBeginningTextLabel.setText(getCorrectText(EPrayerTimeType.AsrBeginning));
-            binding.asrTimeEndTextLabel.setText(getCorrectText(EPrayerTimeType.AsrEnd));
-
-            binding.maghribTimeBeginningTextLabel.setText(getCorrectText(EPrayerTimeType.MaghribBeginning));
-            binding.maghribTimeEndTextLabel.setText(getCorrectText(EPrayerTimeType.MaghribEnd));
-
-            binding.ishaTimeBeginningTextLabel.setText(getCorrectText(EPrayerTimeType.IshaBeginning));
-            binding.ishaTimeEndTextLabel.setText(getCorrectText(EPrayerTimeType.IshaEnd));
+                prayerTimeTextLabel.setText(getCorrectText(prayerTimeType));
+            }
         }
         catch(Exception e)
         {
