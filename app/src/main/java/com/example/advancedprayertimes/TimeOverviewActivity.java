@@ -4,14 +4,17 @@ import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Point;
 import android.location.Location;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.constraintlayout.widget.ConstraintSet;
 
 import com.example.advancedprayertimes.Logic.AppEnvironment;
 import com.example.advancedprayertimes.Logic.DayPrayerTimeEntity;
@@ -156,7 +159,72 @@ public class TimeOverviewActivity extends AppCompatActivity
             TextView prayerTimeTextLabel = entry.getValue();
 
             prayerTimeTextLabel.setOnClickListener(view -> openSettingsForSpecificPrayerTimeType(prayerTimeType));
+            prayerTimeTextLabel.setOnTouchListener((View view, MotionEvent event) -> doTouchStuff(view, event));
         }
+    }
+
+    Map<View, Long> touchPointStuff = new HashMap<>();
+
+    private boolean doTouchStuff(View v, MotionEvent event)
+    {
+        boolean useUpEvent = false;
+
+        switch(event.getAction())
+        {
+            case MotionEvent.ACTION_DOWN:
+                touchPointStuff.put(v, System.currentTimeMillis());
+                break;
+
+            case MotionEvent.ACTION_MOVE:
+            case MotionEvent.ACTION_UP:
+
+                if(touchPointStuff.containsKey(v))
+                {
+                    long milliSecondDifference = System.currentTimeMillis() - touchPointStuff.get(v);
+
+                    if(milliSecondDifference > 500)
+                    {
+                        if(event.getAction() == MotionEvent.ACTION_MOVE)
+                        {
+                            String infoTitleText = "No configuration available!";
+                            String infoValuesText = "";
+
+                            EPrayerTimeType prayerTimeType = prayerTimeTypeWithAssociatedTextView.entrySet().stream().filter(x -> x.getValue() == v).findFirst().get().getKey();
+
+                            if(AppEnvironment.DayPrayerTimeSettings.containsKey(prayerTimeType))
+                            {
+                                DayPrayerTimeSettingsEntity settings = AppEnvironment.DayPrayerTimeSettings.get(prayerTimeType);
+
+                                infoTitleText = "API: "
+                                        + "\nMinute adjustment: "
+                                        + "\nFajr degree: "
+                                        + "\nIsha degree: ";
+
+                                infoValuesText = settings.get_api().toString()
+                                        + "\n" + settings.get_minuteAdjustment()
+                                        + "\n" + (settings.getFajrCalculationDegree() != null ? settings.getFajrCalculationDegree() : "")
+                                        + "\n" + (settings.getIshaCalculationDegree() != null ? settings.getIshaCalculationDegree() : "");
+                            }
+
+                            binding.timeInfoTitleTextLabel.setText(infoTitleText);
+                            binding.timeInfoValuesTextLabel.setText(infoValuesText);
+                        }
+                        else if(event.getAction() == MotionEvent.ACTION_UP)
+                        {
+                            useUpEvent = true;
+                            //binding.timeInfoTextLabel.setText("");
+                            //binding.timeInfoValuesTextLabel.setText("");
+                        }
+                    }
+                }
+
+                break;
+
+            default:
+                break;
+        }
+
+        return useUpEvent;
     }
 
     public static String INTENT_EXTRA = "prayerTime";

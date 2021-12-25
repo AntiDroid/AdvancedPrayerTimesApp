@@ -2,30 +2,32 @@ package com.example.advancedprayertimes.Logic;
 
 import com.google.gson.annotations.SerializedName;
 
+import java.util.Date;
+
 public class MuwaqqitPrayerTimeEntity
 {
     @SerializedName("fajr_date")
     private String _fajrDate;
 
     @SerializedName("fajr_time")
-    private String _fajrTime;
+    private Date _fajrTime;
 
     @SerializedName("sunrise_time")
-    private String _sunrise_time;
+    private Date _sunrise_time;
 
     @SerializedName("zohr_time")
-    private String _dhuhrTime;
+    private Date _dhuhrTime;
 
     @SerializedName("mithl_time")
-    private String _asrMithlTime;
+    private Date _asrMithlTime;
     @SerializedName("mithlain_time")
-    private String _asrMithlaynTime;
+    private Date _asrMithlaynTime;
 
     @SerializedName("sunset_time")
-    private String _maghribTime;
+    private Date _maghribTime;
 
     @SerializedName("esha_time")
-    private String _ishaTime;
+    private Date _ishaTime;
 
     public String getFajrDate()
     {
@@ -37,72 +39,72 @@ public class MuwaqqitPrayerTimeEntity
         _fajrDate = fajrDate;
     }
 
-    public String getFajrTime()
+    public Date getFajrTime()
     {
         return _fajrTime;
     }
 
-    public void setFajrTime(String fajrTime)
+    public void setFajrTime(Date fajrTime)
     {
         _fajrTime = fajrTime;
     }
 
-    public String getSunrise_time()
+    public Date getSunrise_time()
     {
         return _sunrise_time;
     }
 
-    public void setSunrise_time(String sunrise_time)
+    public void setSunrise_time(Date sunrise_time)
     {
         _sunrise_time = sunrise_time;
     }
 
-    public String getDhuhrTime()
+    public Date getDhuhrTime()
     {
         return _dhuhrTime;
     }
 
-    public void setDhuhrTime(String dhuhrTime)
+    public void setDhuhrTime(Date dhuhrTime)
     {
         _dhuhrTime = dhuhrTime;
     }
 
-    public String getAsrMithlTime()
+    public Date getAsrMithlTime()
     {
         return _asrMithlTime;
     }
 
-    public void setAsrMithlTime(String asrMithlTime)
+    public void setAsrMithlTime(Date asrMithlTime)
     {
         _asrMithlTime = asrMithlTime;
     }
 
-    public String getAsrMithlaynTime()
+    public Date getAsrMithlaynTime()
     {
         return _asrMithlaynTime;
     }
 
-    public void setAsrMithlaynTime(String asrMithlaynTime)
+    public void setAsrMithlaynTime(Date asrMithlaynTime)
     {
         _asrMithlaynTime = asrMithlaynTime;
     }
 
-    public String getMaghribTime()
+    public Date getMaghribTime()
     {
         return _maghribTime;
     }
 
-    public void setMaghribTime(String maghribTime)
+    public void setMaghribTime(Date maghribTime)
     {
         _maghribTime = maghribTime;
     }
 
-    public String getIshaTime()
+    public Date getIshaTime()
     {
         return _ishaTime;
     }
 
-    public void setIshaTime(String ishaTime)
+    public void setIshaTime(Date ishaTime)
     {
         _ishaTime = ishaTime;
     }

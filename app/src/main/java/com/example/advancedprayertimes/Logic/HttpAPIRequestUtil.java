@@ -1,6 +1,5 @@
 package com.example.advancedprayertimes.Logic;
 
-import android.annotation.SuppressLint;
 import android.content.Context;
 import android.location.Address;
 import android.location.Geocoder;
@@ -10,6 +9,7 @@ import android.net.Uri;
 import com.example.advancedprayertimes.Logic.Enums.EHttpRequestMethod;
 import com.google.firebase.crashlytics.buildtools.reloc.com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -24,7 +24,6 @@ import java.lang.reflect.Type;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -120,7 +119,10 @@ public class HttpAPIRequestUtil
         String vakitlerList = HttpAPIRequestUtil.RetrieveAPIFeedback(HttpAPIRequestUtil.DIYANET_JSON_URL + "/vakitler/" + ilceID, EHttpRequestMethod.GET);
         String todayDate = DateTimeFormatter.ofPattern("dd.MM.yyyy").format(LocalDateTime.now());
 
-        Gson gson = new Gson();
+        GsonBuilder gsonBuilder = new GsonBuilder();
+        gsonBuilder.setDateFormat("HH:mm");
+
+        Gson gson = gsonBuilder.create();
 
         Type listOfDiyanetPrayerTimeEntity = new TypeToken<ArrayList<DiyanetPrayerTimeEntity>>() {}.getType();
 
@@ -131,16 +133,14 @@ public class HttpAPIRequestUtil
         {
             DiyanetPrayerTimeEntity prayerTimeToday = element.get();
 
-            @SuppressLint("SimpleDateFormat") SimpleDateFormat sdf = new SimpleDateFormat("HH:mm");
+            Date fajrTime = prayerTimeToday.getFajrTime();
+            Date sunRiseTime = prayerTimeToday.getSunrise_time();
 
-            Date fajrTime = sdf.parse(prayerTimeToday.getFajrTime());
-            Date sunRiseTime = sdf.parse(prayerTimeToday.getSunrise_time());
+            Date dhuhrTime = prayerTimeToday.getDhuhrTime();
+            Date asrTime = prayerTimeToday.getAsrTime();
 
-            Date dhuhrTime = sdf.parse(prayerTimeToday.getDhuhrTime());
-            Date asrTime = sdf.parse(prayerTimeToday.getAsrTime());
-
-            Date maghribTime = sdf.parse(prayerTimeToday.getMaghribTime());
-            Date ishaTime = sdf.parse(prayerTimeToday.getIshaTime());
+            Date maghribTime = prayerTimeToday.getMaghribTime();
+            Date ishaTime = prayerTimeToday.getIshaTime();
 
             return new DayPrayerTimeEntity(
                     fajrTime,
@@ -307,7 +307,10 @@ public class HttpAPIRequestUtil
 
         String todayDate = DateTimeFormatter.ofPattern("yyyy-MM-dd").format(LocalDateTime.now());
 
-        Gson gson = new Gson();
+        GsonBuilder gsonBuilder = new GsonBuilder();
+        gsonBuilder.setDateFormat("HH:mm:ss");
+
+        Gson gson = gsonBuilder.create();
 
         Type listOfMyClassObject = new TypeToken<ArrayList<MuwaqqitPrayerTimeEntity>>() {}.getType();
 
@@ -318,16 +321,14 @@ public class HttpAPIRequestUtil
         {
             MuwaqqitPrayerTimeEntity prayerTimeToday = element.get();
 
-            @SuppressLint("SimpleDateFormat") SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss");
+            Date fajrTime = prayerTimeToday.getFajrTime();
+            Date sunRiseTime = prayerTimeToday.getSunrise_time();
 
-            Date fajrTime = sdf.parse(prayerTimeToday.getFajrTime());
-            Date sunRiseTime = sdf.parse(prayerTimeToday.getSunrise_time());
+            Date dhuhrTime = prayerTimeToday.getDhuhrTime();
+            Date asrTime = prayerTimeToday.getAsrMithlTime();
 
-            Date dhuhrTime = sdf.parse(prayerTimeToday.getDhuhrTime());
-            Date asrTime = sdf.parse(prayerTimeToday.getAsrMithlTime());
-
-            Date maghribTime = sdf.parse(prayerTimeToday.getMaghribTime());
-            Date ishaTime = sdf.parse(prayerTimeToday.getIshaTime());
+            Date maghribTime = prayerTimeToday.getMaghribTime();
+            Date ishaTime = prayerTimeToday.getIshaTime();
 
             return new DayPrayerTimeEntity(
                     fajrTime,
