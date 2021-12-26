@@ -3,6 +3,7 @@
     <string name="tab_text_1">Tab 1</string>
     <string name="tab_text_2">Tab 2</string>
     <string name="title_activity_settings">SettingsActivity</string>
+    <string name="no_time_display_text">xx:xx</string>
 
     <!-- Preference Titles -->
     <string name="messages_header">Messages</string>

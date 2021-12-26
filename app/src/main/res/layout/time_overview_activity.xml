@@ -4,6 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/dark_background"
     tools:context=".TimeOverviewActivity">
 
     <com.google.android.material.appbar.AppBarLayout
@@ -26,75 +27,18 @@
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/view_pager"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
-
-        <TextView
-            android:id="@+id/maghribTimeHyphenTextLabel"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="88dp"
-            android:layout_marginTop="444dp"
-            android:text="-"
-            android:textAlignment="center"
-            android:textSize="20sp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
-
-        <TextView
-            android:id="@+id/ishaTimeHyphenTextLabel"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="88dp"
-            android:layout_marginTop="540dp"
-            android:text="-"
-            android:textAlignment="center"
-            android:textSize="20sp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
-
-        <TextView
-            android:id="@+id/asrTimeHyphenTextLabel"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="88dp"
-            android:layout_marginTop="348dp"
-            android:text="-"
-            android:textAlignment="center"
-            android:textSize="20sp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
-
-        <TextView
-            android:id="@+id/fajrTimeHyphenTextLabel"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="88dp"
-            android:layout_marginTop="160dp"
-            android:text="-"
-            android:textAlignment="center"
-            android:textSize="20sp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
-
-        <TextView
-            android:id="@+id/dhuhrTimeHyphenTextLabel"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="88dp"
-            android:layout_marginTop="252dp"
-            android:text="-"
-            android:textAlignment="center"
-            android:textSize="20sp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+        android:layout_height="match_parent"
+        tools:layout_editor_absoluteX="0dp"
+        tools:layout_editor_absoluteY="-123dp">
 
         <TextView
             android:id="@+id/dhuhrTextLabel"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="28dp"
-            android:layout_marginTop="208dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="256dp"
             android:text="DHUHR"
+            android:textColor="@color/teal_200"
             android:textSize="34sp"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
@@ -103,10 +47,37 @@
             android:id="@+id/dhuhrTimeBeginningTextLabel"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="28dp"
-            android:layout_marginTop="252dp"
+            android:layout_marginStart="236dp"
+            android:layout_marginTop="264dp"
             android:gravity="center|top"
-            android:text="xx:xx"
+            android:text="@string/no_time_display_text"
+            android:textColor="@color/teal_200"
+            android:textSize="20sp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/dhuhrTimeHyphenTextLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="296dp"
+            android:layout_marginTop="264dp"
+            android:text="-"
+            android:textAlignment="center"
+            android:textColor="@color/teal_200"
+            android:textSize="20sp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/dhuhrTimeEndTextLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="312dp"
+            android:layout_marginTop="264dp"
+            android:text="@string/no_time_display_text"
+            android:textAlignment="center"
+            android:textColor="@color/teal_200"
             android:textSize="20sp"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
@@ -115,22 +86,11 @@
             android:id="@+id/asrTextLabel"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="28dp"
-            android:layout_marginTop="304dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="308dp"
             android:text="ASR"
+            android:textColor="@color/teal_200"
             android:textSize="34sp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
-
-        <TextView
-            android:id="@+id/asrTimeBeginningTextLabel"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="28dp"
-            android:layout_marginTop="348dp"
-            android:text="xx:xx"
-            android:textAlignment="center"
-            android:textSize="20sp"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
@@ -138,9 +98,10 @@
             android:id="@+id/ishaTextLabel"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="28dp"
-            android:layout_marginTop="496dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="412dp"
             android:text="ISHA"
+            android:textColor="@color/teal_200"
             android:textSize="34sp"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
@@ -149,12 +110,39 @@
             android:id="@+id/ishaTimeBeginningTextLabel"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="28dp"
-            android:layout_marginTop="540dp"
+            android:layout_marginStart="236dp"
+            android:layout_marginTop="420dp"
             android:gravity="center"
             android:justificationMode="inter_word"
-            android:text="xx:xx"
+            android:text="@string/no_time_display_text"
             android:textAlignment="center"
+            android:textColor="@color/teal_200"
+            android:textSize="20sp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/ishaTimeHyphenTextLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="296dp"
+            android:layout_marginTop="420dp"
+            android:text="-"
+            android:textAlignment="center"
+            android:textColor="@color/teal_200"
+            android:textSize="20sp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/ishaTimeEndTextLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="312dp"
+            android:layout_marginTop="420dp"
+            android:text="@string/no_time_display_text"
+            android:textAlignment="center"
+            android:textColor="@color/teal_200"
             android:textSize="20sp"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
@@ -163,9 +151,10 @@
             android:id="@+id/maghribTextLabel"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="28dp"
-            android:layout_marginTop="400dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="360dp"
             android:text="MAGHRIB"
+            android:textColor="@color/teal_200"
             android:textSize="34sp"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
@@ -174,10 +163,37 @@
             android:id="@+id/maghribTimeBeginningTextLabel"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="28dp"
-            android:layout_marginTop="444dp"
-            android:text="xx:xx"
+            android:layout_marginStart="236dp"
+            android:layout_marginTop="368dp"
+            android:text="@string/no_time_display_text"
             android:textAlignment="center"
+            android:textColor="@color/teal_200"
+            android:textSize="20sp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/maghribTimeHyphenTextLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="296dp"
+            android:layout_marginTop="368dp"
+            android:text="-"
+            android:textAlignment="center"
+            android:textColor="@color/teal_200"
+            android:textSize="20sp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/maghribTimeEndTextLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="312dp"
+            android:layout_marginTop="368dp"
+            android:text="@string/no_time_display_text"
+            android:textAlignment="center"
+            android:textColor="@color/teal_200"
             android:textSize="20sp"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
@@ -187,132 +203,8 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="264dp"
-            android:layout_marginTop="324dp"
+            android:layout_marginTop="468dp"
             android:text="Show Times"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
-
-        <TextView
-            android:id="@+id/fajrTextLabel"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="28dp"
-            android:layout_marginTop="116dp"
-            android:text="FAJR"
-            android:textSize="34sp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
-
-        <TextView
-            android:id="@+id/displayedDateTextLabel"
-            android:layout_width="108dp"
-            android:layout_height="31dp"
-            android:layout_marginStart="284dp"
-            android:layout_marginTop="292dp"
-            android:text="xx.xx.xxxx"
-            android:textSize="20sp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
-
-        <TextView
-            android:id="@+id/statusTextLabel"
-            android:layout_width="102dp"
-            android:layout_height="41dp"
-            android:layout_marginStart="292dp"
-            android:layout_marginTop="372dp"
-            android:textSize="34sp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
-
-        <TextView
-            android:id="@+id/timeInfoTitleTextLabel"
-            android:layout_width="191dp"
-            android:layout_height="190dp"
-            android:layout_marginStart="16dp"
-            android:layout_marginTop="604dp"
-            android:textSize="20sp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
-
-        <TextView
-            android:id="@+id/timeInfoValuesTextLabel"
-            android:layout_width="191dp"
-            android:layout_height="190dp"
-            android:layout_marginStart="216dp"
-            android:layout_marginTop="604dp"
-            android:textSize="20sp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
-
-        <TextView
-            android:id="@+id/fajrTimeBeginningTextLabel"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="28dp"
-            android:layout_marginTop="160dp"
-            android:text="xx:xx"
-            android:textAlignment="center"
-            android:textSize="20sp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
-
-        <TextView
-            android:id="@+id/fajrTimeEndTextLabel"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="104dp"
-            android:layout_marginTop="160dp"
-            android:text="xx:xx"
-            android:textAlignment="center"
-            android:textSize="20sp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
-
-        <TextView
-            android:id="@+id/dhuhrTimeEndTextLabel"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="104dp"
-            android:layout_marginTop="252dp"
-            android:text="xx:xx"
-            android:textAlignment="center"
-            android:textSize="20sp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
-
-        <TextView
-            android:id="@+id/asrTimeEndTextLabel"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="104dp"
-            android:layout_marginTop="348dp"
-            android:text="xx:xx"
-            android:textAlignment="center"
-            android:textSize="20sp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
-
-        <TextView
-            android:id="@+id/maghribTimeEndTextLabel"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="104dp"
-            android:layout_marginTop="444dp"
-            android:text="xx:xx"
-            android:textAlignment="center"
-            android:textSize="20sp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
-
-        <TextView
-            android:id="@+id/ishaTimeEndTextLabel"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="104dp"
-            android:layout_marginTop="540dp"
-            android:text="xx:xx"
-            android:textAlignment="center"
-            android:textSize="20sp"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
@@ -322,8 +214,161 @@
             android:layout_width="48dp"
             android:layout_height="47dp"
             android:layout_marginStart="208dp"
-            android:layout_marginTop="324dp"
-            android:visibility="visible"
+            android:layout_marginTop="468dp"
+            android:visibility="invisible"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/statusTextLabel"
+            android:layout_width="95dp"
+            android:layout_height="41dp"
+            android:layout_marginStart="104dp"
+            android:layout_marginTop="468dp"
+            android:textSize="34sp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <Button
+            android:id="@+id/drawGraphicsButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:layout_marginTop="468dp"
+            android:text="Draw"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/fajrTextLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="204dp"
+            android:text="FAJR"
+            android:textSize="34sp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            android:textColor="@color/teal_200" />
+
+        <TextView
+            android:id="@+id/fajrTimeBeginningTextLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="236dp"
+            android:layout_marginTop="212dp"
+            android:text="@string/no_time_display_text"
+            android:textAlignment="center"
+            android:textColor="@color/teal_200"
+            android:textSize="20sp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/fajrTimeEndTextLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="312dp"
+            android:layout_marginTop="212dp"
+            android:text="@string/no_time_display_text"
+            android:textAlignment="center"
+            android:textColor="@color/teal_200"
+            android:textSize="20sp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/fajrTimeHyphenTextLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="296dp"
+            android:layout_marginTop="212dp"
+            android:text="-"
+            android:textAlignment="center"
+            android:textColor="@color/teal_200"
+            android:textSize="20sp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/displayedDateTextLabel"
+            android:layout_width="108dp"
+            android:layout_height="31dp"
+            android:layout_marginStart="136dp"
+            android:layout_marginTop="164dp"
+            android:text="xx.xx.xxxx"
+            android:textColor="@color/teal_200"
+            android:textSize="20sp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/timeInfoTitleTextLabel"
+            android:layout_width="184dp"
+            android:layout_height="91dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="68dp"
+            android:textColor="@color/teal_200"
+            android:textSize="20sp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/timeInfoValuesTextLabel"
+            android:layout_width="173dp"
+            android:layout_height="89dp"
+            android:layout_marginStart="208dp"
+            android:layout_marginTop="68dp"
+            android:textColor="@color/teal_200"
+            android:textSize="20sp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/asrTimeEndTextLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="312dp"
+            android:layout_marginTop="320dp"
+            android:text="@string/no_time_display_text"
+            android:textAlignment="center"
+            android:textColor="@color/teal_200"
+            android:textSize="20sp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/asrTimeBeginningTextLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="236dp"
+            android:layout_marginTop="320dp"
+            android:text="@string/no_time_display_text"
+            android:textAlignment="center"
+            android:textColor="@color/teal_200"
+            android:textSize="20sp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/asrTimeHyphenTextLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="296dp"
+            android:layout_marginTop="320dp"
+            android:text="-"
+            android:textAlignment="center"
+            android:textColor="@color/teal_200"
+            android:textSize="20sp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <com.example.advancedprayertimes.ui.main.TestCustomView
+            android:id="@+id/testCustomView"
+            android:layout_width="395dp"
+            android:layout_height="242dp"
+            android:layout_marginStart="4dp"
+            android:layout_marginTop="532dp"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 

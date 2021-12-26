@@ -6,6 +6,9 @@ import android.location.Geocoder;
 import android.location.Location;
 import android.net.Uri;
 
+import com.example.advancedprayertimes.Logic.Entities.DiyanetPrayerTimeDayEntity;
+import com.example.advancedprayertimes.Logic.Entities.MuwaqqitPrayerTimeDayEntity;
+import com.example.advancedprayertimes.Logic.Entities.DayPrayerTimesEntity;
 import com.example.advancedprayertimes.Logic.Enums.EHttpRequestMethod;
 import com.google.firebase.crashlytics.buildtools.reloc.com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
@@ -24,10 +27,10 @@ import java.lang.reflect.Type;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.sql.Time;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -39,7 +42,7 @@ public class HttpAPIRequestUtil
     private static final String MUWAQQIT_JSON_URL = "https://www.muwaqqit.com/api.json";
     private static final String DIYANET_JSON_URL = "https://ezanvakti.herokuapp.com";
 
-    private static final int MUWAQQIT_API_COOLDOWN_SECONDS = 11;
+    private static final long MUWAQQIT_API_COOLDOWN_MILLISECONDS = 11000;
 
     private static final String BING_MAPS_URL = "https://dev.virtualearth.net/REST/v1/timezone/";
     private static final String BING_MAPS_API_KEY = "AmlyD3G1euqPpGehI1B9s55Pzr2nE-joqnfgBM5ZvHUSn49p-WpQJbrr3NlAE_nw";
@@ -59,7 +62,7 @@ public class HttpAPIRequestUtil
     }
 
     // Der JSON enthält direkt in der ersten Ebene die Gebetszeiteninformationen für alle Tage des jeweiligen Monats.
-    public static DayPrayerTimeEntity RetrieveDiyanetTimes(Context context, Location targetLocation) throws Exception
+    public static DayPrayerTimesEntity RetrieveDiyanetTimes(Context context, Location targetLocation) throws Exception
     {
         Address cityAddress = HttpAPIRequestUtil.RetrieveCityByLocation(context, targetLocation);
 
@@ -122,27 +125,27 @@ public class HttpAPIRequestUtil
         GsonBuilder gsonBuilder = new GsonBuilder();
         gsonBuilder.setDateFormat("HH:mm");
 
-        Gson gson = gsonBuilder.create();
+        Gson gson = AppEnvironment.BuildGSON("HH:mm");
 
-        Type listOfDiyanetPrayerTimeEntity = new TypeToken<ArrayList<DiyanetPrayerTimeEntity>>() {}.getType();
+        Type listOfDiyanetPrayerTimeEntity = new TypeToken<ArrayList<DiyanetPrayerTimeDayEntity>>() {}.getType();
 
-        List<DiyanetPrayerTimeEntity> outputList = gson.fromJson(vakitlerList, listOfDiyanetPrayerTimeEntity);
-        Optional<DiyanetPrayerTimeEntity> element = outputList.stream().filter(x -> todayDate.equals(x.getDate())).findFirst();
+        List<DiyanetPrayerTimeDayEntity> outputList = gson.fromJson(vakitlerList, listOfDiyanetPrayerTimeEntity);
+        Optional<DiyanetPrayerTimeDayEntity> element = outputList.stream().filter(x -> todayDate.equals(x.getDate())).findFirst();
 
         if(element.isPresent())
         {
-            DiyanetPrayerTimeEntity prayerTimeToday = element.get();
+            DiyanetPrayerTimeDayEntity prayerTimeToday = element.get();
 
-            Date fajrTime = prayerTimeToday.getFajrTime();
-            Date sunRiseTime = prayerTimeToday.getSunrise_time();
+            Time fajrTime = prayerTimeToday.getFajrTime();
+            Time sunRiseTime = prayerTimeToday.getSunrise_time();
 
-            Date dhuhrTime = prayerTimeToday.getDhuhrTime();
-            Date asrTime = prayerTimeToday.getAsrTime();
+            Time dhuhrTime = prayerTimeToday.getDhuhrTime();
+            Time asrTime = prayerTimeToday.getAsrTime();
 
-            Date maghribTime = prayerTimeToday.getMaghribTime();
-            Date ishaTime = prayerTimeToday.getIshaTime();
+            Time maghribTime = prayerTimeToday.getMaghribTime();
+            Time ishaTime = prayerTimeToday.getIshaTime();
 
-            return new DayPrayerTimeEntity(
+            return new DayPrayerTimesEntity(
                     fajrTime,
                     sunRiseTime,
                     dhuhrTime,
@@ -155,7 +158,9 @@ public class HttpAPIRequestUtil
         return null;
     }
 
-    public static DayPrayerTimeEntity RetrieveMuwaqqitTimes(Location targetLocation, Double fajrDegree, Double ishaDegree) throws Exception
+    private static long lastMuwaqqitAPIRequest = 0;
+
+    public static DayPrayerTimesEntity RetrieveMuwaqqitTimes(Location targetLocation, Double fajrDegree, Double ishaDegree) throws Exception
     {
         String timeZone;
 
@@ -189,12 +194,25 @@ public class HttpAPIRequestUtil
 
         String response = HttpAPIRequestUtil.RetrieveAPIFeedback(HttpAPIRequestUtil.MUWAQQIT_JSON_URL, EHttpRequestMethod.POST, queryParameters);
 
-        // After two consecutive api calls, the next one is only possible after 11 seconds.
+        // Muwaqqit API calls are only possible after 10 second cool downs.
+        // An invalid request resets this time
         if(response.equals("429 TOO MANY REQUESTS"))
         {
-            TimeUnit.SECONDS.sleep(HttpAPIRequestUtil.MUWAQQIT_API_COOLDOWN_SECONDS);
+            long waitTime = HttpAPIRequestUtil.MUWAQQIT_API_COOLDOWN_MILLISECONDS;
+
+            long timeSinceLastRequest = System.currentTimeMillis() - lastMuwaqqitAPIRequest;
+
+            if(timeSinceLastRequest < HttpAPIRequestUtil.MUWAQQIT_API_COOLDOWN_MILLISECONDS)
+            {
+                waitTime = HttpAPIRequestUtil.MUWAQQIT_API_COOLDOWN_MILLISECONDS - timeSinceLastRequest + 1500;
+            }
+
+            TimeUnit.MILLISECONDS.sleep(waitTime);
             response = HttpAPIRequestUtil.RetrieveAPIFeedback(HttpAPIRequestUtil.MUWAQQIT_JSON_URL, EHttpRequestMethod.POST, queryParameters);
+
+            TimeUnit.MILLISECONDS.sleep(1);
         }
+        lastMuwaqqitAPIRequest = System.currentTimeMillis();
 
         return HttpAPIRequestUtil.FromMuwaqqitJSONToDayPrayerTime(response);
     }
@@ -300,7 +318,7 @@ public class HttpAPIRequestUtil
     }
 
     // Der JSON ist in der ersten Ebene eine Liste und diese Liste enthält dann die Gebetszeiteninformationen für alle Tage des jeweiligen Monats.
-    public static DayPrayerTimeEntity FromMuwaqqitJSONToDayPrayerTime(String jsonText) throws Exception
+    public static DayPrayerTimesEntity FromMuwaqqitJSONToDayPrayerTime(String jsonText) throws Exception
     {
         JSONObject jsonObject = new JSONObject(jsonText);
         JSONArray list = (JSONArray) jsonObject.get("list");
@@ -310,27 +328,27 @@ public class HttpAPIRequestUtil
         GsonBuilder gsonBuilder = new GsonBuilder();
         gsonBuilder.setDateFormat("HH:mm:ss");
 
-        Gson gson = gsonBuilder.create();
+        Gson gson = AppEnvironment.BuildGSON("HH:mm:ss");
 
-        Type listOfMyClassObject = new TypeToken<ArrayList<MuwaqqitPrayerTimeEntity>>() {}.getType();
+        Type listOfMyClassObject = new TypeToken<ArrayList<MuwaqqitPrayerTimeDayEntity>>() {}.getType();
 
-        List<MuwaqqitPrayerTimeEntity> outputList = gson.fromJson(list.toString(), listOfMyClassObject);
-        Optional<MuwaqqitPrayerTimeEntity> element = outputList.stream().filter(x -> todayDate.equals(x.getFajrDate())).findFirst();
+        List<MuwaqqitPrayerTimeDayEntity> outputList = gson.fromJson(list.toString(), listOfMyClassObject);
+        Optional<MuwaqqitPrayerTimeDayEntity> element = outputList.stream().filter(x -> todayDate.equals(x.getFajrDate())).findFirst();
 
         if(element.isPresent())
         {
-            MuwaqqitPrayerTimeEntity prayerTimeToday = element.get();
+            MuwaqqitPrayerTimeDayEntity prayerTimeToday = element.get();
 
-            Date fajrTime = prayerTimeToday.getFajrTime();
-            Date sunRiseTime = prayerTimeToday.getSunrise_time();
+            Time fajrTime = prayerTimeToday.getFajrTime();
+            Time sunRiseTime = prayerTimeToday.getSunrise_time();
 
-            Date dhuhrTime = prayerTimeToday.getDhuhrTime();
-            Date asrTime = prayerTimeToday.getAsrMithlTime();
+            Time dhuhrTime = prayerTimeToday.getDhuhrTime();
+            Time asrTime = prayerTimeToday.getAsrMithlTime();
 
-            Date maghribTime = prayerTimeToday.getMaghribTime();
-            Date ishaTime = prayerTimeToday.getIshaTime();
+            Time maghribTime = prayerTimeToday.getMaghribTime();
+            Time ishaTime = prayerTimeToday.getIshaTime();
 
-            return new DayPrayerTimeEntity(
+            return new DayPrayerTimesEntity(
                     fajrTime,
                     sunRiseTime,
                     dhuhrTime,

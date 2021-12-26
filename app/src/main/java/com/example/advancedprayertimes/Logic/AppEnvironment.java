@@ -11,13 +11,27 @@ import android.os.Looper;
 
 import androidx.core.app.ActivityCompat;
 
+import com.example.advancedprayertimes.Logic.Entities.PrayerTimeSettingsEntity;
 import com.example.advancedprayertimes.Logic.Enums.EPrayerTimeType;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonDeserializationContext;
+import com.google.gson.JsonDeserializer;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonPrimitive;
+import com.google.gson.JsonSerializationContext;
+import com.google.gson.JsonSerializer;
 
+import java.lang.reflect.Type;
+import java.sql.Time;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.HashMap;
 
 public class AppEnvironment
 {
-    public static HashMap<EPrayerTimeType, DayPrayerTimeSettingsEntity> DayPrayerTimeSettings = new HashMap<>();
+    public static HashMap<EPrayerTimeType, PrayerTimeSettingsEntity> DayPrayerTimeSettings = new HashMap<>();
 
     public static Location RetrieveLocation(Context context)
     {
@@ -43,5 +57,49 @@ public class AppEnvironment
         }
 
         return loc;
+    }
+
+    public static Gson BuildGSON(String timeFormatString)
+    {
+        DateFormat timeFormat = new SimpleDateFormat(timeFormatString);
+
+        JsonSerializer<Time> ser = new JsonSerializer<Time>()
+        {
+            @Override
+            public JsonElement serialize(Time src, Type typeOfSrc, JsonSerializationContext context)
+            {
+                if(src == null)
+                {
+                    return null;
+                }
+
+                return new JsonPrimitive(timeFormat.format(src.getTime()));
+            }
+        };
+
+        JsonDeserializer<Time> deser = new JsonDeserializer<Time>()
+        {
+            @Override
+            public Time deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException
+            {
+                if(json == null)
+                {
+                    return null;
+                }
+
+                try
+                {
+                    return new Time(timeFormat.parse(json.getAsString()).getTime());
+                }
+                catch(Exception e)
+                {
+                    return null;
+                }
+            }
+        };
+
+        return new GsonBuilder()
+                .registerTypeAdapter(Time.class, ser)
+                .registerTypeAdapter(Time.class, deser).create();
     }
 }

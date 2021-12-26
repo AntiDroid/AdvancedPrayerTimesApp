@@ -10,7 +10,7 @@ import androidx.preference.PreferenceCategory;
 import androidx.preference.PreferenceFragmentCompat;
 
 import com.example.advancedprayertimes.Logic.AppEnvironment;
-import com.example.advancedprayertimes.Logic.DayPrayerTimeSettingsEntity;
+import com.example.advancedprayertimes.Logic.Entities.PrayerTimeSettingsEntity;
 import com.example.advancedprayertimes.Logic.Enums.EPrayerTimeType;
 import com.example.advancedprayertimes.Logic.Enums.ESupportedAPIs;
 import com.example.advancedprayertimes.databinding.TimeSettingsActivityBinding;
@@ -90,7 +90,7 @@ public class TimeSettingsActivity extends AppCompatActivity
             ishaCalculationDegrees = Double.parseDouble(ishaDegreesListPreference.getValue());
         }
 
-        AppEnvironment.DayPrayerTimeSettings.put(prayerTimeType, new DayPrayerTimeSettingsEntity(api, minuteAdjustment, fajrCalculationDegrees, ishaCalculationDegrees));
+        AppEnvironment.DayPrayerTimeSettings.put(prayerTimeType, new PrayerTimeSettingsEntity(api, minuteAdjustment, fajrCalculationDegrees, ishaCalculationDegrees));
         super.onStop();
     }
 
@@ -160,15 +160,15 @@ public class TimeSettingsActivity extends AppCompatActivity
                 ishaDegreesListPreference.setEntryValues(degreeValuesArray);
                 ishaDegreesListPreference.setValue("-12.0");
 
-                fajrDegreesListPreference.setVisible(DayPrayerTimeSettingsEntity.FAJR_DEGREE_TYPES.contains(prayerTimeType));
-                ishaDegreesListPreference.setVisible(DayPrayerTimeSettingsEntity.ISHA_DEGREE_TYPES.contains(prayerTimeType));
+                fajrDegreesListPreference.setVisible(PrayerTimeSettingsEntity.FAJR_DEGREE_TYPES.contains(prayerTimeType));
+                ishaDegreesListPreference.setVisible(PrayerTimeSettingsEntity.ISHA_DEGREE_TYPES.contains(prayerTimeType));
                 apiSettingsPreferenceCategory.setVisible(fajrDegreesListPreference.isVisible() || ishaDegreesListPreference.isVisible());
 
                 // SET CURRENT CONFIGURATION FOR PRAYERTIMETYPE
 
                 if(AppEnvironment.DayPrayerTimeSettings.containsKey(prayerTimeType))
                 {
-                    DayPrayerTimeSettingsEntity settings = AppEnvironment.DayPrayerTimeSettings.get(prayerTimeType);
+                    PrayerTimeSettingsEntity settings = AppEnvironment.DayPrayerTimeSettings.get(prayerTimeType);
 
                     if(settings != null)
                     {

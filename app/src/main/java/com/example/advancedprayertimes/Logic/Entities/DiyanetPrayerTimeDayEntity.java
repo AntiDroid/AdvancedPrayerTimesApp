@@ -1,98 +1,98 @@
-package com.example.advancedprayertimes.Logic;
+package com.example.advancedprayertimes.Logic.Entities;
 
 import com.google.gson.annotations.SerializedName;
 
-import java.util.Date;
+import java.sql.Time;
 
-public class DiyanetPrayerTimeEntity
+public class DiyanetPrayerTimeDayEntity
 {
     @SerializedName("MiladiTarihKisa")
     private String _date;
 
     @SerializedName("Imsak")
-    private Date _fajrTime;
+    private Time _fajrTime;
 
     @SerializedName("Gunes")
-    private Date _sunrise_time;
+    private Time _sunrise_time;
 
     @SerializedName("Ogle")
-    private Date _dhuhrTime;
+    private Time _dhuhrTime;
 
     @SerializedName("Ikindi")
-    private Date _asrTime;
+    private Time _asrTime;
 
     @SerializedName("Aksam")
-    private Date _maghribTime;
+    private Time _maghribTime;
 
     @SerializedName("Yatsi")
-    private Date _ishaTime;
+    private Time _ishaTime;
 
-    public String getDate()
+    public String getDate ()
     {
         return _date;
     }
 
-    public void setDate(String date)
+    public void setTime (String date)
     {
-        _date = date;
+        _date = date ;
     }
 
-    public Date getFajrTime()
+    public Time getFajrTime()
     {
         return _fajrTime;
     }
 
-    public void setFajrTime(Date fajrTime)
+    public void setFajrTime(Time fajrTime)
     {
         _fajrTime = fajrTime;
     }
 
-    public Date getSunrise_time()
+    public Time getSunrise_time()
     {
         return _sunrise_time;
     }
 
-    public void setSunrise_time(Date sunrise_time)
+    public void setSunrise_time(Time sunrise_time)
     {
         _sunrise_time = sunrise_time;
     }
 
-    public Date getDhuhrTime()
+    public Time getDhuhrTime()
     {
         return _dhuhrTime;
     }
 
-    public void setDhuhrTime(Date dhuhrTime)
+    public void setDhuhrTime(Time dhuhrTime)
     {
         _dhuhrTime = dhuhrTime;
     }
 
-    public Date getAsrTime()
+    public Time getAsrTime()
     {
         return _asrTime;
     }
 
-    public void setAsrTime(Date asrTime)
+    public void setAsrTime(Time asrTime)
     {
         _asrTime = asrTime;
     }
 
-    public Date getMaghribTime()
+    public Time getMaghribTime()
     {
         return _maghribTime;
     }
 
-    public void setMaghribTime(Date maghribTime)
+    public void setMaghribTime(Time maghribTime)
     {
         _maghribTime = maghribTime;
     }
 
-    public Date getIshaTime()
+    public Time getIshaTime()
     {
         return _ishaTime;
     }
 
-    public void setIshaTime(Date ishaTime)
+    public void setIshaTime(Time ishaTime)
     {
         _ishaTime = ishaTime;
     }

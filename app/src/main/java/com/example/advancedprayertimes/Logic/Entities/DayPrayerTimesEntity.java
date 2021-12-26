@@ -1,27 +1,28 @@
-package com.example.advancedprayertimes.Logic;
+package com.example.advancedprayertimes.Logic.Entities;
 
 import com.example.advancedprayertimes.Logic.Enums.EPrayerTimeType;
 
+import java.sql.Time;
 import java.util.Date;
 
-public class DayPrayerTimeEntity
+public class DayPrayerTimesEntity
 {
-    private Date _fajrTime;
-    private Date _sunRiseTime;
+    private Time _fajrTime;
+    private Time _sunRiseTime;
 
-    private Date _dhuhrTime;
-    private Date _asrTime;
+    private Time _dhuhrTime;
+    private Time _asrTime;
 
-    private Date _maghribTime;
-    private Date _ishaTime;
+    private Time _maghribTime;
+    private Time _ishaTime;
 
-    public DayPrayerTimeEntity(
-            Date fajrTime,
-            Date sunRiseTime,
-            Date dhuhrTime,
-            Date asrTime,
-            Date maghribTime,
-            Date ishaTime
+    public DayPrayerTimesEntity(
+            Time fajrTime,
+            Time sunRiseTime,
+            Time dhuhrTime,
+            Time asrTime,
+            Time maghribTime,
+            Time ishaTime
     )
     {
         this._fajrTime = fajrTime;
@@ -34,7 +35,7 @@ public class DayPrayerTimeEntity
         this._ishaTime = ishaTime;
     }
 
-    public Date GetTimeByType(EPrayerTimeType prayerTimeType)
+    public Time GetTimeByType(EPrayerTimeType prayerTimeType)
     {
         switch (prayerTimeType)
         {
@@ -67,62 +68,62 @@ public class DayPrayerTimeEntity
 
     // #########################################################
 
-    public Date getFajrTime()
+    public Time getFajrTime()
     {
         return _fajrTime;
     }
 
-    public void setFajrTime(Date fajrTime)
+    public void setFajrTime(Time fajrTime)
     {
         _fajrTime = fajrTime;
     }
 
-    public Date getSunRiseTime()
+    public Time getSunRiseTime()
     {
         return _sunRiseTime;
     }
 
-    public void setSunRiseTime(Date sunRiseTime)
+    public void setSunRiseTime(Time sunRiseTime)
     {
         _sunRiseTime = sunRiseTime;
     }
 
-    public Date getDhuhrTime()
+    public Time getDhuhrTime()
     {
         return _dhuhrTime;
     }
 
-    public void setDhuhrTime(Date dhuhrTime)
+    public void setDhuhrTime(Time dhuhrTime)
     {
         _dhuhrTime = dhuhrTime;
     }
 
-    public Date getAsrTime()
+    public Time getAsrTime()
     {
         return _asrTime;
     }
 
-    public void setAsrTime(Date asrTime)
+    public void setAsrTime(Time asrTime)
     {
         _asrTime = asrTime;
     }
 
-    public Date getMaghribTime()
+    public Time getMaghribTime()
     {
         return _maghribTime;
     }
 
-    public void setMaghribTime(Date maghribTime)
+    public void setMaghribTime(Time maghribTime)
     {
         _maghribTime = maghribTime;
     }
 
-    public Date getIshaTime()
+    public Time getIshaTime()
     {
         return _ishaTime;
     }
 
-    public void setIshaTime(Date ishaTime)
+    public void setIshaTime(Time ishaTime)
     {
         _ishaTime = ishaTime;
     }

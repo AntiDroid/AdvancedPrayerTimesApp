@@ -1,4 +1,4 @@
-package com.example.advancedprayertimes.Logic;
+package com.example.advancedprayertimes.Logic.Entities;
 
 import com.example.advancedprayertimes.Logic.Enums.EPrayerTimeType;
 import com.example.advancedprayertimes.Logic.Enums.ESupportedAPIs;
@@ -7,14 +7,14 @@ import java.util.HashSet;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class DayPrayerTimeSettingsEntity
+public class PrayerTimeSettingsEntity
 {
     private ESupportedAPIs _api = ESupportedAPIs.Undefined;
     private int _minuteAdjustment = 0;
     private Double _fajrCalculationDegree = null;
     private Double _ishaCalculationDegree = null;
 
-    public DayPrayerTimeSettingsEntity(ESupportedAPIs api, int minuteAdjustment, Double fajrCalculationDegree, Double ishaCalculationDegree)
+    public PrayerTimeSettingsEntity(ESupportedAPIs api, int minuteAdjustment, Double fajrCalculationDegree, Double ishaCalculationDegree)
     {
         this._api = api;
         this._minuteAdjustment = minuteAdjustment;
