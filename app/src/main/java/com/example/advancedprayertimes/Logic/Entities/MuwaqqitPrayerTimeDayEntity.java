@@ -2,33 +2,123 @@ package com.example.advancedprayertimes.Logic.Entities;
 
 import com.google.gson.annotations.SerializedName;
 
-import java.sql.Time;
 import java.util.Date;
 
 public class MuwaqqitPrayerTimeDayEntity
 {
+    @SerializedName("fajr_time")
+    private Date _fajrTime;
+
+    @SerializedName("fajr_angle")
+    private double _fajrAngle;
+
+    @SerializedName("sunrise_time")
+    private Date _sunriseTime;
+
+    @SerializedName("zohr_time")
+    private Date _dhuhrTime;
+
+    @SerializedName("mithl_time")
+    private Date _asrMithlTime;
+    @SerializedName("mithlain_time")
+    private Date _asrMithlaynTime;
+
+    @SerializedName("sunset_time")
+    private Date _maghribTime;
+
+    @SerializedName("esha_time")
+    private Date _ishaTime;
+
+    @SerializedName("esha_angle")
+    private double _ishaAngle;
+
     @SerializedName("fajr_date")
     private String _fajrDate;
 
-    @SerializedName("fajr_time")
-    private Time _fajrTime;
+    public MuwaqqitPrayerTimeDayEntity(Date fajrTime, Date sunriseTime, Date dhuhrTime, Date asrMithlTime, Date asrMithlaynTime, Date maghribTime, Date ishaTime, String fajrDate)
+    {
+        this._fajrTime = fajrTime;
+        this._sunriseTime = sunriseTime;
 
-    @SerializedName("sunrise_time")
-    private Time _sunrise_time;
+        this._dhuhrTime = dhuhrTime;
+        this._asrMithlTime = asrMithlTime;
+        this._asrMithlaynTime = asrMithlaynTime;
 
-    @SerializedName("zohr_time")
-    private Time _dhuhrTime;
+        this._maghribTime = maghribTime;
+        this._ishaTime = ishaTime;
 
-    @SerializedName("mithl_time")
-    private Time _asrMithlTime;
-    @SerializedName("mithlain_time")
-    private Time _asrMithlaynTime;
+        this._fajrDate = fajrDate;
+    }
 
-    @SerializedName("sunset_time")
-    private Time _maghribTime;
+    public Date getFajrTime()
+    {
+        return _fajrTime;
+    }
 
-    @SerializedName("esha_time")
-    private Time _ishaTime;
+    public void setFajrTime(Date fajrTime)
+    {
+        _fajrTime = fajrTime;
+    }
+
+    public Date getSunriseTime()
+    {
+        return _sunriseTime;
+    }
+
+    public void setSunriseTime(Date sunrise_time)
+    {
+        _sunriseTime = sunrise_time;
+    }
+
+    public Date getDhuhrTime()
+    {
+        return _dhuhrTime;
+    }
+
+    public void setDhuhrTime(Date dhuhrTime)
+    {
+        _dhuhrTime = dhuhrTime;
+    }
+
+    public Date getAsrMithlTime()
+    {
+        return _asrMithlTime;
+    }
+
+    public void setAsrMithlTime(Date asrMithlTime)
+    {
+        _asrMithlTime = asrMithlTime;
+    }
+
+    public Date getAsrMithlaynTime()
+    {
+        return _asrMithlaynTime;
+    }
+
+    public void setAsrMithlaynTime(Date asrMithlaynTime)
+    {
+        _asrMithlaynTime = asrMithlaynTime;
+    }
+
+    public Date getMaghribTime()
+    {
+        return _maghribTime;
+    }
+
+    public void setMaghribTime(Date maghribTime)
+    {
+        _maghribTime = maghribTime;
+    }
+
+    public Date getIshaTime()
+    {
+        return _ishaTime;
+    }
+
+    public void setIshaTime(Date ishaTime)
+    {
+        _ishaTime = ishaTime;
+    }
 
     public String getFajrDate()
     {
@@ -40,73 +130,23 @@ public class MuwaqqitPrayerTimeDayEntity
         _fajrDate = fajrDate;
     }
 
-    public Time getFajrTime()
+    public double getFajrAngle()
     {
-        return _fajrTime;
+        return _fajrAngle;
     }
 
-    public void setFajrTime(Time fajrTime)
+    public void setFajrAngle(double fajrAngle)
     {
-        _fajrTime = fajrTime;
+        _fajrAngle = fajrAngle;
     }
 
-    public Time getSunrise_time()
+    public double getIshaAngle()
     {
-        return _sunrise_time;
+        return _ishaAngle;
     }
 
-    public void setSunrise_Time(Time sunrise_time)
+    public void setIshaAngle(double ishaAngle)
     {
-        _sunrise_time = sunrise_time;
-    }
-
-    public Time getDhuhrTime()
-    {
-        return _dhuhrTime;
-    }
-
-    public void setDhuhrTime(Time dhuhrTime)
-    {
-        _dhuhrTime = dhuhrTime;
-    }
-
-    public Time getAsrMithlTime()
-    {
-        return _asrMithlTime;
-    }
-
-    public void setAsrMithlTime(Time asrMithlTime)
-    {
-        _asrMithlTime = asrMithlTime;
-    }
-
-    public Time getAsrMithlaynTime()
-    {
-        return _asrMithlaynTime;
-    }
-
-    public void setAsrMithlaynTime(Time asrMithlaynTime)
-    {
-        _asrMithlaynTime = asrMithlaynTime;
-    }
-
-    public Time getMaghribTime()
-    {
-        return _maghribTime;
-    }
-
-    public void setMaghribTime(Time maghribTime)
-    {
-        _maghribTime = maghribTime;
-    }
-
-    public Time getIshaTime()
-    {
-        return _ishaTime;
-    }
-
-    public void setIshaTime(Time ishaTime)
-    {
-        _ishaTime = ishaTime;
+        _ishaAngle = ishaAngle;
     }
 }

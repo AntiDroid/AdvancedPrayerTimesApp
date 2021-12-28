@@ -4,6 +4,8 @@ import com.example.advancedprayertimes.Logic.Enums.EPrayerTimeType;
 
 import java.sql.Time;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.Optional;
 
 public class PrayerEntity
 {
@@ -12,8 +14,8 @@ public class PrayerEntity
     private EPrayerTimeType _beginningTimeType;
     private EPrayerTimeType _endTimeType;
 
-    private Time _beginningTime = new Time(0);
-    private Time _endTime = new Time(0);
+    private Date _beginningTime = new Date(0);
+    private Date _endTime = new Date(0);
 
     private PrayerEntity(){ }
 
@@ -37,9 +39,19 @@ public class PrayerEntity
 
     public static PrayerEntity GetPrayerByTime(Time time)
     {
-        PrayerEntity targetPrayer = prayers.stream().filter(x -> time.getTime() > x.getBeginningTime().getTime() && time.getTime() < x.getEndTime().getTime()).findFirst().get();
+        Optional<PrayerEntity> targetPrayer = prayers.stream()
+                .filter(x -> time.getTime() > x.getBeginningTime().getTime()
+                                &&
+                        // TODO: FIX ISHA
+                        (time.getTime() < x.getEndTime().getTime() || x.getBeginningTime().getTime() > x.getEndTime().getTime()))
+                .findFirst();
 
-        return targetPrayer;
+        if(targetPrayer.isPresent())
+        {
+            return targetPrayer.get();
+        }
+
+        return null;
     }
 
     // ###############################
@@ -74,22 +86,22 @@ public class PrayerEntity
         _endTimeType = endTimeType;
     }
 
-    public Time getBeginningTime()
+    public Date getBeginningTime()
     {
         return _beginningTime;
     }
 
-    public void setBeginningTime(Time beginningTime)
+    public void setBeginningTime(Date beginningTime)
     {
         _beginningTime = beginningTime;
     }
 
-    public Time getEndTime()
+    public Date getEndTime()
     {
         return _endTime;
     }
 
-    public void setEndTime(Time endTime)
+    public void setEndTime(Date endTime)
     {
         _endTime = endTime;
     }

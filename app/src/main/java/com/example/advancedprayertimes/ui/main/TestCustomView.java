@@ -19,14 +19,64 @@ import java.util.Date;
 
 public class TestCustomView extends View
 {
-    public static DateFormat dateFormat = new SimpleDateFormat("HH:mm");
-
     private static final int backgroundRectangleColor = Color.argb(255, 35,41,53);
-    private static final int innerBackgroundRectangleColor = Color.rgb(0, 204, 102);
-    private static final int prayerTimeMainTextColor = Color.YELLOW;
-    private static final int currentTimeIndicatorLineColor = Color.WHITE;
-    private static final int currentTimeTextColor = Color.RED;
+    private static Paint backgroundRectanglePaint = new Paint()
+    {
+        {
+            setColor(backgroundRectangleColor);
+            setAntiAlias(true);
+        }
+    };
 
+    private static final int innerBackgroundRectangleColor = Color.rgb(0, 204, 102);
+    private static Paint innerBackgroundRectanglePaint = new Paint()
+    {
+        {
+            setAntiAlias(true);
+            setColor(innerBackgroundRectangleColor);
+        }
+    };
+
+    private static final int prayerTimeMainTextColor = Color.YELLOW;
+    Paint textPaint = new Paint()
+    {
+        {
+            setAntiAlias(true);
+            setTextSize(60);
+            setColor(prayerTimeMainTextColor);
+        }
+    };
+
+    Paint prayerTimeTextPaint = new Paint()
+    {
+        {
+            setAntiAlias(true);
+            setTextSize(40);
+            setColor(prayerTimeMainTextColor);
+        }
+    };
+
+    private static final int currentTimeTextColor = Color.RED;
+    Paint currentTimeTextPaint = new Paint()
+    {
+        {
+            setAntiAlias(true);
+            setTextSize(40);
+            setColor(currentTimeTextColor);
+        }
+    };
+
+    Paint indicatorRectanglePaint = new Paint()
+    {
+        {
+            setAntiAlias(true);
+            setColor(currentTimeIndicatorLineColor);
+        }
+    };
+
+    private static final int currentTimeIndicatorLineColor = Color.WHITE;
+
+    public static DateFormat dateFormat = new SimpleDateFormat("HH:mm");
     private PrayerEntity _displayPrayerEntity = null;
 
     public TestCustomView(Context context, AttributeSet attrs)
@@ -41,8 +91,6 @@ public class TestCustomView extends View
 
         // BACKGROUND RECTANGLE
         Rect backgroundRectangle = new Rect(40, 0, 1000, 600);
-        Paint backgroundRectanglePaint = new Paint();
-        backgroundRectanglePaint.setColor(backgroundRectangleColor);
         canvas.drawRect(backgroundRectangle, backgroundRectanglePaint);
 
         if(this.getDisplayPrayerEntity() == null)
@@ -50,24 +98,16 @@ public class TestCustomView extends View
             return;
         }
 
-        //TODO: Move drawing information to setter of prayer time entity
+        //TODO: Move rectangle instantation outside of draw
 
         // INNER BACKGROUND RECTANGLE
         RectF innerBackgroundRectangle = new RectF(180, 110, 950, 550);
-        Paint innerBackgroundRectanglePaint = new Paint();
-        innerBackgroundRectanglePaint.setColor(innerBackgroundRectangleColor);
         canvas.drawRoundRect(innerBackgroundRectangle, 20, 20, innerBackgroundRectanglePaint);
 
         // PRAYER TIME TEXT
-        Paint textPaint = new Paint();
-        textPaint.setTextSize(60);
-        textPaint.setColor(prayerTimeMainTextColor);
-        canvas.drawText(this.getDisplayPrayerEntity().getTitle(), 800, 80, textPaint);
+        canvas.drawText(this.getDisplayPrayerEntity().getTitle(), 450, 80, textPaint);
 
         // PRAYER TIME BEGINNING TEXT
-        Paint prayerTimeTextPaint = new Paint();
-        prayerTimeTextPaint.setTextSize(40);
-        prayerTimeTextPaint.setColor(prayerTimeMainTextColor);
         canvas.drawText(dateFormat.format(this.getDisplayPrayerEntity().getBeginningTime()), 60, 125, prayerTimeTextPaint);
 
         // PRAYER TIME END TEXT
@@ -82,7 +122,18 @@ public class TestCustomView extends View
 
         long indicatorTime = new Time(currentDate.getHour(), currentDate.getMinute(), currentDate.getSecond()).getTime();
 
-        long g = this.getDisplayPrayerEntity().getEndTime().getTime() - this.getDisplayPrayerEntity().getBeginningTime().getTime();
+        long g = 0;
+
+        g = this.getDisplayPrayerEntity().getEndTime().getTime() - this.getDisplayPrayerEntity().getBeginningTime().getTime();
+
+        // TODO: Fix Isha
+        if(this.getDisplayPrayerEntity().getEndTime().getTime() < this.getDisplayPrayerEntity().getBeginningTime().getTime())
+        {
+            long timeOfOneDay = new Date(0, 0, 1, 0, 0, 0).getTime() - new Date(0, 0, 0, 0, 0, 0).getTime();;
+
+            g += timeOfOneDay;
+        }
+
         long a = indicatorTime - this.getDisplayPrayerEntity().getBeginningTime().getTime();
 
         double percentage = (double)a/g;
@@ -93,14 +144,9 @@ public class TestCustomView extends View
         int calculatedBottom = calculatedTop + 2;
 
         Rect indicatorRectangle = new Rect((int)innerBackgroundRectangle.left, calculatedTop, (int)innerBackgroundRectangle.right, calculatedBottom);
-        Paint indicatorRectanglePaint = new Paint();
-        indicatorRectanglePaint.setColor(currentTimeIndicatorLineColor);
         canvas.drawRect(indicatorRectangle, indicatorRectanglePaint);
 
         // CURRENT TIME TEXT
-        Paint currentTimeTextPaint = new Paint();
-        currentTimeTextPaint.setTextSize(40);
-        currentTimeTextPaint.setColor(currentTimeTextColor);
         canvas.drawText(dateFormat.format(indicatorTime), 60, indicatorRectangle.top + 16, currentTimeTextPaint);
     }
 

@@ -3,45 +3,62 @@ package com.example.advancedprayertimes;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.ColorFilter;
+import android.graphics.drawable.Drawable;
+import android.location.Address;
 import android.location.Location;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewTreeObserver;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.AppCompatEditText;
+import androidx.appcompat.widget.AppCompatImageButton;
 
 import com.example.advancedprayertimes.Logic.AppEnvironment;
+import com.example.advancedprayertimes.Logic.DataManagementUtil;
+import com.example.advancedprayertimes.Logic.Entities.CustomPlaceEntity;
 import com.example.advancedprayertimes.Logic.Entities.DayPrayerTimesEntity;
 import com.example.advancedprayertimes.Logic.Entities.PrayerEntity;
 import com.example.advancedprayertimes.Logic.Entities.PrayerTimeSettingsEntity;
 import com.example.advancedprayertimes.Logic.Enums.EPrayerTimeType;
 import com.example.advancedprayertimes.Logic.Enums.ESupportedAPIs;
-import com.example.advancedprayertimes.Logic.HttpAPIRequestUtil;
+import com.example.advancedprayertimes.Logic.LocationUtil;
 import com.example.advancedprayertimes.databinding.TimeOverviewActivityBinding;
-import com.google.gson.Gson;
+import com.google.android.gms.common.api.Status;
+import com.google.android.libraries.places.api.Places;
+import com.google.android.libraries.places.api.model.Place;
+import com.google.android.libraries.places.api.net.PlacesClient;
+import com.google.android.libraries.places.widget.AutocompleteSupportFragment;
+import com.google.android.libraries.places.widget.listener.PlaceSelectionListener;
 
 import java.sql.Time;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class TimeOverviewActivity extends AppCompatActivity
 {
-    private final int backgroundColor = Color.argb(255,45,54,71);
     private TimeOverviewActivityBinding binding = null;
+    private HashMap<EPrayerTimeType, TextView> prayerTimeTypeWithAssociatedTextView = new HashMap<>();
 
+    PlacesClient _placesClient;
 
-
-    HashMap<EPrayerTimeType, TextView> prayerTimeTypeWithAssociatedTextView = new HashMap<>();
+    private AutocompleteSupportFragment autocompleteSupportFragment;
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -51,137 +68,87 @@ public class TimeOverviewActivity extends AppCompatActivity
         binding = TimeOverviewActivityBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
-        //binding.getRoot().setBackgroundColor(backgroundColor);
+        binding.loadPrayerTimesButton.setOnClickListener(view -> asyncLoadPrayerTimes());
+        binding.initiateRedrawingOfPrayerGraphicButton.setOnClickListener(view -> binding.testCustomView.invalidate());
 
         configurePrayerTimeTextViews();
+        configureGooglePlacesAPI();
 
+        AppEnvironment.context = this;
+    }
 
-
-        binding.showStuffButton.setOnClickListener(view ->
+    private void configureGooglePlacesAPI()
+    {
+        if(!Places.isInitialized())
         {
-            binding.statusTextLabel.setText("");
+            Places.initialize(getApplicationContext(), this.getResources().getString(R.string.GooglePlacesAPIKey));
+        }
 
-            Thread asyncRetrievePrayerTimesThread = new Thread(this::retrievePrayerTimes);
+        _placesClient = Places.createClient(getApplicationContext());
 
-            binding.showStuffButton.setEnabled(false);
-            binding.progressBar.setVisibility(View.VISIBLE);
-            asyncRetrievePrayerTimesThread.start();
+        autocompleteSupportFragment = (AutocompleteSupportFragment) getSupportFragmentManager().findFragmentById(R.id.autocomplete_fragment);
+        autocompleteSupportFragment.setPlaceFields(Arrays.asList(Place.Field.ID, Place.Field.LAT_LNG, Place.Field.NAME));
+
+
+
+        AppCompatEditText searchFieldEditText = autocompleteSupportFragment.getView().findViewById(R.id.places_autocomplete_search_input);
+        AppCompatImageButton clearSearchFieldButton = autocompleteSupportFragment.getView().findViewById(R.id.places_autocomplete_clear_button);
+
+
+
+        autocompleteSupportFragment.getView().setBackgroundColor(Color.LTGRAY);
+        autocompleteSupportFragment.getView().setBackgroundResource(R.drawable.rounded_corner);
+
+
+
+
+
+        searchFieldEditText.setTextColor(Color.BLACK);
+        clearSearchFieldButton.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener()
+        {
+            @Override
+            public void onGlobalLayout()
+            {
+                if(clearSearchFieldButton.getVisibility() != View.GONE)
+                {
+                    clearSearchFieldButton.setVisibility(View.GONE);
+                }
+            }
         });
 
-        binding.timeInfoTitleTextLabel.setText("API: \nMinute adjustment: \nFajr degree: \nIsha degree: ");
-
-        binding.drawGraphicsButton.setOnClickListener(view ->
+        // Set up a PlaceSelectionListener to handle the response.
+        autocompleteSupportFragment.setOnPlaceSelectedListener(new PlaceSelectionListener()
         {
-            binding.testCustomView.invalidate();
+            @Override
+            public void onPlaceSelected(@NonNull Place place)
+            {
+                AppEnvironment.place = new CustomPlaceEntity(place);
+                Toast.makeText(getApplicationContext(), place.getName(), Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onError(@NonNull Status status)
+            {
+                Toast.makeText(getApplicationContext(), "Error", Toast.LENGTH_SHORT).show();
+            }
         });
     }
 
     @Override
     protected void onPause()
     {
-        saveLocalData();
-
-        super.onPause();
-    }
-
-    private void saveLocalData()
-    {
         SharedPreferences sharedPref = this.getPreferences(MODE_PRIVATE);
-        SharedPreferences.Editor editor = sharedPref.edit();
-
-        // SAVE PRAYER TIME DATA
-        for(PrayerEntity prayerEntity : PrayerEntity.prayers)
-        {
-            if(prayerEntity.getBeginningTime() != null)
-            {
-                editor.putLong(prayerEntity.getTitle() + " beginning value", prayerEntity.getBeginningTime().getTime());
-            }
-
-            if(prayerEntity.getEndTime() != null)
-            {
-                editor.putLong(prayerEntity.getTitle() + " end value", prayerEntity.getEndTime().getTime());
-            }
-        }
-
-        // SAVE ASSOCIATED DATE STRING
-        editor.putString("displayedTime", binding.displayedDateTextLabel.getText().toString());
-
-        // SAVE PRAYER TIME SETTINGS
-        Gson gson = AppEnvironment.BuildGSON("HH:mm");
-
-        for(Map.Entry<EPrayerTimeType, PrayerTimeSettingsEntity> entry : AppEnvironment.DayPrayerTimeSettings.entrySet())
-        {
-            String jsonString = gson.toJson(entry.getValue());
-            editor.putString(entry.getKey().toString() + "settings", jsonString);
-        }
-
-        editor.apply();
+        DataManagementUtil.SaveLocalData(sharedPref, binding);
+        super.onPause();
     }
 
     @Override
     protected void onResume()
     {
-        retrieveLocalData();
-
-        super.onResume();
-    }
-
-    private void retrieveLocalData()
-    {
         SharedPreferences sharedPref = this.getPreferences(MODE_PRIVATE);
-
-        // RETRIEVE PRAYER TIME DATA
-        for(PrayerEntity prayerEntity : PrayerEntity.prayers)
-        {
-            Time beginningTime = null;
-            Time endTime = null;
-
-            if(sharedPref.contains(prayerEntity.getTitle() + " beginning value"))
-            {
-                beginningTime = new Time(sharedPref.getLong(prayerEntity.getTitle() + " beginning value", 0));
-            }
-
-            if(sharedPref.contains(prayerEntity.getTitle() + " end value"))
-            {
-                endTime = new Time(sharedPref.getLong(prayerEntity.getTitle() + " end value", 0));
-            }
-
-            prayerEntity.setBeginningTime(beginningTime);
-            prayerEntity.setEndTime(endTime);
-        }
-
-        // RETRIEVE ASSOCIATED DATE STRING
-        binding.displayedDateTextLabel.setText(sharedPref.getString("displayedTime", "xx.xx.xxxx"));
-
-        // RETRIEVE ASSOCIATED DATE STRING
-        Gson gson = new Gson();
-
-        for(EPrayerTimeType prayerTimeType : this.prayerTimeTypeWithAssociatedTextView.keySet())
-        {
-            String enumName = prayerTimeType.toString();
-            String value = sharedPref.getString(enumName + "settings", null);
-
-            if(value != null)
-            {
-                try
-                {
-                    PrayerTimeSettingsEntity settings = gson.fromJson(value, PrayerTimeSettingsEntity.class);
-
-                    AppEnvironment.DayPrayerTimeSettings.put(prayerTimeType, settings);
-                }
-                catch(Exception e)
-                {
-                    e.printStackTrace();
-                }
-            }
-        }
-
+        DataManagementUtil.RetrieveLocalData(sharedPref, binding, this.prayerTimeTypeWithAssociatedTextView.keySet());
         this.applyTimeSettingsToOverview();
-
-        // TODO: Commit und dergleichen hinterfragen
-        sharedPref.edit().clear();
-        sharedPref.edit().commit();
-        sharedPref.edit().apply();
+        super.onResume();
     }
 
     private void configurePrayerTimeTextViews()
@@ -211,60 +178,73 @@ public class TimeOverviewActivity extends AppCompatActivity
         }
     }
 
-    Map<View, Long> touchPointStuff = new HashMap<>();
-
-    private boolean doTouchStuff(View v, MotionEvent event)
+    private void asyncLoadPrayerTimes()
     {
-        boolean useUpEvent = false;
+        Thread asyncRetrievePrayerTimesThread = new Thread(this::loadPrayerTimes);
+        asyncRetrievePrayerTimesThread.start();
+
+        binding.loadPrayerTimesButton.setEnabled(false);
+        binding.progressBar.setVisibility(View.VISIBLE);
+    }
+
+    Map<View, Long> lastTouchBeginnTimePerTextViewHashMap = new HashMap<>();
+
+    private boolean doTouchStuff(View textView, MotionEvent event)
+    {
+        boolean dontPassEventOnToOtherListeners = false;
 
         switch(event.getAction())
         {
+            // a new touch was registered
             case MotionEvent.ACTION_DOWN:
-                touchPointStuff.put(v, System.currentTimeMillis());
+                lastTouchBeginnTimePerTextViewHashMap.put(textView, System.currentTimeMillis());
                 break;
 
-            case MotionEvent.ACTION_MOVE:
+            // a touch was aborted
             case MotionEvent.ACTION_UP:
 
-                if(touchPointStuff.containsKey(v) && touchPointStuff.get(v) != null)
+                if(lastTouchBeginnTimePerTextViewHashMap.get(textView) != null)
                 {
-                    long milliSecondDifference = System.currentTimeMillis() - touchPointStuff.get(v);
+                    long milliSecondDifference = System.currentTimeMillis() - lastTouchBeginnTimePerTextViewHashMap.get(textView);
 
+                    // long press on text view
                     if(milliSecondDifference > 500)
                     {
-                        if(event.getAction() == MotionEvent.ACTION_MOVE)
+                        // to prevent the regular click event to trigger right after
+                        dontPassEventOnToOtherListeners = true;
+
+                        EPrayerTimeType prayerTimeType = this.prayerTimeTypeWithAssociatedTextView.entrySet().stream().filter(x -> x.getValue() == textView).findFirst().get().getKey();
+
+                        String infoValuesText = "No settings";
+
+                        if(AppEnvironment.PrayerTimeSettingsByPrayerTimeTypeHashMap.containsKey(prayerTimeType))
                         {
-                            String infoValuesText = "";
+                            PrayerTimeSettingsEntity settings = AppEnvironment.PrayerTimeSettingsByPrayerTimeTypeHashMap.get(prayerTimeType);
 
-                            EPrayerTimeType prayerTimeType = this.prayerTimeTypeWithAssociatedTextView.entrySet().stream().filter(x -> x.getValue() == v).findFirst().get().getKey();
+                            infoValuesText = "API:\n" + settings.get_api().toString()
+                                    + "\n\nMinute adjustment:\n" + settings.get_minuteAdjustment();
 
-                            if(AppEnvironment.DayPrayerTimeSettings.containsKey(prayerTimeType))
-                            {
-                                PrayerTimeSettingsEntity settings = AppEnvironment.DayPrayerTimeSettings.get(prayerTimeType);
+                                    if(settings.getFajrCalculationDegree() != null)
+                                    {
+                                        infoValuesText += "\n\nFajr degree:\n" + settings.getFajrCalculationDegree();
+                                    }
 
-                                infoValuesText = settings.get_api().toString()
-                                        + "\n" + settings.get_minuteAdjustment()
-                                        + "\n" + (settings.getFajrCalculationDegree() != null ? settings.getFajrCalculationDegree() : "")
-                                        + "\n" + (settings.getIshaCalculationDegree() != null ? settings.getIshaCalculationDegree() : "");
-                            }
-
-                            binding.timeInfoValuesTextLabel.setText(infoValuesText);
+                                    if(settings.getIshaCalculationDegree() != null)
+                                    {
+                                        infoValuesText += "\n\nIsha degree:\n" + settings.getIshaCalculationDegree();
+                                    }
                         }
-                        else if(event.getAction() == MotionEvent.ACTION_UP)
-                        {
-                            useUpEvent = true;
-                            binding.timeInfoValuesTextLabel.setText("");
-                        }
+
+                        Toast.makeText(getApplicationContext(), infoValuesText, Toast.LENGTH_SHORT).show();
                     }
                 }
-
                 break;
 
             default:
                 break;
         }
 
-        return useUpEvent;
+        return dontPassEventOnToOtherListeners;
     }
 
     public static String INTENT_EXTRA = "prayerTime";
@@ -286,185 +266,70 @@ public class TimeOverviewActivity extends AppCompatActivity
     Map<EPrayerTimeType, DayPrayerTimesEntity> muwaqqitTimesHashMap = new HashMap<>();
     Map<EPrayerTimeType, DayPrayerTimesEntity> diyanetTimesHashMap = new HashMap<>();
 
-    public void retrievePrayerTimes()
+    public void loadPrayerTimes()
     {
         try
         {
-            Location targetLocation = AppEnvironment.RetrieveLocation(this);
-
-            if(targetLocation == null)
+            if(AppEnvironment.place == null)
             {
                 new Handler(Looper.getMainLooper())
                         .post(() ->
-                        new AlertDialog.Builder(this)
-                                .setTitle("LOCATION NOT AVAILABLE")
-                                .setMessage("Location could not be retrieved!")
-                                .show()
+                                new AlertDialog.Builder(this)
+                                        .setTitle("LOCATION NOT AVAILABLE")
+                                        .setMessage("Location information is missing!")
+                                        .show()
                         );
 
-                binding.showStuffButton.setEnabled(true);
-                binding.progressBar.setVisibility(View.INVISIBLE);
+                new Handler(Looper.getMainLooper()).post(() ->
+                {
+                    this.resetLoadingUIFeedback();
+                });
                 return;
             }
 
-            Map<EPrayerTimeType, PrayerTimeSettingsEntity> toBeCalculatedPrayerTimes = AppEnvironment.DayPrayerTimeSettings;
+            Location targetLocation = new Location("");//provider name is unnecessary
+            targetLocation.setLatitude(AppEnvironment.place.getLatitude());//your coords of course
+            targetLocation.setLongitude(AppEnvironment.place.getLongitude());
 
-            retrieveDiyanetTimes(toBeCalculatedPrayerTimes, targetLocation);
-            retrieveMuwaqqitTimes(toBeCalculatedPrayerTimes, targetLocation);
-            applyTimesToPrayerEntities();
+            retrieveTimes(AppEnvironment.PrayerTimeSettingsByPrayerTimeTypeHashMap, targetLocation);
+            assignCorrectTimesToPrayers();
 
             new Handler(Looper.getMainLooper()).post(() ->
             {
                 applyTimeSettingsToOverview();
-                binding.showStuffButton.setEnabled(true);
-                binding.progressBar.setVisibility(View.INVISIBLE);
+                this.resetLoadingUIFeedback();
             });
         }
         catch (Exception e)
         {
             new Handler(Looper.getMainLooper()).post(() ->
             {
-                binding.statusTextLabel.setText("Error!");
-                binding.showStuffButton.setEnabled(true);
-                binding.progressBar.setVisibility(View.INVISIBLE);
+                this.resetLoadingUIFeedback();
             });
             e.printStackTrace();
         }
     }
 
-    private void retrieveDiyanetTimes(Map<EPrayerTimeType, PrayerTimeSettingsEntity> toBeCalculatedPrayerTimes, Location targetLocation) throws Exception
+    private void resetLoadingUIFeedback()
     {
-        // reset values
-        diyanetTimesHashMap.clear();
-
-        Map<EPrayerTimeType, PrayerTimeSettingsEntity> diyanetTimes =
-                toBeCalculatedPrayerTimes.entrySet().stream()
-                        .filter(x -> x.getValue().get_api() == ESupportedAPIs.Diyanet)
-                        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-
-        // ADD ALL DIYANET TIME CALCULATIONS
-        if(diyanetTimes.size() > 0)
-        {
-            DayPrayerTimesEntity diyanetTime = HttpAPIRequestUtil.RetrieveDiyanetTimes(this, targetLocation);
-
-            if(diyanetTime != null)
-            {
-                diyanetTimesHashMap = diyanetTimes.entrySet().stream()
-                        .collect(Collectors.toMap(Map.Entry::getKey, y -> diyanetTime));
-            }
-        }
+        binding.loadPrayerTimesButton.setEnabled(true);
+        binding.progressBar.setVisibility(View.INVISIBLE);
     }
 
-    private void retrieveMuwaqqitTimes(Map<EPrayerTimeType, PrayerTimeSettingsEntity> toBeCalculatedPrayerTimes, Location targetLocation) throws Exception
+    private void retrieveTimes(Map<EPrayerTimeType, PrayerTimeSettingsEntity> toBeCalculatedPrayerTimes, Location targetLocation) throws Exception
     {
-        // reset values
-        muwaqqitTimesHashMap.clear();
+        Address cityAddress = LocationUtil.RetrieveCityByLocation(this, targetLocation);
 
-        Map<EPrayerTimeType, PrayerTimeSettingsEntity> muwaqqitTimesHashMap =
-                toBeCalculatedPrayerTimes.entrySet().stream()
-                        .filter(x -> x.getValue().get_api() == ESupportedAPIs.Muwaqqit)
-                        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-
-        Map<EPrayerTimeType, PrayerTimeSettingsEntity> degreeMuwaqqitTimesHashMap =
-                muwaqqitTimesHashMap.entrySet().stream()
-                        .filter(x -> PrayerTimeSettingsEntity.DEGREE_TYPES.contains(x.getKey()))
-                        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-
-        Map<EPrayerTimeType, PrayerTimeSettingsEntity> nonDegreeMuwaqqitTimesHashMap =
-                muwaqqitTimesHashMap.entrySet().stream()
-                        .filter(x -> !PrayerTimeSettingsEntity.DEGREE_TYPES.contains(x.getKey()))
-                        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-
-        if(degreeMuwaqqitTimesHashMap.size() > 0)
-        {
-            Map<EPrayerTimeType, PrayerTimeSettingsEntity> fajrDegreeMuwaqqitTimesHashMap =
-                    degreeMuwaqqitTimesHashMap.entrySet().stream()
-                            .filter(x -> PrayerTimeSettingsEntity.FAJR_DEGREE_TYPES.contains(x.getKey()))
-                            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-
-            Map<EPrayerTimeType, PrayerTimeSettingsEntity> ishaDegreeMuwaqqitTimesHashMap =
-                    degreeMuwaqqitTimesHashMap.entrySet().stream()
-                            .filter(x -> PrayerTimeSettingsEntity.ISHA_DEGREE_TYPES.contains(x.getKey()))
-                            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-
-            // MERGE CALCULATIONS FOR MERGABLE TIMES
-            while(fajrDegreeMuwaqqitTimesHashMap.size() > 0 && ishaDegreeMuwaqqitTimesHashMap.size() > 0)
-            {
-                Map.Entry<EPrayerTimeType, PrayerTimeSettingsEntity> fajrDegreeEntry = fajrDegreeMuwaqqitTimesHashMap.entrySet().stream().findFirst().get();
-                Map.Entry<EPrayerTimeType, PrayerTimeSettingsEntity> ishaDegreeEntry = ishaDegreeMuwaqqitTimesHashMap.entrySet().stream().findFirst().get();
-
-                PrayerTimeSettingsEntity fajrDegreeSettingsEntity = fajrDegreeEntry.getValue();
-                PrayerTimeSettingsEntity ishaDegreeSettingsEntity = ishaDegreeEntry.getValue();
-
-                Double fajrDegree = fajrDegreeSettingsEntity.getFajrCalculationDegree();
-                Double ishaDegree = ishaDegreeSettingsEntity.getIshaCalculationDegree();
-
-                DayPrayerTimesEntity degreeMuwaqqitTimeEntity = HttpAPIRequestUtil.RetrieveMuwaqqitTimes(targetLocation, fajrDegree, ishaDegree);
-
-                if(degreeMuwaqqitTimeEntity == null)
-                {
-                    throw new Exception();
-                }
-
-                this.muwaqqitTimesHashMap.put(fajrDegreeEntry.getKey(), degreeMuwaqqitTimeEntity);
-                this.muwaqqitTimesHashMap.put(ishaDegreeEntry.getKey(), degreeMuwaqqitTimeEntity);
-
-                // remove handled entries from the lists
-                fajrDegreeMuwaqqitTimesHashMap.remove(fajrDegreeEntry.getKey());
-                ishaDegreeMuwaqqitTimesHashMap.remove(ishaDegreeEntry.getKey());
-
-                degreeMuwaqqitTimesHashMap.remove(fajrDegreeEntry.getKey());
-                degreeMuwaqqitTimesHashMap.remove(ishaDegreeEntry.getKey());
-            }
-
-            // ADD REMAINING CALCULATIONS FOR NON MERGABLE DEGREE TIMES
-            for(Map.Entry<EPrayerTimeType, PrayerTimeSettingsEntity> entry : degreeMuwaqqitTimesHashMap.entrySet())
-            {
-                EPrayerTimeType prayerTimeType = entry.getKey();
-                PrayerTimeSettingsEntity settingsEntity = entry.getValue();
-
-                Double fajrDegree = settingsEntity.getFajrCalculationDegree();
-                Double ishaDegree = settingsEntity.getIshaCalculationDegree();
-
-                DayPrayerTimesEntity degreeMuwaqqitTimeEntity = HttpAPIRequestUtil.RetrieveMuwaqqitTimes(targetLocation, fajrDegree, ishaDegree);
-
-                if(degreeMuwaqqitTimeEntity == null)
-                {
-                    throw new Exception();
-                }
-
-                this.muwaqqitTimesHashMap.put(prayerTimeType, degreeMuwaqqitTimeEntity);
-            }
-        }
-
-        // ADD CALCULATIONS FOR NON DEGREE TIMES
-        if(nonDegreeMuwaqqitTimesHashMap.size() > 0)
-        {
-            DayPrayerTimesEntity nonDegreeMuwaqqitTimeEntity;
-
-            // any other muwaqqit request will suffice
-            if(this.muwaqqitTimesHashMap.values().stream().findFirst().isPresent())
-            {
-                nonDegreeMuwaqqitTimeEntity = this.muwaqqitTimesHashMap.values().stream().findFirst().get();
-            }
-            else
-            {
-                nonDegreeMuwaqqitTimeEntity = HttpAPIRequestUtil.RetrieveMuwaqqitTimes(targetLocation, null, null);
-            }
-
-            for(EPrayerTimeType prayerTimeType : nonDegreeMuwaqqitTimesHashMap.keySet())
-            {
-                this.muwaqqitTimesHashMap.put(prayerTimeType, nonDegreeMuwaqqitTimeEntity);
-            }
-        }
+        this.diyanetTimesHashMap = DataManagementUtil.RetrieveDiyanetTimes(this, toBeCalculatedPrayerTimes, cityAddress);
+        this.muwaqqitTimesHashMap = DataManagementUtil.RetrieveMuwaqqitTimes(toBeCalculatedPrayerTimes, targetLocation);
     }
 
-    private void applyTimesToPrayerEntities()
+    private void assignCorrectTimesToPrayers()
     {
         for(PrayerEntity prayerEntity : PrayerEntity.prayers)
         {
-            Time beginningTime = getCorrectTime(prayerEntity.getBeginningTimeType());
-            Time endTime = getCorrectTime(prayerEntity.getEndTimeType());
+            Date beginningTime = getCorrectTime(prayerEntity.getBeginningTimeType());
+            Date endTime = getCorrectTime(prayerEntity.getEndTimeType());
 
             prayerEntity.setBeginningTime(beginningTime);
             prayerEntity.setEndTime(endTime);
@@ -473,13 +338,13 @@ public class TimeOverviewActivity extends AppCompatActivity
 
     private static final DateFormat timeFormat = new SimpleDateFormat("HH:mm");
 
-    private Time getCorrectTime(EPrayerTimeType prayerTimeType)
+    private Date getCorrectTime(EPrayerTimeType prayerTimeType)
     {
-        if(AppEnvironment.DayPrayerTimeSettings.containsKey(prayerTimeType))
+        if(AppEnvironment.PrayerTimeSettingsByPrayerTimeTypeHashMap.containsKey(prayerTimeType))
         {
-            PrayerTimeSettingsEntity settings = AppEnvironment.DayPrayerTimeSettings.get(prayerTimeType);
+            PrayerTimeSettingsEntity settings = AppEnvironment.PrayerTimeSettingsByPrayerTimeTypeHashMap.get(prayerTimeType);
 
-            Time correctTime = null;
+            Date correctTime = null;
 
             if(settings != null)
             {
@@ -518,6 +383,16 @@ public class TimeOverviewActivity extends AppCompatActivity
         try
         {
             binding.displayedDateTextLabel.setText(DateTimeFormatter.ofPattern("dd.MM.yyyy").format(LocalDateTime.now()));
+
+            String cityName = "-";
+
+            if(AppEnvironment.place != null)
+            {
+                cityName = AppEnvironment.place.getName();
+            }
+
+            AppCompatEditText editText = autocompleteSupportFragment.getView().findViewById(R.id.places_autocomplete_search_input);
+            editText.setText(cityName);
 
             for(PrayerEntity prayerEntity : PrayerEntity.prayers)
             {

@@ -11,8 +11,10 @@ import android.os.Looper;
 
 import androidx.core.app.ActivityCompat;
 
+import com.example.advancedprayertimes.Logic.Entities.CustomPlaceEntity;
 import com.example.advancedprayertimes.Logic.Entities.PrayerTimeSettingsEntity;
 import com.example.advancedprayertimes.Logic.Enums.EPrayerTimeType;
+import com.google.android.libraries.places.api.model.Place;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonDeserializationContext;
@@ -27,46 +29,25 @@ import java.lang.reflect.Type;
 import java.sql.Time;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 
 public class AppEnvironment
 {
-    public static HashMap<EPrayerTimeType, PrayerTimeSettingsEntity> DayPrayerTimeSettings = new HashMap<>();
+    public static HashMap<EPrayerTimeType, PrayerTimeSettingsEntity> PrayerTimeSettingsByPrayerTimeTypeHashMap = new HashMap<>();
 
-    public static Location RetrieveLocation(Context context)
+    public static Context context = null;
+
+    public static CustomPlaceEntity place;
+
+    public static Gson BuildGSON(String dateTimeFormatString)
     {
-        //TODO: Refactoring of location retrieval
-        LocationManager locationManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
+        DateFormat timeFormat = new SimpleDateFormat(dateTimeFormatString);
 
-        if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
-            &&
-            ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED)
-        {
-            new Handler(Looper.getMainLooper()).post(() ->
-                    new AlertDialog.Builder(context)
-                            .setTitle("MISSING PERMISSION")
-                            .setMessage("Location permission was not granted!")
-                            .show());
-        }
-
-        Location loc = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-
-        if(loc == null)
-        {
-            loc = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
-        }
-
-        return loc;
-    }
-
-    public static Gson BuildGSON(String timeFormatString)
-    {
-        DateFormat timeFormat = new SimpleDateFormat(timeFormatString);
-
-        JsonSerializer<Time> ser = new JsonSerializer<Time>()
+        JsonSerializer<Date> ser = new JsonSerializer<Date>()
         {
             @Override
-            public JsonElement serialize(Time src, Type typeOfSrc, JsonSerializationContext context)
+            public JsonElement serialize(Date src, Type typeOfSrc, JsonSerializationContext context)
             {
                 if(src == null)
                 {
@@ -77,10 +58,10 @@ public class AppEnvironment
             }
         };
 
-        JsonDeserializer<Time> deser = new JsonDeserializer<Time>()
+        JsonDeserializer<Date> deser = new JsonDeserializer<Date>()
         {
             @Override
-            public Time deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException
+            public Date deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException
             {
                 if(json == null)
                 {
@@ -89,7 +70,7 @@ public class AppEnvironment
 
                 try
                 {
-                    return new Time(timeFormat.parse(json.getAsString()).getTime());
+                    return new Date(timeFormat.parse(json.getAsString()).getTime());
                 }
                 catch(Exception e)
                 {
@@ -99,7 +80,7 @@ public class AppEnvironment
         };
 
         return new GsonBuilder()
-                .registerTypeAdapter(Time.class, ser)
-                .registerTypeAdapter(Time.class, deser).create();
+                .registerTypeAdapter(Date.class, ser)
+                .registerTypeAdapter(Date.class, deser).create();
     }
 }

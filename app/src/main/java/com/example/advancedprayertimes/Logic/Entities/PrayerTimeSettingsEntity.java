@@ -2,6 +2,7 @@ package com.example.advancedprayertimes.Logic.Entities;
 
 import com.example.advancedprayertimes.Logic.Enums.EPrayerTimeType;
 import com.example.advancedprayertimes.Logic.Enums.ESupportedAPIs;
+import com.google.android.libraries.places.api.model.Place;
 
 import java.util.HashSet;
 import java.util.stream.Collectors;

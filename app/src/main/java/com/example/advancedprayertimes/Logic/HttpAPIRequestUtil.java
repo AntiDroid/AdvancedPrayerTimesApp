@@ -6,6 +6,7 @@ import android.location.Geocoder;
 import android.location.Location;
 import android.net.Uri;
 
+import com.example.advancedprayertimes.Logic.DB.DBHelper;
 import com.example.advancedprayertimes.Logic.Entities.DiyanetPrayerTimeDayEntity;
 import com.example.advancedprayertimes.Logic.Entities.MuwaqqitPrayerTimeDayEntity;
 import com.example.advancedprayertimes.Logic.Entities.DayPrayerTimesEntity;
@@ -27,10 +28,10 @@ import java.lang.reflect.Type;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.sql.Time;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -47,73 +48,92 @@ public class HttpAPIRequestUtil
     private static final String BING_MAPS_URL = "https://dev.virtualearth.net/REST/v1/timezone/";
     private static final String BING_MAPS_API_KEY = "AmlyD3G1euqPpGehI1B9s55Pzr2nE-joqnfgBM5ZvHUSn49p-WpQJbrr3NlAE_nw";
 
-    public static Address RetrieveCityByLocation(Context context, Location location) throws Exception
-    {
-        Geocoder geocoder = new Geocoder(context);
-
-        List<Address> addresses = geocoder.getFromLocation(location.getLatitude(),location.getLongitude(),1);
-
-        if (Geocoder.isPresent() && addresses.size() > 0)
-        {
-            return addresses.get(0);
-        }
-
-        return null;
-    }
-
     // Der JSON enthält direkt in der ersten Ebene die Gebetszeiteninformationen für alle Tage des jeweiligen Monats.
-    public static DayPrayerTimesEntity RetrieveDiyanetTimes(Context context, Location targetLocation) throws Exception
+    public static DayPrayerTimesEntity RetrieveDiyanetTimes(Address cityAddress) throws Exception
     {
-        Address cityAddress = HttpAPIRequestUtil.RetrieveCityByLocation(context, targetLocation);
-
         if(cityAddress == null)
         {
             throw new Exception();
         }
 
-        String ulkelerList = HttpAPIRequestUtil.RetrieveAPIFeedback(HttpAPIRequestUtil.DIYANET_JSON_URL + "/ulkeler", EHttpRequestMethod.GET);
-        JSONArray ulkelerJSONArray = new JSONArray(ulkelerList);
+        DBHelper helper = new DBHelper(AppEnvironment.context);
 
         String ulkeID = null;
-
-        for (int i = 0; i < ulkelerJSONArray.length(); i++)
-        {
-            JSONObject obj = (JSONObject) ulkelerJSONArray.get(i);
-
-            if(obj.getString("UlkeAdiEn").equals(cityAddress.getCountryName().toUpperCase()))
-            {
-                ulkeID = obj.getString("UlkeID");
-            }
-        }
-
-        // ######################
-
-        String sehirlerList = HttpAPIRequestUtil.RetrieveAPIFeedback(HttpAPIRequestUtil.DIYANET_JSON_URL + "/sehirler/" + ulkeID, EHttpRequestMethod.GET);
-        JSONArray sehirlerJSONArray = new JSONArray(sehirlerList);
-
         String sehirID = null;
+        String ilceID = helper.GetDiyanetIlceIDByCountryAndCityName(cityAddress.getCountryName().toUpperCase(), cityAddress.getLocality().toUpperCase());
 
-        if(sehirlerJSONArray.length() > 0)
+        if(ilceID == null)
         {
-            JSONObject obj = (JSONObject) sehirlerJSONArray.get(0);
+            String ulkelerList = HttpAPIRequestUtil.RetrieveAPIFeedback(HttpAPIRequestUtil.DIYANET_JSON_URL + "/ulkeler", EHttpRequestMethod.GET);
+            JSONArray ulkelerJSONArray = new JSONArray(ulkelerList);
 
-            sehirID = obj.getString("SehirID");
-        }
-
-        // ######################
-
-        String ilcelerList = HttpAPIRequestUtil.RetrieveAPIFeedback(HttpAPIRequestUtil.DIYANET_JSON_URL + "/ilceler/" + sehirID, EHttpRequestMethod.GET);
-        JSONArray ilcelerJSONArray = new JSONArray(ilcelerList);
-
-        String ilceID = null;
-
-        for (int i = 0; i < ilcelerJSONArray.length(); i++)
-        {
-            JSONObject obj = (JSONObject) ilcelerJSONArray.get(i);
-
-            if(obj.getString("IlceAdiEn").equals(cityAddress.getLocality().toUpperCase()))
+            for (int i = 0; i < ulkelerJSONArray.length(); i++)
             {
-                ilceID = obj.getString("IlceID");
+                JSONObject obj = (JSONObject) ulkelerJSONArray.get(i);
+
+                if(helper.GetDiyanetUlkeIDByName(obj.getString("UlkeAdiEn")) == null)
+                {
+                    helper.AddDiyanetUlke(obj.getString("UlkeID"), obj.getString("UlkeAdiEn"));
+                }
+
+                if(obj.getString("UlkeAdiEn").equals(cityAddress.getCountryName().toUpperCase()))
+                {
+                    ulkeID = obj.getString("UlkeID");
+                    break;
+                }
+            }
+
+            if(ulkeID == null)
+            {
+                return null;
+            }
+
+            // ######################
+
+            String sehirlerList = HttpAPIRequestUtil.RetrieveAPIFeedback(HttpAPIRequestUtil.DIYANET_JSON_URL + "/sehirler/" + ulkeID, EHttpRequestMethod.GET);
+            JSONArray sehirlerJSONArray = new JSONArray(sehirlerList);
+
+            if(sehirlerJSONArray.length() > 0)
+            {
+                JSONObject obj = (JSONObject) sehirlerJSONArray.get(0);
+
+                if(helper.GetDiyanetSehirIDByName(obj.getString("SehirAdiEn")) == null)
+                {
+                    helper.AddDiyanetSehir(ulkeID, obj.getString("SehirID"), obj.getString("SehirAdiEn"));
+                }
+
+                sehirID = obj.getString("SehirID");
+            }
+
+            if(sehirID == null)
+            {
+                return null;
+            }
+
+            // ######################
+
+            String ilcelerList = HttpAPIRequestUtil.RetrieveAPIFeedback(HttpAPIRequestUtil.DIYANET_JSON_URL + "/ilceler/" + sehirID, EHttpRequestMethod.GET);
+            JSONArray ilcelerJSONArray = new JSONArray(ilcelerList);
+
+            for (int i = 0; i < ilcelerJSONArray.length(); i++)
+            {
+                JSONObject obj = (JSONObject) ilcelerJSONArray.get(i);
+
+                if(helper.GetDiyanetIlceIDByName(obj.getString("IlceAdiEn")) == null)
+                {
+                    helper.AddDiyanetIlce(sehirID, obj.getString("IlceID"), obj.getString("IlceAdiEn"));
+                }
+
+                if(obj.getString("IlceAdiEn").equals(cityAddress.getLocality().toUpperCase()))
+                {
+                    ilceID = obj.getString("IlceID");
+                    break;
+                }
+            }
+
+            if(ilceID == null)
+            {
+                return null;
             }
         }
 
@@ -132,27 +152,16 @@ public class HttpAPIRequestUtil
         List<DiyanetPrayerTimeDayEntity> outputList = gson.fromJson(vakitlerList, listOfDiyanetPrayerTimeEntity);
         Optional<DiyanetPrayerTimeDayEntity> element = outputList.stream().filter(x -> todayDate.equals(x.getDate())).findFirst();
 
+        //TODO: API schickt heutige Daten manchmal nicht
+        if(!element.isPresent())
+        {
+            String tomorrowDate = DateTimeFormatter.ofPattern("dd.MM.yyyy").format(LocalDateTime.now().plusDays(1));
+            element = outputList.stream().filter(x -> todayDate.equals(x.getDate())).findFirst();
+        }
+
         if(element.isPresent())
         {
-            DiyanetPrayerTimeDayEntity prayerTimeToday = element.get();
-
-            Time fajrTime = prayerTimeToday.getFajrTime();
-            Time sunRiseTime = prayerTimeToday.getSunrise_time();
-
-            Time dhuhrTime = prayerTimeToday.getDhuhrTime();
-            Time asrTime = prayerTimeToday.getAsrTime();
-
-            Time maghribTime = prayerTimeToday.getMaghribTime();
-            Time ishaTime = prayerTimeToday.getIshaTime();
-
-            return new DayPrayerTimesEntity(
-                    fajrTime,
-                    sunRiseTime,
-                    dhuhrTime,
-                    asrTime,
-                    maghribTime,
-                    ishaTime
-            );
+            return new DayPrayerTimesEntity(element.get());
         }
 
         return null;
@@ -162,6 +171,18 @@ public class HttpAPIRequestUtil
 
     public static DayPrayerTimesEntity RetrieveMuwaqqitTimes(Location targetLocation, Double fajrDegree, Double ishaDegree) throws Exception
     {
+        String todayDate = DateTimeFormatter.ofPattern("yyyy-MM-dd").format(LocalDateTime.now());
+
+        DBHelper helper = new DBHelper(AppEnvironment.context);
+
+        // TODO: CHECK TODAY DATE AS WELL
+        MuwaqqitPrayerTimeDayEntity storedMuwaqqitTime = helper.GetMuwaqqitPrayerTimesByDateLocationAndDegrees(todayDate, targetLocation.getLongitude(), targetLocation.getLatitude(), fajrDegree, ishaDegree);
+
+        if(storedMuwaqqitTime != null)
+        {
+            return new DayPrayerTimesEntity(storedMuwaqqitTime);
+        }
+
         String timeZone;
 
         try
@@ -174,8 +195,6 @@ public class HttpAPIRequestUtil
         }
 
         HashMap<String, String> queryParameters = new HashMap<>();
-
-        String todayDate = DateTimeFormatter.ofPattern("yyyy-MM-dd").format(LocalDateTime.now());
 
         queryParameters.put("d", todayDate);
         queryParameters.put("ln", Double.toString(targetLocation.getLongitude()));
@@ -214,7 +233,7 @@ public class HttpAPIRequestUtil
         }
         lastMuwaqqitAPIRequest = System.currentTimeMillis();
 
-        return HttpAPIRequestUtil.FromMuwaqqitJSONToDayPrayerTime(response);
+        return HttpAPIRequestUtil.FromMuwaqqitJSONToDayPrayerTime(response, targetLocation, fajrDegree, ishaDegree);
     }
 
     public static String RetrieveTimeZoneByLocation(Location targetLocation) throws JSONException
@@ -318,7 +337,7 @@ public class HttpAPIRequestUtil
     }
 
     // Der JSON ist in der ersten Ebene eine Liste und diese Liste enthält dann die Gebetszeiteninformationen für alle Tage des jeweiligen Monats.
-    public static DayPrayerTimesEntity FromMuwaqqitJSONToDayPrayerTime(String jsonText) throws Exception
+    public static DayPrayerTimesEntity FromMuwaqqitJSONToDayPrayerTime(String jsonText, Location location, Double fajrDegree, Double ishaDegree) throws Exception
     {
         JSONObject jsonObject = new JSONObject(jsonText);
         JSONArray list = (JSONArray) jsonObject.get("list");
@@ -333,29 +352,21 @@ public class HttpAPIRequestUtil
         Type listOfMyClassObject = new TypeToken<ArrayList<MuwaqqitPrayerTimeDayEntity>>() {}.getType();
 
         List<MuwaqqitPrayerTimeDayEntity> outputList = gson.fromJson(list.toString(), listOfMyClassObject);
+
+        DBHelper helper = new DBHelper(AppEnvironment.context);
+
+        helper.DeleteAllMuwaqqitPrayerTimesByDegrees(fajrDegree, ishaDegree);
+
+        for(MuwaqqitPrayerTimeDayEntity time : outputList)
+        {
+            helper.AddMuwaqqitPrayerTime(time, location);
+        }
+
         Optional<MuwaqqitPrayerTimeDayEntity> element = outputList.stream().filter(x -> todayDate.equals(x.getFajrDate())).findFirst();
 
         if(element.isPresent())
         {
-            MuwaqqitPrayerTimeDayEntity prayerTimeToday = element.get();
-
-            Time fajrTime = prayerTimeToday.getFajrTime();
-            Time sunRiseTime = prayerTimeToday.getSunrise_time();
-
-            Time dhuhrTime = prayerTimeToday.getDhuhrTime();
-            Time asrTime = prayerTimeToday.getAsrMithlTime();
-
-            Time maghribTime = prayerTimeToday.getMaghribTime();
-            Time ishaTime = prayerTimeToday.getIshaTime();
-
-            return new DayPrayerTimesEntity(
-                    fajrTime,
-                    sunRiseTime,
-                    dhuhrTime,
-                    asrTime,
-                    maghribTime,
-                    ishaTime
-            );
+            return new DayPrayerTimesEntity(element.get());
         }
 
         return null;

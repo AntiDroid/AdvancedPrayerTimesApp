@@ -2,27 +2,50 @@ package com.example.advancedprayertimes.Logic.Entities;
 
 import com.example.advancedprayertimes.Logic.Enums.EPrayerTimeType;
 
-import java.sql.Time;
 import java.util.Date;
 
 public class DayPrayerTimesEntity
 {
-    private Time _fajrTime;
-    private Time _sunRiseTime;
+    private Date _fajrTime;
+    private Date _sunRiseTime;
 
-    private Time _dhuhrTime;
-    private Time _asrTime;
+    private Date _dhuhrTime;
+    private Date _asrTime;
 
-    private Time _maghribTime;
-    private Time _ishaTime;
+    private Date _maghribTime;
+    private Date _ishaTime;
+
+    public DayPrayerTimesEntity(MuwaqqitPrayerTimeDayEntity muwaqqitTime)
+    {
+        this(
+                muwaqqitTime.getFajrTime(),
+                muwaqqitTime.getSunriseTime(),
+                muwaqqitTime.getDhuhrTime(),
+                muwaqqitTime.getAsrMithlTime(),
+                muwaqqitTime.getMaghribTime(),
+                muwaqqitTime.getIshaTime()
+            );
+    }
+
+    public DayPrayerTimesEntity(DiyanetPrayerTimeDayEntity diyanetTime)
+    {
+        this(
+                diyanetTime.getFajrTime(),
+                diyanetTime.getSunriseTime(),
+                diyanetTime.getDhuhrTime(),
+                diyanetTime.getAsrTime(),
+                diyanetTime.getMaghribTime(),
+                diyanetTime.getIshaTime()
+            );
+    }
 
     public DayPrayerTimesEntity(
-            Time fajrTime,
-            Time sunRiseTime,
-            Time dhuhrTime,
-            Time asrTime,
-            Time maghribTime,
-            Time ishaTime
+            Date fajrTime,
+            Date sunRiseTime,
+            Date dhuhrTime,
+            Date asrTime,
+            Date maghribTime,
+            Date ishaTime
     )
     {
         this._fajrTime = fajrTime;
@@ -35,7 +58,7 @@ public class DayPrayerTimesEntity
         this._ishaTime = ishaTime;
     }
 
-    public Time GetTimeByType(EPrayerTimeType prayerTimeType)
+    public Date GetTimeByType(EPrayerTimeType prayerTimeType)
     {
         switch (prayerTimeType)
         {
@@ -68,62 +91,62 @@ public class DayPrayerTimesEntity
 
     // #########################################################
 
-    public Time getFajrTime()
+    public Date getFajrTime()
     {
         return _fajrTime;
     }
 
-    public void setFajrTime(Time fajrTime)
+    public void setFajrTime(Date fajrTime)
     {
         _fajrTime = fajrTime;
     }
 
-    public Time getSunRiseTime()
+    public Date getSunRiseTime()
     {
         return _sunRiseTime;
     }
 
-    public void setSunRiseTime(Time sunRiseTime)
+    public void setSunRiseTime(Date sunRiseTime)
     {
         _sunRiseTime = sunRiseTime;
     }
 
-    public Time getDhuhrTime()
+    public Date getDhuhrTime()
     {
         return _dhuhrTime;
     }
 
-    public void setDhuhrTime(Time dhuhrTime)
+    public void setDhuhrTime(Date dhuhrTime)
     {
         _dhuhrTime = dhuhrTime;
     }
 
-    public Time getAsrTime()
+    public Date getAsrTime()
     {
         return _asrTime;
     }
 
-    public void setAsrTime(Time asrTime)
+    public void setAsrTime(Date asrTime)
     {
         _asrTime = asrTime;
     }
 
-    public Time getMaghribTime()
+    public Date getMaghribTime()
     {
         return _maghribTime;
     }
 
-    public void setMaghribTime(Time maghribTime)
+    public void setMaghribTime(Date maghribTime)
     {
         _maghribTime = maghribTime;
     }
 
-    public Time getIshaTime()
+    public Date getIshaTime()
     {
         return _ishaTime;
     }
 
-    public void setIshaTime(Time ishaTime)
+    public void setIshaTime(Date ishaTime)
     {
         _ishaTime = ishaTime;
     }

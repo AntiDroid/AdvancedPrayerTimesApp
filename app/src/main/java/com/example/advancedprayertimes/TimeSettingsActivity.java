@@ -90,7 +90,7 @@ public class TimeSettingsActivity extends AppCompatActivity
             ishaCalculationDegrees = Double.parseDouble(ishaDegreesListPreference.getValue());
         }
 
-        AppEnvironment.DayPrayerTimeSettings.put(prayerTimeType, new PrayerTimeSettingsEntity(api, minuteAdjustment, fajrCalculationDegrees, ishaCalculationDegrees));
+        AppEnvironment.PrayerTimeSettingsByPrayerTimeTypeHashMap.put(prayerTimeType, new PrayerTimeSettingsEntity(api, minuteAdjustment, fajrCalculationDegrees, ishaCalculationDegrees));
         super.onStop();
     }
 
@@ -166,9 +166,9 @@ public class TimeSettingsActivity extends AppCompatActivity
 
                 // SET CURRENT CONFIGURATION FOR PRAYERTIMETYPE
 
-                if(AppEnvironment.DayPrayerTimeSettings.containsKey(prayerTimeType))
+                if(AppEnvironment.PrayerTimeSettingsByPrayerTimeTypeHashMap.containsKey(prayerTimeType))
                 {
-                    PrayerTimeSettingsEntity settings = AppEnvironment.DayPrayerTimeSettings.get(prayerTimeType);
+                    PrayerTimeSettingsEntity settings = AppEnvironment.PrayerTimeSettingsByPrayerTimeTypeHashMap.get(prayerTimeType);
 
                     if(settings != null)
                     {
