@@ -81,7 +81,7 @@ public class TimeOverviewActivity extends AppCompatActivity
     {
         if(!Places.isInitialized())
         {
-            Places.initialize(getApplicationContext(), this.getResources().getString(R.string.GooglePlacesAPIKey));
+            Places.initialize(getApplicationContext(), BuildConfig.GP_API_KEY);
         }
 
         _placesClient = Places.createClient(getApplicationContext());

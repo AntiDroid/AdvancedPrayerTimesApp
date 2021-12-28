@@ -4,7 +4,6 @@
     <string name="tab_text_2">Tab 2</string>
     <string name="title_activity_settings">SettingsActivity</string>
     <string name="no_time_display_text">xx:xx</string>
-    <string name="GooglePlacesAPIKey">AIzaSyC9zrr1y1u31vDHMG0WR_1hZ5e-jrCl8eM</string>
 
     <!-- Preference Titles -->
     <string name="messages_header">Messages</string>
