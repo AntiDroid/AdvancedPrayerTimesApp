@@ -17,7 +17,7 @@ import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.util.Date;
 
-public class TestCustomView extends View
+public class PrayerTimeGraphicView extends View
 {
     private static final int backgroundRectangleColor = Color.argb(255, 35,41,53);
     private static Paint backgroundRectanglePaint = new Paint()
@@ -79,7 +79,7 @@ public class TestCustomView extends View
     public static DateFormat dateFormat = new SimpleDateFormat("HH:mm");
     private PrayerEntity _displayPrayerEntity = null;
 
-    public TestCustomView(Context context, AttributeSet attrs)
+    public PrayerTimeGraphicView(Context context, AttributeSet attrs)
     {
         super(context, attrs);
     }

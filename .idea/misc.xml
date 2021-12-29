@@ -5,14 +5,20 @@
       <map>
         <entry key="..\:/Users/talip/AndroidStudioProjects/AdvancedPrayerTimes/app/src/main/res/layout/PrayerTimeSettingsActivity.xml" value="0.18885135135135134" />
         <entry key="..\:/Users/talip/AndroidStudioProjects/AdvancedPrayerTimes/app/src/main/res/layout/activity_main.xml" value="0.23227206946454415" />
+        <entry key="..\:/Users/talip/AndroidStudioProjects/AdvancedPrayerTimes/app/src/main/res/layout/fragment_first.xml" value="0.19763513513513514" />
+        <entry key="..\:/Users/talip/AndroidStudioProjects/AdvancedPrayerTimes/app/src/main/res/layout/fragment_fragment1.xml" value="0.19763513513513514" />
+        <entry key="..\:/Users/talip/AndroidStudioProjects/AdvancedPrayerTimes/app/src/main/res/layout/fragment_fragment2.xml" value="0.19763513513513514" />
+        <entry key="..\:/Users/talip/AndroidStudioProjects/AdvancedPrayerTimes/app/src/main/res/layout/fragment_fragment3.xml" value="0.19763513513513514" />
         <entry key="..\:/Users/talip/AndroidStudioProjects/AdvancedPrayerTimes/app/src/main/res/layout/fragment_main.xml" value="0.36684782608695654" />
+        <entry key="..\:/Users/talip/AndroidStudioProjects/AdvancedPrayerTimes/app/src/main/res/layout/fragment_second.xml" value="0.19763513513513514" />
+        <entry key="..\:/Users/talip/AndroidStudioProjects/AdvancedPrayerTimes/app/src/main/res/layout/fragment_third.xml" value="0.19763513513513514" />
         <entry key="..\:/Users/talip/AndroidStudioProjects/AdvancedPrayerTimes/app/src/main/res/layout/overview_activity.xml" value="0.4" />
         <entry key="..\:/Users/talip/AndroidStudioProjects/AdvancedPrayerTimes/app/src/main/res/layout/prayer_time_settings_activity.xml" value="0.264" />
         <entry key="..\:/Users/talip/AndroidStudioProjects/AdvancedPrayerTimes/app/src/main/res/layout/prayer_times_overview_activity.xml" value="0.1527027027027027" />
         <entry key="..\:/Users/talip/AndroidStudioProjects/AdvancedPrayerTimes/app/src/main/res/layout/rounded_corner.xml" value="0.12432432432432433" />
         <entry key="..\:/Users/talip/AndroidStudioProjects/AdvancedPrayerTimes/app/src/main/res/layout/settings_activity.xml" value="0.2797567332754127" />
-        <entry key="..\:/Users/talip/AndroidStudioProjects/AdvancedPrayerTimes/app/src/main/res/layout/time_overview_activity.xml" value="0.8" />
-        <entry key="..\:/Users/talip/AndroidStudioProjects/AdvancedPrayerTimes/app/src/main/res/layout/time_settings_activity.xml" value="0.17060810810810811" />
+        <entry key="..\:/Users/talip/AndroidStudioProjects/AdvancedPrayerTimes/app/src/main/res/layout/time_overview_activity.xml" value="0.264" />
+        <entry key="..\:/Users/talip/AndroidStudioProjects/AdvancedPrayerTimes/app/src/main/res/layout/time_settings_activity.xml" value="0.176" />
         <entry key="..\:/Users/talip/AndroidStudioProjects/AdvancedPrayerTimes/app/src/main/res/xml/root_preferences.xml" value="0.2" />
       </map>
     </option>

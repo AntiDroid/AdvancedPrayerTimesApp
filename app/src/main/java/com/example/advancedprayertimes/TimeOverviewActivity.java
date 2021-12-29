@@ -3,10 +3,7 @@ package com.example.advancedprayertimes;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.ColorFilter;
-import android.graphics.drawable.Drawable;
 import android.location.Address;
 import android.location.Location;
 import android.os.Bundle;
@@ -19,7 +16,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.AppCompatEditText;
 import androidx.appcompat.widget.AppCompatImageButton;
@@ -69,7 +65,7 @@ public class TimeOverviewActivity extends AppCompatActivity
         setContentView(binding.getRoot());
 
         binding.loadPrayerTimesButton.setOnClickListener(view -> asyncLoadPrayerTimes());
-        binding.initiateRedrawingOfPrayerGraphicButton.setOnClickListener(view -> binding.testCustomView.invalidate());
+        binding.initiateRedrawingOfPrayerGraphicButton.setOnClickListener(view -> binding.prayerTimeGraphicView.invalidate());
 
         configurePrayerTimeTextViews();
         configureGooglePlacesAPI();
@@ -86,22 +82,13 @@ public class TimeOverviewActivity extends AppCompatActivity
 
         _placesClient = Places.createClient(getApplicationContext());
 
-        autocompleteSupportFragment = (AutocompleteSupportFragment) getSupportFragmentManager().findFragmentById(R.id.autocomplete_fragment);
+        autocompleteSupportFragment = (AutocompleteSupportFragment) getSupportFragmentManager().findFragmentById(R.id.googlePlaceSearchAutoCompleteFragment);
         autocompleteSupportFragment.setPlaceFields(Arrays.asList(Place.Field.ID, Place.Field.LAT_LNG, Place.Field.NAME));
-
-
 
         AppCompatEditText searchFieldEditText = autocompleteSupportFragment.getView().findViewById(R.id.places_autocomplete_search_input);
         AppCompatImageButton clearSearchFieldButton = autocompleteSupportFragment.getView().findViewById(R.id.places_autocomplete_clear_button);
-
-
-
         autocompleteSupportFragment.getView().setBackgroundColor(Color.LTGRAY);
         autocompleteSupportFragment.getView().setBackgroundResource(R.drawable.rounded_corner);
-
-
-
-
 
         searchFieldEditText.setTextColor(Color.BLACK);
         clearSearchFieldButton.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener()
@@ -291,6 +278,21 @@ public class TimeOverviewActivity extends AppCompatActivity
             targetLocation.setLatitude(AppEnvironment.place.getLatitude());//your coords of course
             targetLocation.setLongitude(AppEnvironment.place.getLongitude());
 
+            if(AppEnvironment.PrayerTimeSettingsByPrayerTimeTypeHashMap.size() == 0)
+            {
+                new Handler(Looper.getMainLooper())
+                        .post(() ->
+                        {
+                            new AlertDialog.Builder(this)
+                                    .setTitle("NO SETTINGS AVAILABLE")
+                                    .setMessage("There are no prayer time settings!")
+                                    .show();
+                            this.resetLoadingUIFeedback();
+                        }
+                    );
+                return;
+            }
+
             retrieveTimes(AppEnvironment.PrayerTimeSettingsByPrayerTimeTypeHashMap, targetLocation);
             assignCorrectTimesToPrayers();
 
@@ -419,7 +421,8 @@ public class TimeOverviewActivity extends AppCompatActivity
             LocalDateTime currentDate = LocalDateTime.now();
             Time currentTime = new Time(currentDate.getHour(), currentDate.getMinute(), currentDate.getSecond());
 
-            binding.testCustomView.setDisplayPrayerEntity(PrayerEntity.GetPrayerByTime(currentTime));
+            binding.prayerTimeGraphicView.setDisplayPrayerEntity(PrayerEntity.GetPrayerByTime(currentTime));
+            binding.prayerTimeGraphicView.invalidate();
         }
         catch(Exception e)
         {

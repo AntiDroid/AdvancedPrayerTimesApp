@@ -26,6 +26,7 @@ public class DataManagementUtil
     public static void SaveLocalData(SharedPreferences sharedPref, TimeOverviewActivityBinding binding)
     {
         SharedPreferences.Editor editor = sharedPref.edit();
+        sharedPref.edit().clear().commit();
 
         // SAVE PRAYER TIME DATA
         for(PrayerEntity prayerEntity : PrayerEntity.prayers)
@@ -123,9 +124,6 @@ public class DataManagementUtil
                 e.printStackTrace();
             }
         }
-
-        // TODO: Commit und dergleichen hinterfragen. Wieso werden Keys nicht entfernt?
-        sharedPref.edit().clear().commit();
     }
 
     public static Map<EPrayerTimeType, DayPrayerTimesEntity> RetrieveDiyanetTimes(Context context, Map<EPrayerTimeType, PrayerTimeSettingsEntity> toBeCalculatedPrayerTimes, Address cityAddress) throws Exception
