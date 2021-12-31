@@ -1,6 +1,6 @@
 package com.example.advancedprayertimes.Logic.Entities;
 
-import com.example.advancedprayertimes.Logic.Enums.EPrayerTimeType;
+import com.example.advancedprayertimes.Logic.Enums.EPrayerPointInTimeType;
 
 import java.sql.Time;
 import java.util.ArrayList;
@@ -11,15 +11,15 @@ public class PrayerEntity
 {
     private String _title;
 
-    private EPrayerTimeType _beginningTimeType;
-    private EPrayerTimeType _endTimeType;
+    private EPrayerPointInTimeType _beginningTimeType;
+    private EPrayerPointInTimeType _endTimeType;
 
     private Date _beginningTime = new Date(0);
     private Date _endTime = new Date(0);
 
     private PrayerEntity(){ }
 
-    private PrayerEntity(String prayerName, EPrayerTimeType beginningType, EPrayerTimeType endType)
+    private PrayerEntity(String prayerName, EPrayerPointInTimeType beginningType, EPrayerPointInTimeType endType)
     {
         this._title = prayerName;
         this._beginningTimeType = beginningType;
@@ -29,11 +29,11 @@ public class PrayerEntity
     public static ArrayList<PrayerEntity> prayers = new ArrayList<PrayerEntity>()
     {
         {
-            add(new PrayerEntity("Fajr", EPrayerTimeType.FajrBeginning, EPrayerTimeType.FajrEnd));
-            add(new PrayerEntity("Dhuhr", EPrayerTimeType.DhuhrBeginning, EPrayerTimeType.DhuhrEnd));
-            add(new PrayerEntity("Asr", EPrayerTimeType.AsrBeginning, EPrayerTimeType.AsrEnd));
-            add(new PrayerEntity("Maghrib", EPrayerTimeType.MaghribBeginning, EPrayerTimeType.MaghribEnd));
-            add(new PrayerEntity("Isha", EPrayerTimeType.IshaBeginning, EPrayerTimeType.IshaEnd));
+            add(new PrayerEntity("Fajr", EPrayerPointInTimeType.FajrBeginning, EPrayerPointInTimeType.FajrEnd));
+            add(new PrayerEntity("Dhuhr", EPrayerPointInTimeType.DhuhrBeginning, EPrayerPointInTimeType.DhuhrEnd));
+            add(new PrayerEntity("Asr", EPrayerPointInTimeType.AsrBeginning, EPrayerPointInTimeType.AsrEnd));
+            add(new PrayerEntity("Maghrib", EPrayerPointInTimeType.MaghribBeginning, EPrayerPointInTimeType.MaghribEnd));
+            add(new PrayerEntity("Isha", EPrayerPointInTimeType.IshaBeginning, EPrayerPointInTimeType.IshaEnd));
         }
     };
 
@@ -42,13 +42,23 @@ public class PrayerEntity
         Optional<PrayerEntity> targetPrayer = prayers.stream()
                 .filter(x -> time.getTime() > x.getBeginningTime().getTime()
                                 &&
-                        // TODO: FIX ISHA
-                        (time.getTime() < x.getEndTime().getTime() || x.getBeginningTime().getTime() > x.getEndTime().getTime()))
+                        time.getTime() < x.getEndTime().getTime() )
                 .findFirst();
 
         if(targetPrayer.isPresent())
         {
             return targetPrayer.get();
+        }
+        // TODO: FIX ISHA
+        else if(
+                // before fajr beginning
+                time.getTime() < prayers.get(0).getBeginningTime().getTime()
+                &&
+                // before isha end
+                time.getTime() < prayers.get(4).getEndTime().getTime()
+        )
+        {
+            return prayers.get(4);
         }
 
         return null;
@@ -66,22 +76,22 @@ public class PrayerEntity
         _title = title;
     }
 
-    public EPrayerTimeType getBeginningTimeType()
+    public EPrayerPointInTimeType getBeginningTimeType()
     {
         return _beginningTimeType;
     }
 
-    public void setBeginningTimeType(EPrayerTimeType beginningTimeType)
+    public void setBeginningTimeType(EPrayerPointInTimeType beginningTimeType)
     {
         _beginningTimeType = beginningTimeType;
     }
 
-    public EPrayerTimeType getEndTimeType()
+    public EPrayerPointInTimeType getEndTimeType()
     {
         return _endTimeType;
     }
 
-    public void setEndTimeType(EPrayerTimeType endTimeType)
+    public void setEndTimeType(EPrayerPointInTimeType endTimeType)
     {
         _endTimeType = endTimeType;
     }

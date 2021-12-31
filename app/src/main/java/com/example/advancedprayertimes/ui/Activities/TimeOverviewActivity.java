@@ -1,4 +1,4 @@
-package com.example.advancedprayertimes;
+package com.example.advancedprayertimes.UI.Activities;
 
 import android.app.AlertDialog;
 import android.content.Intent;
@@ -20,15 +20,18 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.AppCompatEditText;
 import androidx.appcompat.widget.AppCompatImageButton;
 
+import com.example.advancedprayertimes.BuildConfig;
 import com.example.advancedprayertimes.Logic.AppEnvironment;
 import com.example.advancedprayertimes.Logic.DataManagementUtil;
 import com.example.advancedprayertimes.Logic.Entities.CustomPlaceEntity;
 import com.example.advancedprayertimes.Logic.Entities.DayPrayerTimesEntity;
 import com.example.advancedprayertimes.Logic.Entities.PrayerEntity;
 import com.example.advancedprayertimes.Logic.Entities.PrayerTimeSettingsEntity;
+import com.example.advancedprayertimes.Logic.Enums.EPrayerPointInTimeType;
 import com.example.advancedprayertimes.Logic.Enums.EPrayerTimeType;
 import com.example.advancedprayertimes.Logic.Enums.ESupportedAPIs;
 import com.example.advancedprayertimes.Logic.LocationUtil;
+import com.example.advancedprayertimes.R;
 import com.example.advancedprayertimes.databinding.TimeOverviewActivityBinding;
 import com.google.android.gms.common.api.Status;
 import com.google.android.libraries.places.api.Places;
@@ -50,6 +53,7 @@ import java.util.Map;
 public class TimeOverviewActivity extends AppCompatActivity
 {
     private TimeOverviewActivityBinding binding = null;
+    private HashMap<EPrayerPointInTimeType, TextView> prayerPointInTimeTypeWithAssociatedTextView = new HashMap<>();
     private HashMap<EPrayerTimeType, TextView> prayerTimeTypeWithAssociatedTextView = new HashMap<>();
 
     PlacesClient _placesClient;
@@ -133,35 +137,45 @@ public class TimeOverviewActivity extends AppCompatActivity
     protected void onResume()
     {
         SharedPreferences sharedPref = this.getPreferences(MODE_PRIVATE);
-        DataManagementUtil.RetrieveLocalData(sharedPref, binding, this.prayerTimeTypeWithAssociatedTextView.keySet());
+        DataManagementUtil.RetrieveLocalData(sharedPref, binding, this.prayerPointInTimeTypeWithAssociatedTextView.keySet());
         this.applyTimeSettingsToOverview();
         super.onResume();
     }
 
     private void configurePrayerTimeTextViews()
     {
-        this.prayerTimeTypeWithAssociatedTextView.put(EPrayerTimeType.FajrBeginning, binding.fajrTimeBeginningTextLabel);
-        this.prayerTimeTypeWithAssociatedTextView.put(EPrayerTimeType.FajrEnd, binding.fajrTimeEndTextLabel);
+        prayerTimeTypeWithAssociatedTextView.put(EPrayerTimeType.Fajr, binding.fajrTextLabel);
+        this.prayerPointInTimeTypeWithAssociatedTextView.put(EPrayerPointInTimeType.FajrBeginning, binding.fajrTimeBeginningTextLabel);
+        this.prayerPointInTimeTypeWithAssociatedTextView.put(EPrayerPointInTimeType.FajrEnd, binding.fajrTimeEndTextLabel);
 
-        this.prayerTimeTypeWithAssociatedTextView.put(EPrayerTimeType.DhuhrBeginning, binding.dhuhrTimeBeginningTextLabel);
-        this.prayerTimeTypeWithAssociatedTextView.put(EPrayerTimeType.DhuhrEnd, binding.dhuhrTimeEndTextLabel);
+        prayerTimeTypeWithAssociatedTextView.put(EPrayerTimeType.Dhuhr, binding.dhuhrTextLabel);
+        this.prayerPointInTimeTypeWithAssociatedTextView.put(EPrayerPointInTimeType.DhuhrBeginning, binding.dhuhrTimeBeginningTextLabel);
+        this.prayerPointInTimeTypeWithAssociatedTextView.put(EPrayerPointInTimeType.DhuhrEnd, binding.dhuhrTimeEndTextLabel);
 
-        this.prayerTimeTypeWithAssociatedTextView.put(EPrayerTimeType.AsrBeginning, binding.asrTimeBeginningTextLabel);
-        this.prayerTimeTypeWithAssociatedTextView.put(EPrayerTimeType.AsrEnd, binding.asrTimeEndTextLabel);
+        prayerTimeTypeWithAssociatedTextView.put(EPrayerTimeType.Asr, binding.asrTextLabel);
+        this.prayerPointInTimeTypeWithAssociatedTextView.put(EPrayerPointInTimeType.AsrBeginning, binding.asrTimeBeginningTextLabel);
+        this.prayerPointInTimeTypeWithAssociatedTextView.put(EPrayerPointInTimeType.AsrEnd, binding.asrTimeEndTextLabel);
 
-        this.prayerTimeTypeWithAssociatedTextView.put(EPrayerTimeType.MaghribBeginning, binding.maghribTimeBeginningTextLabel);
-        this.prayerTimeTypeWithAssociatedTextView.put(EPrayerTimeType.MaghribEnd, binding.maghribTimeEndTextLabel);
+        prayerTimeTypeWithAssociatedTextView.put(EPrayerTimeType.Maghrib, binding.maghribTextLabel);
+        this.prayerPointInTimeTypeWithAssociatedTextView.put(EPrayerPointInTimeType.MaghribBeginning, binding.maghribTimeBeginningTextLabel);
+        this.prayerPointInTimeTypeWithAssociatedTextView.put(EPrayerPointInTimeType.MaghribEnd, binding.maghribTimeEndTextLabel);
 
-        this.prayerTimeTypeWithAssociatedTextView.put(EPrayerTimeType.IshaBeginning, binding.ishaTimeBeginningTextLabel);
-        this.prayerTimeTypeWithAssociatedTextView.put(EPrayerTimeType.IshaEnd, binding.ishaTimeEndTextLabel);
+        prayerTimeTypeWithAssociatedTextView.put(EPrayerTimeType.Isha, binding.ishaTextLabel);
+        this.prayerPointInTimeTypeWithAssociatedTextView.put(EPrayerPointInTimeType.IshaBeginning, binding.ishaTimeBeginningTextLabel);
+        this.prayerPointInTimeTypeWithAssociatedTextView.put(EPrayerPointInTimeType.IshaEnd, binding.ishaTimeEndTextLabel);
 
         for(Map.Entry<EPrayerTimeType, TextView> entry : this.prayerTimeTypeWithAssociatedTextView.entrySet())
         {
-            EPrayerTimeType prayerTimeType = entry.getKey();
             TextView prayerTimeTextLabel = entry.getValue();
 
-            prayerTimeTextLabel.setOnClickListener(view -> openSettingsForSpecificPrayerTimeType(prayerTimeType));
-            prayerTimeTextLabel.setOnTouchListener((View view, MotionEvent event) -> doTouchStuff(view, event));
+            prayerTimeTextLabel.setOnClickListener(view -> openSettingsForSpecificPrayerTimeType(entry.getKey()));
+        }
+
+        for(Map.Entry<EPrayerPointInTimeType, TextView> entry : this.prayerPointInTimeTypeWithAssociatedTextView.entrySet())
+        {
+            TextView prayerTimeTextLabel = entry.getValue();
+
+            prayerTimeTextLabel.setOnTouchListener((View view, MotionEvent event) -> doTouchStuff(view, event, entry.getKey()));
         }
     }
 
@@ -176,7 +190,7 @@ public class TimeOverviewActivity extends AppCompatActivity
 
     Map<View, Long> lastTouchBeginnTimePerTextViewHashMap = new HashMap<>();
 
-    private boolean doTouchStuff(View textView, MotionEvent event)
+    private boolean doTouchStuff(View textView, MotionEvent event, EPrayerPointInTimeType prayerPointInTimeType)
     {
         boolean dontPassEventOnToOtherListeners = false;
 
@@ -200,13 +214,11 @@ public class TimeOverviewActivity extends AppCompatActivity
                         // to prevent the regular click event to trigger right after
                         dontPassEventOnToOtherListeners = true;
 
-                        EPrayerTimeType prayerTimeType = this.prayerTimeTypeWithAssociatedTextView.entrySet().stream().filter(x -> x.getValue() == textView).findFirst().get().getKey();
-
                         String infoValuesText = "No settings";
 
-                        if(AppEnvironment.PrayerTimeSettingsByPrayerTimeTypeHashMap.containsKey(prayerTimeType))
+                        if(AppEnvironment.PrayerTimeSettingsByPrayerTimeTypeHashMap.containsKey(prayerPointInTimeType))
                         {
-                            PrayerTimeSettingsEntity settings = AppEnvironment.PrayerTimeSettingsByPrayerTimeTypeHashMap.get(prayerTimeType);
+                            PrayerTimeSettingsEntity settings = AppEnvironment.PrayerTimeSettingsByPrayerTimeTypeHashMap.get(prayerPointInTimeType);
 
                             infoValuesText = "API:\n" + settings.get_api().toString()
                                     + "\n\nMinute adjustment:\n" + settings.get_minuteAdjustment();
@@ -240,7 +252,7 @@ public class TimeOverviewActivity extends AppCompatActivity
     {
         try
         {
-            Intent myIntent = new Intent(TimeOverviewActivity.this, TimeSettingsActivity.class);
+            Intent myIntent = new Intent(TimeOverviewActivity.this, PrayerSettingsActivity.class);
             myIntent.putExtra(INTENT_EXTRA, prayerTimeType); //Optional parameters
             TimeOverviewActivity.this.startActivity(myIntent);
         }
@@ -250,8 +262,8 @@ public class TimeOverviewActivity extends AppCompatActivity
         }
     }
 
-    Map<EPrayerTimeType, DayPrayerTimesEntity> muwaqqitTimesHashMap = new HashMap<>();
-    Map<EPrayerTimeType, DayPrayerTimesEntity> diyanetTimesHashMap = new HashMap<>();
+    Map<EPrayerPointInTimeType, DayPrayerTimesEntity> muwaqqitTimesHashMap = new HashMap<>();
+    Map<EPrayerPointInTimeType, DayPrayerTimesEntity> diyanetTimesHashMap = new HashMap<>();
 
     public void loadPrayerTimes()
     {
@@ -318,7 +330,7 @@ public class TimeOverviewActivity extends AppCompatActivity
         binding.progressBar.setVisibility(View.INVISIBLE);
     }
 
-    private void retrieveTimes(Map<EPrayerTimeType, PrayerTimeSettingsEntity> toBeCalculatedPrayerTimes, Location targetLocation) throws Exception
+    private void retrieveTimes(Map<EPrayerPointInTimeType, PrayerTimeSettingsEntity> toBeCalculatedPrayerTimes, Location targetLocation) throws Exception
     {
         Address cityAddress = LocationUtil.RetrieveCityByLocation(this, targetLocation);
 
@@ -340,7 +352,7 @@ public class TimeOverviewActivity extends AppCompatActivity
 
     private static final DateFormat timeFormat = new SimpleDateFormat("HH:mm");
 
-    private Date getCorrectTime(EPrayerTimeType prayerTimeType)
+    private Date getCorrectTime(EPrayerPointInTimeType prayerTimeType)
     {
         if(AppEnvironment.PrayerTimeSettingsByPrayerTimeTypeHashMap.containsKey(prayerTimeType))
         {
@@ -411,8 +423,8 @@ public class TimeOverviewActivity extends AppCompatActivity
                     endText = timeFormat.format(prayerEntity.getEndTime().getTime());
                 }
 
-                TextView beginningTimeTextView = this.prayerTimeTypeWithAssociatedTextView.get(prayerEntity.getBeginningTimeType());
-                TextView endTimeTextView = this.prayerTimeTypeWithAssociatedTextView.get(prayerEntity.getEndTimeType());
+                TextView beginningTimeTextView = this.prayerPointInTimeTypeWithAssociatedTextView.get(prayerEntity.getBeginningTimeType());
+                TextView endTimeTextView = this.prayerPointInTimeTypeWithAssociatedTextView.get(prayerEntity.getEndTimeType());
 
                 beginningTimeTextView.setText(beginningText);
                 endTimeTextView.setText(endText);

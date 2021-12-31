@@ -1,4 +1,4 @@
-package com.example.advancedprayertimes.ui.main;
+package com.example.advancedprayertimes.UI;
 
 import android.content.Context;
 import android.graphics.Canvas;
@@ -132,6 +132,11 @@ public class PrayerTimeGraphicView extends View
             long timeOfOneDay = new Date(0, 0, 1, 0, 0, 0).getTime() - new Date(0, 0, 0, 0, 0, 0).getTime();;
 
             g += timeOfOneDay;
+
+            if(indicatorTime < this.getDisplayPrayerEntity().getBeginningTime().getTime() && indicatorTime < this.getDisplayPrayerEntity().getEndTime().getTime())
+            {
+                indicatorTime += timeOfOneDay;
+            }
         }
 
         long a = indicatorTime - this.getDisplayPrayerEntity().getBeginningTime().getTime();

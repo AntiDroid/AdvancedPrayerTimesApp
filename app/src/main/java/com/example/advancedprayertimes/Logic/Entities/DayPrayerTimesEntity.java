@@ -1,6 +1,6 @@
 package com.example.advancedprayertimes.Logic.Entities;
 
-import com.example.advancedprayertimes.Logic.Enums.EPrayerTimeType;
+import com.example.advancedprayertimes.Logic.Enums.EPrayerPointInTimeType;
 
 import java.util.Date;
 
@@ -58,7 +58,7 @@ public class DayPrayerTimesEntity
         this._ishaTime = ishaTime;
     }
 
-    public Date GetTimeByType(EPrayerTimeType prayerTimeType)
+    public Date GetTimeByType(EPrayerPointInTimeType prayerTimeType)
     {
         switch (prayerTimeType)
         {

@@ -1,8 +1,7 @@
 package com.example.advancedprayertimes.Logic.Entities;
 
-import com.example.advancedprayertimes.Logic.Enums.EPrayerTimeType;
+import com.example.advancedprayertimes.Logic.Enums.EPrayerPointInTimeType;
 import com.example.advancedprayertimes.Logic.Enums.ESupportedAPIs;
-import com.google.android.libraries.places.api.model.Place;
 
 import java.util.HashSet;
 import java.util.stream.Collectors;
@@ -23,16 +22,16 @@ public class PrayerTimeSettingsEntity
         this._ishaCalculationDegree = ishaCalculationDegree;
     }
 
-    public static HashSet<EPrayerTimeType> DEGREE_TYPES =
-            Stream.of(EPrayerTimeType.FajrBeginning, EPrayerTimeType.MaghribEnd, EPrayerTimeType.IshaBeginning, EPrayerTimeType.IshaEnd)
+    public static HashSet<EPrayerPointInTimeType> DEGREE_TYPES =
+            Stream.of(EPrayerPointInTimeType.FajrBeginning, EPrayerPointInTimeType.MaghribEnd, EPrayerPointInTimeType.IshaBeginning, EPrayerPointInTimeType.IshaEnd)
                     .collect(Collectors.toCollection(HashSet::new));
 
-    public static HashSet<EPrayerTimeType> ISHA_DEGREE_TYPES =
-            Stream.of(EPrayerTimeType.MaghribEnd, EPrayerTimeType.IshaBeginning)
+    public static HashSet<EPrayerPointInTimeType> ISHA_DEGREE_TYPES =
+            Stream.of(EPrayerPointInTimeType.MaghribEnd, EPrayerPointInTimeType.IshaBeginning)
                     .collect(Collectors.toCollection(HashSet::new));
 
-    public static HashSet<EPrayerTimeType> FAJR_DEGREE_TYPES =
-            Stream.of(EPrayerTimeType.FajrBeginning, EPrayerTimeType.IshaEnd)
+    public static HashSet<EPrayerPointInTimeType> FAJR_DEGREE_TYPES =
+            Stream.of(EPrayerPointInTimeType.FajrBeginning, EPrayerPointInTimeType.IshaEnd)
                     .collect(Collectors.toCollection(HashSet::new));
 
     // ############################

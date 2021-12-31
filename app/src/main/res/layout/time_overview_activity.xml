@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/dark_background"
-    tools:context=".TimeOverviewActivity">
+    tools:context=".UI.Activities.TimeOverviewActivity">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/view_pager"
@@ -319,7 +319,7 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
-        <com.example.advancedprayertimes.ui.main.PrayerTimeGraphicView
+        <com.example.advancedprayertimes.UI.PrayerTimeGraphicView
             android:id="@+id/prayerTimeGraphicView"
             android:layout_width="395dp"
             android:layout_height="242dp"
