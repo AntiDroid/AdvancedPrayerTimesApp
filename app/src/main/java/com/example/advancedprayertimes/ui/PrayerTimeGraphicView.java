@@ -9,13 +9,11 @@ import android.graphics.RectF;
 import android.util.AttributeSet;
 import android.view.View;
 
-import com.example.advancedprayertimes.Logic.Entities.PrayerEntity;
+import com.example.advancedprayertimes.Logic.Entities.PrayerTimeEntity;
 
-import java.sql.Time;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
-import java.util.Date;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 
 public class PrayerTimeGraphicView extends View
 {
@@ -76,12 +74,14 @@ public class PrayerTimeGraphicView extends View
 
     private static final int currentTimeIndicatorLineColor = Color.WHITE;
 
-    public static DateFormat dateFormat = new SimpleDateFormat("HH:mm");
-    private PrayerEntity _displayPrayerEntity = null;
+    public static DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("HH:mm");
+    private PrayerTimeEntity _displayPrayerTimeEntity = null;
 
     public PrayerTimeGraphicView(Context context, AttributeSet attrs)
     {
         super(context, attrs);
+
+        this.setBackgroundColor(backgroundRectangleColor);
     }
 
     @Override
@@ -89,11 +89,7 @@ public class PrayerTimeGraphicView extends View
     {
         super.onDraw(canvas);
 
-        // BACKGROUND RECTANGLE
-        Rect backgroundRectangle = new Rect(40, 0, 1000, 600);
-        canvas.drawRect(backgroundRectangle, backgroundRectanglePaint);
-
-        if(this.getDisplayPrayerEntity() == null)
+        if(this.getDisplayPrayerEntity() == null || this.getDisplayPrayerEntity().getDuration() == 0)
         {
             return;
         }
@@ -101,11 +97,11 @@ public class PrayerTimeGraphicView extends View
         //TODO: Move rectangle instantation outside of draw
 
         // INNER BACKGROUND RECTANGLE
-        RectF innerBackgroundRectangle = new RectF(180, 110, 950, 550);
+        RectF innerBackgroundRectangle = new RectF(180, 110, this.getRight() - 100, 550);
         canvas.drawRoundRect(innerBackgroundRectangle, 20, 20, innerBackgroundRectanglePaint);
 
         // PRAYER TIME TEXT
-        canvas.drawText(this.getDisplayPrayerEntity().getTitle(), 450, 80, textPaint);
+        canvas.drawText(this.getDisplayPrayerEntity().getTitle(), (this.getWidth()/2)-50, 80, textPaint);
 
         // PRAYER TIME BEGINNING TEXT
         canvas.drawText(dateFormat.format(this.getDisplayPrayerEntity().getBeginningTime()), 60, 125, prayerTimeTextPaint);
@@ -120,28 +116,19 @@ public class PrayerTimeGraphicView extends View
     {
         LocalDateTime currentDate = LocalDateTime.now();
 
-        long indicatorTime = new Time(currentDate.getHour(), currentDate.getMinute(), currentDate.getSecond()).getTime();
-
-        long g = 0;
-
-        g = this.getDisplayPrayerEntity().getEndTime().getTime() - this.getDisplayPrayerEntity().getBeginningTime().getTime();
+        long timeShare = 0;
 
         // TODO: Fix Isha
-        if(this.getDisplayPrayerEntity().getEndTime().getTime() < this.getDisplayPrayerEntity().getBeginningTime().getTime())
+        if(this.getDisplayPrayerEntity().getEndTime().isBefore(this.getDisplayPrayerEntity().getBeginningTime()))
         {
-            long timeOfOneDay = new Date(0, 0, 1, 0, 0, 0).getTime() - new Date(0, 0, 0, 0, 0, 0).getTime();;
-
-            g += timeOfOneDay;
-
-            if(indicatorTime < this.getDisplayPrayerEntity().getBeginningTime().getTime() && indicatorTime < this.getDisplayPrayerEntity().getEndTime().getTime())
-            {
-                indicatorTime += timeOfOneDay;
-            }
+            timeShare = ChronoUnit.MILLIS.between(this.getDisplayPrayerEntity().getBeginningTime().minusDays(1), currentDate);
+        }
+        else
+        {
+            timeShare = ChronoUnit.MILLIS.between(this.getDisplayPrayerEntity().getBeginningTime(), currentDate);
         }
 
-        long a = indicatorTime - this.getDisplayPrayerEntity().getBeginningTime().getTime();
-
-        double percentage = (double)a/g;
+        double percentage = (double) timeShare/this.getDisplayPrayerEntity().getDuration();
 
         int relativePos = (int) (innerBackgroundRectangle.height() * percentage);
 
@@ -152,16 +139,16 @@ public class PrayerTimeGraphicView extends View
         canvas.drawRect(indicatorRectangle, indicatorRectanglePaint);
 
         // CURRENT TIME TEXT
-        canvas.drawText(dateFormat.format(indicatorTime), 60, indicatorRectangle.top + 16, currentTimeTextPaint);
+        canvas.drawText(currentDate.format(dateFormat), 60, indicatorRectangle.top + 16, currentTimeTextPaint);
     }
 
-    public PrayerEntity getDisplayPrayerEntity()
+    public PrayerTimeEntity getDisplayPrayerEntity()
     {
-        return _displayPrayerEntity;
+        return _displayPrayerTimeEntity;
     }
 
-    public void setDisplayPrayerEntity(PrayerEntity displayPrayerEntity)
+    public void setDisplayPrayerEntity(PrayerTimeEntity displayPrayerTimeEntity)
     {
-        _displayPrayerEntity = displayPrayerEntity;
+        _displayPrayerTimeEntity = displayPrayerTimeEntity;
     }
 }

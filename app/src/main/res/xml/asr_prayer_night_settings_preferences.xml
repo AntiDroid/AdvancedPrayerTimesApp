@@ -1,0 +1,31 @@
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory
+        android:id="@+id/subtimeThreePreferenceCategory"
+        app:title="Two shadow lenghts">
+
+        <SwitchPreference
+            app:defaultValue="false"
+            app:key="isTwoShadowLengthsEnabled"
+            app:title="Enabled" />
+
+    </PreferenceCategory>
+    <PreferenceCategory android:title="Karaha time">
+
+        <SwitchPreference
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:defaultValue="false"
+            app:key="isKarahaTimeEnabled"
+            app:title="Enabled" />
+        <ListPreference
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:defaultValue="false"
+            app:key="karahaCalculationDegree"
+            app:title="Calculation degree"
+            app:useSimpleSummaryProvider="true" />
+    </PreferenceCategory>
+
+</PreferenceScreen>

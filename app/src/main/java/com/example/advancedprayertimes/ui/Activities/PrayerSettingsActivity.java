@@ -8,12 +8,10 @@ import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.viewpager2.widget.ViewPager2;
 
-import com.example.advancedprayertimes.Logic.AppEnvironment;
-import com.example.advancedprayertimes.Logic.Enums.EPrayerPointInTimeType;
 import com.example.advancedprayertimes.Logic.Enums.EPrayerTimeType;
 import com.example.advancedprayertimes.R;
 import com.example.advancedprayertimes.UI.PrayerSettingsViewPagerAdapter;
-import com.example.advancedprayertimes.databinding.PrayerSettingsActivityBinding;
+import com.example.advancedprayertimes.databinding.ActivityPrayerSettingsBinding;
 import com.google.android.material.tabs.TabLayout;
 import com.google.android.material.tabs.TabLayoutMediator;
 
@@ -21,32 +19,28 @@ import java.util.ArrayList;
 
 public class PrayerSettingsActivity extends AppCompatActivity
 {
-    EPrayerTimeType _prayerTimeType;
-    EPrayerPointInTimeType _prayerBeginningPointInTimeType;
-    EPrayerPointInTimeType _prayerEndPointInTimeType;
+    EPrayerTimeType _prayerType;
 
-    PrayerSettingsActivityBinding binding = null;
+    ActivityPrayerSettingsBinding binding = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.prayer_settings_activity);
+        setContentView(R.layout.activity_prayer_settings);
 
-        binding = PrayerSettingsActivityBinding.inflate(getLayoutInflater());
+        binding = ActivityPrayerSettingsBinding.inflate(getLayoutInflater());
 
         // Get the Intent that started this activity and extract the string
         Intent intent = this.getIntent();
-        _prayerTimeType = (EPrayerTimeType) intent.getSerializableExtra(TimeOverviewActivity.INTENT_EXTRA);
-        _prayerBeginningPointInTimeType = AppEnvironment.GetPointInTimeByPrayerType(_prayerTimeType, true);
-        _prayerEndPointInTimeType = AppEnvironment.GetPointInTimeByPrayerType(_prayerTimeType, false);
+        _prayerType = (EPrayerTimeType) intent.getSerializableExtra(TimeOverviewActivity.INTENT_EXTRA);
 
         ActionBar actionBar = this.getSupportActionBar();
 
         if (actionBar != null)
         {
             actionBar.setDisplayHomeAsUpEnabled(true);
-            actionBar.setTitle(_prayerTimeType.toString() + " settings");
+            actionBar.setTitle(_prayerType.toString() + " settings");
         }
 
         configureTabs();
@@ -57,6 +51,7 @@ public class PrayerSettingsActivity extends AppCompatActivity
         {
             add("Beginning");
             add("End");
+            add("Special");
         }
     };
 
@@ -65,7 +60,7 @@ public class PrayerSettingsActivity extends AppCompatActivity
         TabLayout tabManagerTabLayout = findViewById(R.id.tabLayoutTalip);
         ViewPager2 viewPager = findViewById(R.id.viewPagerTalip);
 
-        PrayerSettingsViewPagerAdapter adapter = new PrayerSettingsViewPagerAdapter(this, _prayerBeginningPointInTimeType, _prayerEndPointInTimeType);
+        PrayerSettingsViewPagerAdapter adapter = new PrayerSettingsViewPagerAdapter(this, _prayerType);
         viewPager.setAdapter(adapter);
 
         new TabLayoutMediator(tabManagerTabLayout, viewPager,

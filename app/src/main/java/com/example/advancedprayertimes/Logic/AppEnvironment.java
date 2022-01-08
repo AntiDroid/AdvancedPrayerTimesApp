@@ -1,136 +1,117 @@
 package com.example.advancedprayertimes.Logic;
 
-import android.content.Context;
-
-import com.example.advancedprayertimes.Logic.Entities.CustomPlaceEntity;
-import com.example.advancedprayertimes.Logic.Entities.PrayerTimeSettingsEntity;
-import com.example.advancedprayertimes.Logic.Enums.EPrayerPointInTimeType;
+import com.example.advancedprayertimes.Logic.DB.DBHelper;
+import com.example.advancedprayertimes.Logic.Entities.API_Entities.CustomPlaceEntity;
+import com.example.advancedprayertimes.Logic.Entities.Setting_Entities.PrayerSettingsEntity;
+import com.example.advancedprayertimes.Logic.Entities.Setting_Entities.PrayerTimeBeginningEndSettingsEntity;
+import com.example.advancedprayertimes.Logic.Enums.EPrayerTimeMomentType;
 import com.example.advancedprayertimes.Logic.Enums.EPrayerTimeType;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonParseException;
 import com.google.gson.JsonPrimitive;
-import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 
-import java.lang.reflect.Type;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.util.AbstractMap;
 import java.util.HashMap;
+import java.util.Map;
 
 public class AppEnvironment
 {
-    public static HashMap<EPrayerPointInTimeType, PrayerTimeSettingsEntity> PrayerTimeSettingsByPrayerTimeTypeHashMap = new HashMap<>();
+    public static final String GLOBAL_SHARED_PREFERENCE_NAME = "globalSharedPreference";
 
-    public static Context context = null;
+    public static HashMap<EPrayerTimeType, PrayerSettingsEntity> prayerSettingsByPrayerType = new HashMap<EPrayerTimeType, PrayerSettingsEntity>()
+    {
+        {
+            put(EPrayerTimeType.Fajr, new PrayerSettingsEntity());
+            put(EPrayerTimeType.Duha, new PrayerSettingsEntity());
+            put(EPrayerTimeType.Dhuhr, new PrayerSettingsEntity());
+            put(EPrayerTimeType.Asr, new PrayerSettingsEntity());
+            put(EPrayerTimeType.Maghrib, new PrayerSettingsEntity());
+            put(EPrayerTimeType.Isha, new PrayerSettingsEntity());
+        }
+    };
 
-    public static CustomPlaceEntity place;
+//    public static HashMap<EPrayerTimeType, PrayerSettingsEntity> GetPrayerSettingsByPrayerType()
+//    {
+//        for(EPrayerTimeType prayerTimeType : EPrayerTimeType.values())
+//        {
+//            String key = DataManagementUtil.GetPrayerTimeEntityKeyForSharedPreference(prayerTimeType);
+//            String storedValue = sharedPref.getString(key, null);
+//
+//            if(storedValue != null)
+//            {
+//                PrayerTimeEntity retrievedPrayer = gson.fromJson(storedValue, PrayerTimeEntity.class);
+//
+//                if(retrievedPrayer != null)
+//                {
+//                    PrayerTimeEntity.Prayers.set(i, retrievedPrayer);
+//                }
+//            }
+//        }
+//    }
+
+    public static DBHelper dbHelper = null;
+    public static CustomPlaceEntity PlaceEntity = null;
+
+    public static Map<Map.Entry<EPrayerTimeType, EPrayerTimeMomentType>, PrayerTimeBeginningEndSettingsEntity> GetPrayerTimeSettingsByPrayerTimeTypeHashMap()
+    {
+        Map<Map.Entry<EPrayerTimeType, EPrayerTimeMomentType>, PrayerTimeBeginningEndSettingsEntity> resultMap = new HashMap<>();
+
+        for(Map.Entry<EPrayerTimeType, PrayerSettingsEntity> entry : AppEnvironment.prayerSettingsByPrayerType.entrySet())
+        {
+            if(entry.getValue().getBeginningSettings() != null)
+            {
+                resultMap.put(new AbstractMap.SimpleEntry(entry.getKey(), EPrayerTimeMomentType.Beginning), entry.getValue().getBeginningSettings());
+            }
+
+            if(entry.getValue().getEndSettings() != null)
+            {
+                resultMap.put(new AbstractMap.SimpleEntry(entry.getKey(), EPrayerTimeMomentType.End), entry.getValue().getEndSettings());
+            }
+        }
+
+        return resultMap;
+    }
 
     public static Gson BuildGSON(String dateTimeFormatString)
     {
-        DateFormat timeFormat = new SimpleDateFormat(dateTimeFormatString);
+        DateTimeFormatter timeFormat = DateTimeFormatter.ofPattern(dateTimeFormatString);
 
-        JsonSerializer<Date> ser = new JsonSerializer<Date>()
+        JsonSerializer<LocalDateTime> ser = (src, typeOfSrc, context) ->
         {
-            @Override
-            public JsonElement serialize(Date src, Type typeOfSrc, JsonSerializationContext context)
+            if (src == null)
             {
-                if (src == null)
-                {
-                    return null;
-                }
-
-                return new JsonPrimitive(timeFormat.format(src.getTime()));
+                return null;
             }
+
+            return new JsonPrimitive(src.format(timeFormat));
         };
 
-        JsonDeserializer<Date> deser = new JsonDeserializer<Date>()
+        JsonDeserializer<LocalDateTime> deser = (json, typeOfT, context) ->
         {
-            @Override
-            public Date deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException
+            if (json == null)
             {
-                if (json == null)
-                {
-                    return null;
-                }
+                return null;
+            }
 
-                try
-                {
-                    return new Date(timeFormat.parse(json.getAsString()).getTime());
-                } catch (Exception e)
-                {
-                    return null;
-                }
+            try
+            {
+                return LocalTime.parse(json.getAsString(), timeFormat).atDate(LocalDateTime.now().toLocalDate());
+            }
+            catch (Exception e)
+            {
+                return null;
             }
         };
 
         return new GsonBuilder()
-                .registerTypeAdapter(Date.class, ser)
-                .registerTypeAdapter(Date.class, deser).create();
-    }
-
-    public static EPrayerPointInTimeType GetPointInTimeByPrayerType(EPrayerTimeType prayerTimeType, boolean isBeginning)
-    {
-        switch (prayerTimeType)
-        {
-            case Fajr:
-                return isBeginning ?
-                        EPrayerPointInTimeType.FajrBeginning :
-                        EPrayerPointInTimeType.FajrEnd;
-
-            case Dhuhr:
-                return isBeginning ?
-                        EPrayerPointInTimeType.DhuhrBeginning :
-                        EPrayerPointInTimeType.DhuhrEnd;
-
-            case Asr:
-                return isBeginning ?
-                        EPrayerPointInTimeType.AsrBeginning :
-                        EPrayerPointInTimeType.AsrEnd;
-
-            case Maghrib:
-                return isBeginning ?
-                        EPrayerPointInTimeType.MaghribBeginning :
-                        EPrayerPointInTimeType.MaghribEnd;
-
-            case Isha:
-                return isBeginning ?
-                        EPrayerPointInTimeType.IshaBeginning :
-                        EPrayerPointInTimeType.IshaEnd;
-        }
-
-        return null;
-    }
-
-    public static EPrayerTimeType GetPrayerByPointInTime(EPrayerPointInTimeType pointInTimeType)
-    {
-        switch (pointInTimeType)
-        {
-            case FajrBeginning:
-            case FajrEnd:
-                return EPrayerTimeType.Fajr;
-
-            case DhuhrBeginning:
-            case DhuhrEnd:
-                return EPrayerTimeType.Dhuhr;
-
-            case AsrBeginning:
-            case AsrEnd:
-                return EPrayerTimeType.Asr;
-
-            case MaghribBeginning:
-            case MaghribEnd:
-                return EPrayerTimeType.Maghrib;
-
-            case IshaBeginning:
-            case IshaEnd:
-                return EPrayerTimeType.Isha;
-        }
-
-        return null;
+                .setPrettyPrinting()
+                .registerTypeAdapter(LocalDateTime.class, ser)
+                .registerTypeAdapter(LocalDateTime.class, deser)
+                .create();
     }
 }

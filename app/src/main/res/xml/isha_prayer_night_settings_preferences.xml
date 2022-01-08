@@ -1,0 +1,25 @@
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory
+        android:id="@+id/subtimeThreePreferenceCategory"
+        app:title="Thirds of the night">
+
+        <SwitchPreference
+            app:defaultValue="false"
+            app:key="isThirdsOfNightEnabled"
+            app:title="Enabled" />
+
+    </PreferenceCategory>
+    <PreferenceCategory android:title="Halfs of the night">
+
+        <SwitchPreference
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:key="switch_preference_1"
+            app:defaultValue="false"
+            app:key="isHalfsOfNightEnabled"
+            app:title="Enabled" />
+    </PreferenceCategory>
+
+</PreferenceScreen>

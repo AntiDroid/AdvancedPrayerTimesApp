@@ -8,12 +8,15 @@ import android.database.sqlite.SQLiteOpenHelper;
 import android.location.Location;
 import android.util.Log;
 
-import com.example.advancedprayertimes.Logic.Entities.MuwaqqitPrayerTimeDayEntity;
+import com.example.advancedprayertimes.Logic.Entities.API_Entities.Diyanet.DiyanetIlceEntity;
+import com.example.advancedprayertimes.Logic.Entities.API_Entities.Diyanet.DiyanetSehirEntity;
+import com.example.advancedprayertimes.Logic.Entities.API_Entities.Diyanet.DiyanetUlkeEntity;
+import com.example.advancedprayertimes.Logic.Entities.API_Entities.MuwaqqitPrayerTimeDayEntity;
 import com.google.gson.Gson;
 
-import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 public class DBHelper extends SQLiteOpenHelper
@@ -136,7 +139,7 @@ public class DBHelper extends SQLiteOpenHelper
 
     }
 
-    SimpleDateFormat dateFormat = new SimpleDateFormat("HH:mm");
+    DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("HH:mm");
 
     // ######################################################
     // ######################################################
@@ -144,13 +147,13 @@ public class DBHelper extends SQLiteOpenHelper
     // ######################################################
     // ######################################################
 
-    public boolean AddDiyanetUlke(String id, String name)
+    public boolean AddDiyanetUlke(DiyanetUlkeEntity ulke)
     {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues cv = new ContentValues();
 
-        cv.put(idColumn, id);
-        cv.put(nameColumn, name);
+        cv.put(idColumn, ulke.getUlkeID());
+        cv.put(nameColumn, ulke.getUlkeAdiEn());
 
         boolean returnValue = db.insert(DIYANET_ULKE_TABLE, null, cv) != -1;
 
@@ -158,14 +161,14 @@ public class DBHelper extends SQLiteOpenHelper
         return returnValue;
     }
 
-    public boolean AddDiyanetSehir(String parentID, String id, String name)
+    public boolean AddDiyanetSehir(String parentID, DiyanetSehirEntity sehirEntity)
     {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues cv = new ContentValues();
 
-        cv.put(idColumn, id);
+        cv.put(idColumn, sehirEntity.getSehirID());
         cv.put(parentIDColumn, parentID);
-        cv.put(nameColumn, name);
+        cv.put(nameColumn, sehirEntity.getSehirAdiEn());
 
         boolean returnValue = db.insert(DIYANET_SEHIR_TABLE, null, cv) != -1;
 
@@ -173,14 +176,14 @@ public class DBHelper extends SQLiteOpenHelper
         return returnValue;
     }
 
-    public boolean AddDiyanetIlce(String parentID, String id, String name)
+    public boolean AddDiyanetIlce(String parentID, DiyanetIlceEntity ilceEntity)
     {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues cv = new ContentValues();
 
-        cv.put(idColumn, id);
+        cv.put(idColumn, ilceEntity.getIlceID());
         cv.put(parentIDColumn, parentID);
-        cv.put(nameColumn, name);
+        cv.put(nameColumn, ilceEntity.getIlceAdiEn());
 
         boolean returnValue = db.insert(DIYANET_ILCE_TABLE, null, cv) != -1;
 
@@ -299,15 +302,15 @@ public class DBHelper extends SQLiteOpenHelper
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues cv = new ContentValues();
 
-        cv.put(fajrTimeColumn, dateFormat.format(muwaqqitPrayerTimeDayEntity.getFajrTime()));
+        cv.put(fajrTimeColumn, muwaqqitPrayerTimeDayEntity.getFajrTime().format(dateFormat));
         cv.put(fajrDegreeColumn, muwaqqitPrayerTimeDayEntity.getFajrAngle());
 
-        cv.put(sunriseTimeColumn, dateFormat.format(muwaqqitPrayerTimeDayEntity.getSunriseTime()));
-        cv.put(dhuhrTimeColumn, dateFormat.format(muwaqqitPrayerTimeDayEntity.getDhuhrTime()));
-        cv.put(asrMithlTimeColumn, dateFormat.format(muwaqqitPrayerTimeDayEntity.getAsrMithlTime()));
-        cv.put(maghribTimeColumn, dateFormat.format(muwaqqitPrayerTimeDayEntity.getMaghribTime()));
+        cv.put(sunriseTimeColumn, muwaqqitPrayerTimeDayEntity.getSunriseTime().format(dateFormat));
+        cv.put(dhuhrTimeColumn, muwaqqitPrayerTimeDayEntity.getDhuhrTime().format(dateFormat));
+        cv.put(asrMithlTimeColumn, muwaqqitPrayerTimeDayEntity.getAsrMithlTime().format(dateFormat));
+        cv.put(maghribTimeColumn, muwaqqitPrayerTimeDayEntity.getMaghribTime().format(dateFormat));
 
-        cv.put(ishaTimeColumn, dateFormat.format(muwaqqitPrayerTimeDayEntity.getIshaTime()));
+        cv.put(ishaTimeColumn, muwaqqitPrayerTimeDayEntity.getIshaTime().format(dateFormat));
         cv.put(ishaDegreeColumn, muwaqqitPrayerTimeDayEntity.getIshaAngle());
 
         cv.put(dateColumn, muwaqqitPrayerTimeDayEntity.getFajrDate());
@@ -486,32 +489,32 @@ public class DBHelper extends SQLiteOpenHelper
         int fajrTimeIndex = cursor.getColumnIndex(fajrTimeColumn);
         if(fajrTimeIndex < 0)
             fajrTimeIndex = 0;
-        Date fajrTime = dateFormat.parse(cursor.getString(fajrTimeIndex));
+        LocalDateTime fajrTime = LocalDateTime.parse(cursor.getString(fajrTimeIndex), dateFormat);
 
         int sunriseTimeColumnIndex = cursor.getColumnIndex(sunriseTimeColumn);
         if(sunriseTimeColumnIndex < 0)
             sunriseTimeColumnIndex = 0;
-        Date sunriseTime = dateFormat.parse(cursor.getString(sunriseTimeColumnIndex));
+        LocalDateTime sunriseTime = LocalDateTime.parse(cursor.getString(sunriseTimeColumnIndex), dateFormat);
 
         int dhuhrTimeColumnIndex = cursor.getColumnIndex(dhuhrTimeColumn);
         if(dhuhrTimeColumnIndex < 0)
             dhuhrTimeColumnIndex = 0;
-        Date dhuhrTime = dateFormat.parse(cursor.getString(dhuhrTimeColumnIndex));
+        LocalDateTime dhuhrTime = LocalDateTime.parse(cursor.getString(dhuhrTimeColumnIndex), dateFormat);
 
         int asrTimeColumnIndex = cursor.getColumnIndex(asrMithlTimeColumn);
         if(asrTimeColumnIndex < 0)
             asrTimeColumnIndex = 0;
-        Date asrTime = dateFormat.parse(cursor.getString(asrTimeColumnIndex));
+        LocalDateTime asrTime = LocalDateTime.parse(cursor.getString(asrTimeColumnIndex), dateFormat);
 
         int maghribTimeColumnIndex = cursor.getColumnIndex(maghribTimeColumn);
         if(maghribTimeColumnIndex < 0)
             maghribTimeColumnIndex = 0;
-        Date maghribTime = dateFormat.parse(cursor.getString(maghribTimeColumnIndex));
+        LocalDateTime maghribTime = LocalDateTime.parse(cursor.getString(maghribTimeColumnIndex), dateFormat);
 
         int ishaTimeColumnIndex = cursor.getColumnIndex(ishaTimeColumn);
         if(ishaTimeColumnIndex < 0)
             ishaTimeColumnIndex = 0;
-        Date ishaTime = dateFormat.parse(cursor.getString(ishaTimeColumnIndex));
+        LocalDateTime ishaTime = LocalDateTime.parse(cursor.getString(ishaTimeColumnIndex), dateFormat);
 
         int dateColumnIndex = cursor.getColumnIndex(dateColumn);
         if(dateColumnIndex < 0)
@@ -521,6 +524,7 @@ public class DBHelper extends SQLiteOpenHelper
         return new MuwaqqitPrayerTimeDayEntity(
                         fajrTime,
                         sunriseTime,
+                        null,
                         dhuhrTime,
                         asrTime,
                         null,
