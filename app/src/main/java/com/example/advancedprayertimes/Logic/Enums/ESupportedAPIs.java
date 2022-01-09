@@ -4,5 +4,6 @@ public enum ESupportedAPIs
 {
     Undefined,
     Muwaqqit,
-    Diyanet
+    Diyanet,
+    AlAdhan
 }

@@ -1,17 +1,18 @@
 package com.example.advancedprayertimes.Logic;
 
 import android.location.Address;
-import android.location.Location;
 import android.net.Uri;
 
 import com.example.advancedprayertimes.BuildConfig;
+import com.example.advancedprayertimes.Logic.Entities.API_Entities.AlAdhanPrayerTimeDayEntity;
 import com.example.advancedprayertimes.Logic.Entities.API_Entities.Diyanet.DiyanetIlceEntity;
 import com.example.advancedprayertimes.Logic.Entities.API_Entities.Diyanet.DiyanetSehirEntity;
 import com.example.advancedprayertimes.Logic.Entities.API_Entities.Diyanet.DiyanetUlkeEntity;
 import com.example.advancedprayertimes.Logic.Entities.API_Entities.DiyanetPrayerTimeDayEntity;
 import com.example.advancedprayertimes.Logic.Entities.API_Entities.MuwaqqitPrayerTimeDayEntity;
-import com.example.advancedprayertimes.Logic.Entities.DayPrayerTimesPackageEntity;
+import com.example.advancedprayertimes.Logic.Entities.CustomLocation;
 import com.example.advancedprayertimes.Logic.Enums.EHttpRequestMethod;
+import com.example.advancedprayertimes.Logic.Enums.EHttpResponseStatusType;
 import com.google.firebase.crashlytics.buildtools.reloc.com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
 
@@ -27,6 +28,7 @@ import java.lang.reflect.Type;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -40,13 +42,14 @@ public class HttpAPIRequestUtil
 {
     private static final String MUWAQQIT_JSON_URL = "https://www.muwaqqit.com/api.json";
     private static final String DIYANET_JSON_URL = "https://ezanvakti.herokuapp.com";
+    private static final String ALADHAN_JSON_URL = "https://api.aladhan.com/v1/calendar";
 
     private static final long MUWAQQIT_API_COOLDOWN_MILLISECONDS = 11000;
 
     private static final String BING_MAPS_URL = "https://dev.virtualearth.net/REST/v1/timezone/";
 
     // Der JSON enthält direkt in der ersten Ebene die Gebetszeiteninformationen für alle Tage des jeweiligen Monats.
-    public static DayPrayerTimesPackageEntity RetrieveDiyanetTimes(Address cityAddress) throws Exception
+    public static DiyanetPrayerTimeDayEntity RetrieveDiyanetTimes(Address cityAddress) throws Exception
     {
         if(cityAddress == null)
         {
@@ -65,9 +68,9 @@ public class HttpAPIRequestUtil
 
             try
             {
-                ulkelerRequestStatus = HttpAPIRequestUtil.RetrieveAPIFeedback(ulkelerJSONList, HttpAPIRequestUtil.DIYANET_JSON_URL + "/ulkeler", EHttpRequestMethod.GET, null);
+                EHttpResponseStatusType ulkelerResponseStatusType = HttpAPIRequestUtil.RetrieveAPIFeedback(ulkelerJSONList, HttpAPIRequestUtil.DIYANET_JSON_URL + "/ulkeler", EHttpRequestMethod.GET, null);
 
-                if(ulkelerRequestStatus == 0 || ulkelerRequestStatus > 299)
+                if(ulkelerResponseStatusType != EHttpResponseStatusType.Success)
                 {
                     return null;
                 }
@@ -112,9 +115,9 @@ public class HttpAPIRequestUtil
 
             try
             {
-                sehirlerRequestStatus = HttpAPIRequestUtil.RetrieveAPIFeedback(sehirlerList, HttpAPIRequestUtil.DIYANET_JSON_URL + "/sehirler/" + targetUlkeID, EHttpRequestMethod.GET, null);
+                EHttpResponseStatusType sehirlerResponseStatusType = HttpAPIRequestUtil.RetrieveAPIFeedback(sehirlerList, HttpAPIRequestUtil.DIYANET_JSON_URL + "/sehirler/" + targetUlkeID, EHttpRequestMethod.GET, null);
 
-                if(sehirlerRequestStatus == 0 || sehirlerRequestStatus > 299)
+                if(sehirlerResponseStatusType != EHttpResponseStatusType.Success)
                 {
                     return null;
                 }
@@ -157,9 +160,9 @@ public class HttpAPIRequestUtil
 
             try
             {
-                ilcelerRequestStatus = HttpAPIRequestUtil.RetrieveAPIFeedback(ilcelerList, HttpAPIRequestUtil.DIYANET_JSON_URL + "/ilceler/" + sehirID, EHttpRequestMethod.GET, null);
+                EHttpResponseStatusType ilcelerResponseStatusType = HttpAPIRequestUtil.RetrieveAPIFeedback(ilcelerList, HttpAPIRequestUtil.DIYANET_JSON_URL + "/ilceler/" + sehirID, EHttpRequestMethod.GET, null);
 
-                if(ilcelerRequestStatus == 0 || ilcelerRequestStatus > 299)
+                if(ilcelerResponseStatusType != EHttpResponseStatusType.Success)
                 {
                     return null;
                 }
@@ -202,13 +205,13 @@ public class HttpAPIRequestUtil
         StringBuilder vakitlerList = new StringBuilder();
         int vakitlerRequestStatus = 0;
 
-        DayPrayerTimesPackageEntity timesPackageEntity = null;
+        DiyanetPrayerTimeDayEntity timesPackageEntity = null;
 
         try
         {
-            vakitlerRequestStatus = HttpAPIRequestUtil.RetrieveAPIFeedback(vakitlerList, HttpAPIRequestUtil.DIYANET_JSON_URL + "/vakitler/" + ilceID, EHttpRequestMethod.GET, null);
+            EHttpResponseStatusType vakitlerResponseStatusType = HttpAPIRequestUtil.RetrieveAPIFeedback(vakitlerList, HttpAPIRequestUtil.DIYANET_JSON_URL + "/vakitler/" + ilceID, EHttpRequestMethod.GET, null);
 
-            if(vakitlerRequestStatus == 0 || vakitlerRequestStatus > 299)
+            if(vakitlerResponseStatusType != EHttpResponseStatusType.Success)
             {
                 return null;
             }
@@ -229,7 +232,7 @@ public class HttpAPIRequestUtil
 
             if(element.isPresent())
             {
-                timesPackageEntity = new DayPrayerTimesPackageEntity(element.get());
+                timesPackageEntity = element.get();
             }
         }
         catch(Exception e)
@@ -245,10 +248,89 @@ public class HttpAPIRequestUtil
         return timesPackageEntity;
     }
 
-    private static long lastMuwaqqitAPIRequest = 0;
+    public static AlAdhanPrayerTimeDayEntity RetrieveAlAdhanTimes(CustomLocation targetLocation, Double fajrDegree, Double ishaDegree, Double ishtibaqAngle) throws Exception
+    {
+        if(targetLocation == null)
+        {
+            throw new Exception("Can not retrieve Diyanet prayer time data without a provided address!", null);
+        }
 
-    public static DayPrayerTimesPackageEntity RetrieveMuwaqqitTimes(
-            Location targetLocation,
+        StringBuilder alAdhanJSONList = new StringBuilder();
+
+        try
+        {
+            String fajrDegreeText = "null";
+            String IshaDegreeText = "null";
+            String ishtibaqDegreeText = "null";
+
+            if(fajrDegree != null) { fajrDegreeText = "" + Math.abs(fajrDegree); }
+            if(ishaDegree != null) { IshaDegreeText = "" + Math.abs(ishaDegree); }
+            if(ishtibaqAngle != null) { ishtibaqDegreeText = "" + Math.abs(ishtibaqAngle); }
+
+            HashMap<String, String> queryParameters = new HashMap<String, String>();
+            queryParameters.put("latitude", targetLocation.getLatitude() + "");
+            queryParameters.put("longitude", targetLocation.getLongitude() + "");
+            queryParameters.put("method", "99");
+            queryParameters.put("methodSettings", fajrDegreeText + "," + ishtibaqDegreeText + "," + IshaDegreeText);
+            queryParameters.put("month", LocalDateTime.now().getMonthValue() + "");
+            queryParameters.put("year", LocalDateTime.now().getYear() + "");
+
+            EHttpResponseStatusType alAdhanResponseStatusType = HttpAPIRequestUtil.RetrieveAPIFeedback(alAdhanJSONList, HttpAPIRequestUtil.ALADHAN_JSON_URL, EHttpRequestMethod.GET, queryParameters);
+
+            if(alAdhanResponseStatusType != EHttpResponseStatusType.Success)
+            {
+                return null;
+            }
+
+            JSONObject jsonObject = new JSONObject(alAdhanJSONList.toString());
+            JSONArray arrayListJson = jsonObject.getJSONArray("data");
+
+            Gson gson = AppEnvironment.BuildGSON("HH:mm");
+
+            DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm dd-MM-yyyy");
+
+            for(int i = 0; i < arrayListJson.length(); i++)
+            {
+                JSONObject timingsJSONObject = arrayListJson.getJSONObject(i).getJSONObject("timings");
+
+                String dateString = arrayListJson.getJSONObject(i).getJSONObject("date").getJSONObject("gregorian").getString("date");
+
+                LocalDateTime fajrTime = LocalDateTime.parse(timingsJSONObject.getString("Fajr").substring(0, 5) + " " + dateString, timeFormatter);
+                LocalDateTime sunRiseTime = LocalDateTime.parse(timingsJSONObject.getString("Sunrise").substring(0, 5) + " " + dateString, timeFormatter);
+                LocalDateTime duhaTime = null;
+                LocalDateTime dhuhrTime = LocalDateTime.parse(timingsJSONObject.getString("Dhuhr").substring(0, 5) + " " + dateString, timeFormatter);
+                LocalDateTime asrTime = LocalDateTime.parse(timingsJSONObject.getString("Asr").substring(0, 5) + " " + dateString, timeFormatter);
+                LocalDateTime asrmitlhaynTime = null;
+                LocalDateTime asrKarahaTime = null;
+                LocalDateTime maghribTime = LocalDateTime.parse(timingsJSONObject.getString("Sunset").substring(0, 5) + " " + dateString, timeFormatter);
+                LocalDateTime ishtibaqAnNujumTime = LocalDateTime.parse(timingsJSONObject.getString("Maghrib").substring(0, 5) + " " + dateString, timeFormatter);
+                LocalDateTime ishaTime = LocalDateTime.parse(timingsJSONObject.getString("Isha").substring(0, 5) + " " + dateString, timeFormatter);
+
+                if(fajrTime.toLocalDate().isEqual(LocalDate.now()))
+                {
+                    return new AlAdhanPrayerTimeDayEntity(
+                            fajrTime,
+                            sunRiseTime,
+                            dhuhrTime,
+                            asrTime,
+                            null,
+                            maghribTime,
+                            ishtibaqAnNujumTime,
+                            ishaTime
+                    );
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            throw new Exception("Could not process Diyanet ulke information!", e);
+        }
+
+        return null;
+    }
+
+    public static MuwaqqitPrayerTimeDayEntity RetrieveMuwaqqitTimes(
+            CustomLocation targetLocation,
             Double fajrDegree,
             Double ishaDegree,
             Double karahaDegree)
@@ -264,95 +346,82 @@ public class HttpAPIRequestUtil
             storedMuwaqqitTime = AppEnvironment.dbHelper.GetMuwaqqitPrayerTimesByDateLocationAndDegrees(todayDate, targetLocation.getLongitude(), targetLocation.getLatitude(), fajrDegree, ishaDegree);
         }
 
-        if(storedMuwaqqitTime != null)
-        {
-            return new DayPrayerTimesPackageEntity(storedMuwaqqitTime);
-        }
-
-        String timeZone = RetrieveTimeZoneByLocation(targetLocation);
-
+        if(storedMuwaqqitTime != null) { return storedMuwaqqitTime; }
         HashMap<String, String> queryParameters = new HashMap<>();
-
         queryParameters.put("d", todayDate);
         queryParameters.put("ln", Double.toString(targetLocation.getLongitude()));
         queryParameters.put("lt", Double.toString(targetLocation.getLatitude()));
-        queryParameters.put("tz", timeZone);
+        queryParameters.put("tz", targetLocation.getTimezone());
 
-        if(fajrDegree != null)
-        {
-            queryParameters.put("fa", fajrDegree.toString());
-        }
-
-        if(ishaDegree != null)
-        {
-            queryParameters.put("ea", ishaDegree.toString());
-        }
-
-        if(karahaDegree != null)
-        {
-            queryParameters.put("ia", karahaDegree.toString());
-        }
+        if(fajrDegree != null) { queryParameters.put("fa", fajrDegree.toString()); }
+        if(ishaDegree != null) { queryParameters.put("ea", ishaDegree.toString()); }
+        if(karahaDegree != null) { queryParameters.put("ia", karahaDegree.toString()); }
 
         StringBuilder response = new StringBuilder();
-        int muwaqqitRequestStatus = HttpAPIRequestUtil.RetrieveAPIFeedback(response, HttpAPIRequestUtil.MUWAQQIT_JSON_URL, EHttpRequestMethod.POST, queryParameters);
+        EHttpResponseStatusType muwaqqitResponseStatusType = HttpAPIRequestUtil.RetrieveAPIFeedback(response, HttpAPIRequestUtil.MUWAQQIT_JSON_URL, EHttpRequestMethod.POST, queryParameters);
 
-        if(muwaqqitRequestStatus == 0 || muwaqqitRequestStatus > 299)
+        // Muwaqqit API requires 10 seconds cool down after every successful or unsuccessful request
+        if(muwaqqitResponseStatusType == EHttpResponseStatusType.TooManyRequests)
         {
-            return null;
-        }
-
-        int secondTryMuwaqqitRequestStatus = -1;
-
-        // Muwaqqit API calls are only possible after 10 second cool downs.
-        // An invalid request resets this time
-        if(response.toString().equals("429 TOO MANY REQUESTS"))
-        {
-            long waitTime = HttpAPIRequestUtil.MUWAQQIT_API_COOLDOWN_MILLISECONDS;
-
-            long timeSinceLastRequest = System.currentTimeMillis() - lastMuwaqqitAPIRequest;
-
-            if(timeSinceLastRequest < HttpAPIRequestUtil.MUWAQQIT_API_COOLDOWN_MILLISECONDS)
-            {
-                waitTime = HttpAPIRequestUtil.MUWAQQIT_API_COOLDOWN_MILLISECONDS - timeSinceLastRequest + 2500;
-            }
-
-            try
-            {
-                TimeUnit.MILLISECONDS.sleep(waitTime);
-            }
-            catch( Exception e)
-            {
-                // DO NOTHING
-            }
+            try { TimeUnit.MILLISECONDS.sleep(HttpAPIRequestUtil.MUWAQQIT_API_COOLDOWN_MILLISECONDS); }
+            catch(Exception e) { /* DO NOTHING */ }
 
             response = new StringBuilder();
-            secondTryMuwaqqitRequestStatus = HttpAPIRequestUtil.RetrieveAPIFeedback(response, HttpAPIRequestUtil.MUWAQQIT_JSON_URL, EHttpRequestMethod.POST, queryParameters);
+            muwaqqitResponseStatusType = HttpAPIRequestUtil.RetrieveAPIFeedback(response, HttpAPIRequestUtil.MUWAQQIT_JSON_URL, EHttpRequestMethod.POST, queryParameters);
         }
-        lastMuwaqqitAPIRequest = System.currentTimeMillis();
 
-        if(secondTryMuwaqqitRequestStatus == 0 || secondTryMuwaqqitRequestStatus > 299)
+        if(muwaqqitResponseStatusType != EHttpResponseStatusType.Success)
         {
             return null;
         }
 
-        return HttpAPIRequestUtil.FromMuwaqqitJSONToDayPrayerTime(response.toString(), targetLocation, fajrDegree, ishaDegree);
+        MuwaqqitPrayerTimeDayEntity timesPackageEntity = null;
+
+        try
+        {
+            Gson gson = AppEnvironment.BuildGSON("HH:mm:ss");
+            List<MuwaqqitPrayerTimeDayEntity> outputList = gson.fromJson(new JSONObject(response.toString()).getJSONArray("list").toString(), new TypeToken<ArrayList<MuwaqqitPrayerTimeDayEntity>>() {}.getType());
+
+            AppEnvironment.dbHelper.DeleteAllMuwaqqitPrayerTimesByDegrees(fajrDegree, ishaDegree);
+
+            for(MuwaqqitPrayerTimeDayEntity time : outputList)
+            {
+                AppEnvironment.dbHelper.AddMuwaqqitPrayerTime(time, targetLocation);
+
+                if(todayDate.equals(time.getDate()))
+                {
+                    timesPackageEntity = time;
+                }
+            }
+        }
+        catch(Exception e)
+        {
+            throw new Exception("Could not process Muwaqqit prayer times for an unknown reason!", e);
+        }
+
+        if(timesPackageEntity == null)
+        {
+            throw new Exception("Could not retrieve Muwaqqit prayer times for an unknown reason!", null);
+        }
+
+        return timesPackageEntity;
     }
 
-    public static String RetrieveTimeZoneByLocation(Location targetLocation) throws Exception
+    public static String RetrieveTimeZoneByLocation(double longitude, double latitude) throws Exception
     {
         String urlText =
                 HttpAPIRequestUtil.BING_MAPS_URL +
-                targetLocation.getLatitude() + "," + targetLocation.getLongitude();
+                        latitude + "," + longitude;
 
         HashMap<String, String> parameters = new HashMap<>();
         parameters.put("key", BuildConfig.BING_API_KEY);
 
         StringBuilder response = new StringBuilder();
-        int timezoneRequestStatus = HttpAPIRequestUtil.RetrieveAPIFeedback(response, urlText, EHttpRequestMethod.GET, parameters);
+        EHttpResponseStatusType timezoneResponseStatusType = HttpAPIRequestUtil.RetrieveAPIFeedback(response, urlText, EHttpRequestMethod.GET, parameters);
 
-        if(timezoneRequestStatus == 0 || timezoneRequestStatus > 299)
+        if(timezoneResponseStatusType != EHttpResponseStatusType.Success)
         {
-            throw new Exception("Bing API request for timezone was not successful!", null);
+            return null;
         }
 
         String timezone = "";
@@ -375,10 +444,10 @@ public class HttpAPIRequestUtil
         return timezone;
     }
 
-    public static int RetrieveAPIFeedback(StringBuilder responseContent, String urlText, EHttpRequestMethod requestMethod, Map<String, String> queryParameters)
+    public static EHttpResponseStatusType RetrieveAPIFeedback(StringBuilder responseContent, String urlText, EHttpRequestMethod requestMethod, Map<String, String> queryParameters) throws Exception
     {
         HttpURLConnection conn = null;
-        int status = 0;
+        EHttpResponseStatusType responseStatusType = EHttpResponseStatusType.None;
 
         try
         {
@@ -433,11 +502,9 @@ public class HttpAPIRequestUtil
                 os.close();
             }
 
-            // Test if the response from the server is successful
-            status = conn.getResponseCode();
+            responseStatusType = HttpAPIRequestUtil.GetHttpResponseStatusTypeByResponseCode(conn.getResponseCode());
 
-            // TODO: Fehlerstatus der einzelnen APIs korrekt behandeln
-            if (status >= 300)
+            if (responseStatusType != EHttpResponseStatusType.Success)
             {
                 reader = new BufferedReader(new InputStreamReader(conn.getErrorStream()));
             }
@@ -446,71 +513,34 @@ public class HttpAPIRequestUtil
                 reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
             }
 
-            while ((line = reader.readLine()) != null)
-            {
-                responseContent.append(line);
-            }
-
+            while ((line = reader.readLine()) != null) { responseContent.append(line); }
             reader.close();
-            responseContent.toString();
-        }
-        catch(Exception e)
-        {
-            e.printStackTrace();
         }
         finally
         {
-            if(conn != null)
-            {
-                conn.disconnect();
-            }
+            if(conn != null) { conn.disconnect(); }
         }
 
-        return status;
+        return responseStatusType;
     }
 
-    // Der JSON ist in der ersten Ebene eine Liste und diese Liste enthält dann die Gebetszeiteninformationen für alle Tage des jeweiligen Monats.
-    public static DayPrayerTimesPackageEntity FromMuwaqqitJSONToDayPrayerTime(String jsonText, Location location, Double fajrDegree, Double ishaDegree) throws Exception
+    public static EHttpResponseStatusType GetHttpResponseStatusTypeByResponseCode(int statusCode)
     {
-        DayPrayerTimesPackageEntity timesPackageEntity = null;
-
-        try
+        if(statusCode > 299)
         {
-            Gson gson = AppEnvironment.BuildGSON("HH:mm:ss");
-            String todayDate = DateTimeFormatter.ofPattern("yyyy-MM-dd").format(LocalDateTime.now());
-
-            JSONObject jsonObject = new JSONObject(jsonText);
-
-            Type listOfMyClassObject = new TypeToken<ArrayList<MuwaqqitPrayerTimeDayEntity>>() {}.getType();
-
-            JSONArray arrayListJson = jsonObject.getJSONArray("list");
-
-            List<MuwaqqitPrayerTimeDayEntity> outputList = gson.fromJson(arrayListJson.toString(), listOfMyClassObject);
-
-            AppEnvironment.dbHelper.DeleteAllMuwaqqitPrayerTimesByDegrees(fajrDegree, ishaDegree);
-
-            for(MuwaqqitPrayerTimeDayEntity time : outputList)
+            if(statusCode == 429)
             {
-                AppEnvironment.dbHelper.AddMuwaqqitPrayerTime(time, location);
+                return EHttpResponseStatusType.TooManyRequests;
             }
 
-            Optional<MuwaqqitPrayerTimeDayEntity> element = outputList.stream().filter(x -> todayDate.equals(x.getFajrDate())).findFirst();
-
-            if(element.isPresent())
-            {
-                timesPackageEntity = new DayPrayerTimesPackageEntity(element.get());
-            }
+            return EHttpResponseStatusType.UnknownError;
         }
-        catch(Exception e)
+        // 200 - 299
+        else if(statusCode < 300 && statusCode > 199)
         {
-            throw new Exception("Could not process Muwaqqit prayer times for an unknown reason!", e);
+            return EHttpResponseStatusType.Success;
         }
 
-        if(timesPackageEntity == null)
-        {
-            throw new Exception("Could not retrieve Muwaqqit prayer times for an unknown reason!", null);
-        }
-
-        return timesPackageEntity;
+        return EHttpResponseStatusType.None;
     }
 }

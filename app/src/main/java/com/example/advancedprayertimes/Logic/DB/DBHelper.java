@@ -5,13 +5,13 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
-import android.location.Location;
 import android.util.Log;
 
 import com.example.advancedprayertimes.Logic.Entities.API_Entities.Diyanet.DiyanetIlceEntity;
 import com.example.advancedprayertimes.Logic.Entities.API_Entities.Diyanet.DiyanetSehirEntity;
 import com.example.advancedprayertimes.Logic.Entities.API_Entities.Diyanet.DiyanetUlkeEntity;
 import com.example.advancedprayertimes.Logic.Entities.API_Entities.MuwaqqitPrayerTimeDayEntity;
+import com.example.advancedprayertimes.Logic.Entities.CustomLocation;
 import com.google.gson.Gson;
 
 import java.time.LocalDateTime;
@@ -295,7 +295,7 @@ public class DBHelper extends SQLiteOpenHelper
     // ######################################################
     // ######################################################
 
-    public boolean AddMuwaqqitPrayerTime(MuwaqqitPrayerTimeDayEntity muwaqqitPrayerTimeDayEntity, Location location)
+    public boolean AddMuwaqqitPrayerTime(MuwaqqitPrayerTimeDayEntity muwaqqitPrayerTimeDayEntity, CustomLocation location)
     {
         Gson gson = new Gson();
 
@@ -307,13 +307,13 @@ public class DBHelper extends SQLiteOpenHelper
 
         cv.put(sunriseTimeColumn, muwaqqitPrayerTimeDayEntity.getSunriseTime().format(dateFormat));
         cv.put(dhuhrTimeColumn, muwaqqitPrayerTimeDayEntity.getDhuhrTime().format(dateFormat));
-        cv.put(asrMithlTimeColumn, muwaqqitPrayerTimeDayEntity.getAsrMithlTime().format(dateFormat));
+        cv.put(asrMithlTimeColumn, muwaqqitPrayerTimeDayEntity.getAsrTime().format(dateFormat));
         cv.put(maghribTimeColumn, muwaqqitPrayerTimeDayEntity.getMaghribTime().format(dateFormat));
 
         cv.put(ishaTimeColumn, muwaqqitPrayerTimeDayEntity.getIshaTime().format(dateFormat));
         cv.put(ishaDegreeColumn, muwaqqitPrayerTimeDayEntity.getIshaAngle());
 
-        cv.put(dateColumn, muwaqqitPrayerTimeDayEntity.getFajrDate());
+        cv.put(dateColumn, muwaqqitPrayerTimeDayEntity.getDate());
         cv.put(longitudeColumn, location.getLongitude());
         cv.put(latitudeColumn, location.getLatitude());
         cv.put(insertDateMilliSecondsColumn, System.currentTimeMillis());

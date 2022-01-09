@@ -38,7 +38,7 @@ public class CustomPlaceEntity
     public CustomPlaceEntity(String id, double latitude, double longitude, String name)
     {
         this._id = id;
-        this._location = new CustomLocation(longitude, latitude);
+        this._location = new CustomLocation(longitude, latitude, "");
         this._name = name;
     }
 

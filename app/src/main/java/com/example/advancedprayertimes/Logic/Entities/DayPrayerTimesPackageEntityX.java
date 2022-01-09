@@ -7,7 +7,7 @@ import com.example.advancedprayertimes.Logic.Enums.EPrayerTimeType;
 
 import java.time.LocalDateTime;
 
-public class DayPrayerTimesPackageEntity
+public class DayPrayerTimesPackageEntityX
 {
     // region static fields
 
@@ -26,28 +26,30 @@ public class DayPrayerTimesPackageEntity
     private LocalDateTime _asrKarahaTime;
 
     private LocalDateTime _maghribTime;
+    private LocalDateTime _ishtibaqAnNujumTime;
     private LocalDateTime _ishaTime;
 
     // endregion fields
 
     // region constructors
 
-    public DayPrayerTimesPackageEntity(MuwaqqitPrayerTimeDayEntity muwaqqitTime)
+    public DayPrayerTimesPackageEntityX(MuwaqqitPrayerTimeDayEntity muwaqqitTime)
     {
         this(
                 muwaqqitTime.getFajrTime(),
                 muwaqqitTime.getSunriseTime(),
                 muwaqqitTime.getDuhaTime(),
                 muwaqqitTime.getDhuhrTime(),
-                muwaqqitTime.getAsrMithlTime(),
-                muwaqqitTime.getAsrMithlaynTime(),
+                muwaqqitTime.getAsrTime(),
+                muwaqqitTime.getMithlaynTime(),
                 muwaqqitTime.getAsrKarahaTime(),
                 muwaqqitTime.getMaghribTime(),
+                null,
                 muwaqqitTime.getIshaTime()
             );
     }
 
-    public DayPrayerTimesPackageEntity(DiyanetPrayerTimeDayEntity diyanetTime)
+    public DayPrayerTimesPackageEntityX(DiyanetPrayerTimeDayEntity diyanetTime)
     {
         this(
                 diyanetTime.getFajrTime(),
@@ -58,11 +60,12 @@ public class DayPrayerTimesPackageEntity
                 null,
                 null,
                 diyanetTime.getMaghribTime(),
+                null,
                 diyanetTime.getIshaTime()
             );
     }
 
-    public DayPrayerTimesPackageEntity(
+    public DayPrayerTimesPackageEntityX(
             LocalDateTime fajrTime,
             LocalDateTime sunRiseTime,
             LocalDateTime duhaTime,
@@ -71,6 +74,7 @@ public class DayPrayerTimesPackageEntity
             LocalDateTime asrmitlhaynTime,
             LocalDateTime asrKarahaTime,
             LocalDateTime maghribTime,
+            LocalDateTime ishtibaqAnNujumTime,
             LocalDateTime ishaTime
     )
     {
@@ -85,6 +89,7 @@ public class DayPrayerTimesPackageEntity
         this._asrKarahaTime = asrKarahaTime;
 
         this._maghribTime = maghribTime;
+        this._ishtibaqAnNujumTime = ishtibaqAnNujumTime;
         this._ishaTime = ishaTime;
     }
 
@@ -170,6 +175,16 @@ public class DayPrayerTimesPackageEntity
     public void setMaghribTime(LocalDateTime maghribTime)
     {
         _maghribTime = maghribTime;
+    }
+
+    public LocalDateTime getIshtibaqAnNujumTime()
+    {
+        return _ishtibaqAnNujumTime;
+    }
+
+    public void setIshtibaqAnNujumTime(LocalDateTime ishtibaqAnNujumTime)
+    {
+        _ishtibaqAnNujumTime = ishtibaqAnNujumTime;
     }
 
     public LocalDateTime getIshaTime()

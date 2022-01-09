@@ -2,11 +2,14 @@ package com.example.advancedprayertimes.Logic;
 
 import android.content.SharedPreferences;
 import android.location.Address;
-import android.location.Location;
 
+import com.example.advancedprayertimes.Logic.Entities.API_Entities.AlAdhanPrayerTimeDayEntity;
 import com.example.advancedprayertimes.Logic.Entities.API_Entities.CustomPlaceEntity;
-import com.example.advancedprayertimes.Logic.Entities.DayPrayerTimesPackageEntity;
+import com.example.advancedprayertimes.Logic.Entities.API_Entities.DiyanetPrayerTimeDayEntity;
+import com.example.advancedprayertimes.Logic.Entities.API_Entities.MuwaqqitPrayerTimeDayEntity;
+import com.example.advancedprayertimes.Logic.Entities.CustomLocation;
 import com.example.advancedprayertimes.Logic.Entities.PrayerTimeEntity;
+import com.example.advancedprayertimes.Logic.Entities.PrayerTimePackageAbstractClass;
 import com.example.advancedprayertimes.Logic.Entities.Setting_Entities.PrayerSettingsEntity;
 import com.example.advancedprayertimes.Logic.Entities.Setting_Entities.PrayerTimeBeginningEndSettingsEntity;
 import com.example.advancedprayertimes.Logic.Enums.EPrayerTimeMomentType;
@@ -113,7 +116,7 @@ public class DataManagementUtil
         }
     }
 
-    public static Map<Map.Entry<EPrayerTimeType, EPrayerTimeMomentType>, DayPrayerTimesPackageEntity> RetrieveDiyanetTimeData(
+    public static Map<Map.Entry<EPrayerTimeType, EPrayerTimeMomentType>, PrayerTimePackageAbstractClass> RetrieveDiyanetTimeData(
             Map<Map.Entry<EPrayerTimeType, EPrayerTimeMomentType>, PrayerTimeBeginningEndSettingsEntity> toBeCalculatedPrayerTimes,
             Address cityAddress)
             throws Exception
@@ -128,7 +131,7 @@ public class DataManagementUtil
         {
             try
             {
-                DayPrayerTimesPackageEntity diyanetTime = HttpAPIRequestUtil.RetrieveDiyanetTimes(cityAddress);
+                DiyanetPrayerTimeDayEntity diyanetTime = HttpAPIRequestUtil.RetrieveDiyanetTimes(cityAddress);
 
                 if(diyanetTime != null)
                 {
@@ -148,16 +151,52 @@ public class DataManagementUtil
         return new HashMap<>();
     }
 
-    public static Map<Map.Entry<EPrayerTimeType, EPrayerTimeMomentType>, DayPrayerTimesPackageEntity> RetrieveMuwaqqitTimeData(
+    public static Map<Map.Entry<EPrayerTimeType, EPrayerTimeMomentType>, PrayerTimePackageAbstractClass> RetrieveAlAdhanTimeData(
             Map<Map.Entry<EPrayerTimeType, EPrayerTimeMomentType>, PrayerTimeBeginningEndSettingsEntity> toBeCalculatedPrayerTimes,
-            Address cityAddress)
+            CustomLocation location)
             throws Exception
     {
-        Location targetLocation = new Location("");
-        targetLocation.setLongitude(cityAddress.getLongitude());
-        targetLocation.setLatitude(cityAddress.getLatitude());
+        Map<Map.Entry<EPrayerTimeType, EPrayerTimeMomentType>, PrayerTimeBeginningEndSettingsEntity> alAdhanPrayerTimeTypesHashMap =
+                toBeCalculatedPrayerTimes.entrySet().stream()
+                        .filter(x -> x.getValue().get_api() == ESupportedAPIs.AlAdhan)
+                        .collect(Collectors.toMap(x -> x.getKey(), y -> y.getValue()));
 
-        Map<Map.Entry<EPrayerTimeType, EPrayerTimeMomentType>, DayPrayerTimesPackageEntity> muwaqqitTimesHashMap = new HashMap<>();
+        Map<Map.Entry<EPrayerTimeType, EPrayerTimeMomentType>, PrayerTimePackageAbstractClass> alAdhanTimesHashMap = new HashMap<>();
+
+        // ADD ALL DIYANET TIME CALCULATIONS
+        if(alAdhanPrayerTimeTypesHashMap.size() > 0)
+        {
+            try
+            {
+                for(Map.Entry<Map.Entry<EPrayerTimeType, EPrayerTimeMomentType>, PrayerTimeBeginningEndSettingsEntity> prayerTimeWithMoment : alAdhanPrayerTimeTypesHashMap.entrySet())
+                {
+                    Double fajrDegree = prayerTimeWithMoment.getValue().getFajrCalculationDegree();
+                    //Double ishtibaqAnNujumDegree = prayerTimeWithMoment.getValue().getFajrCalculationDegree();
+                    Double ishaDegree = prayerTimeWithMoment.getValue().getIshaCalculationDegree();
+
+                    AlAdhanPrayerTimeDayEntity alAdhanTime = HttpAPIRequestUtil.RetrieveAlAdhanTimes(location, fajrDegree, ishaDegree, null);
+
+                    if(alAdhanTime != null)
+                    {
+                        alAdhanTimesHashMap.put(prayerTimeWithMoment.getKey(), alAdhanTime);
+                    }
+                }
+            }
+            catch(Exception e)
+            {
+                throw new Exception("An error has occured while trying to retrieve AlAdhan prayer time data!", e);
+            }
+        }
+
+        return alAdhanTimesHashMap;
+    }
+
+    public static Map<Map.Entry<EPrayerTimeType, EPrayerTimeMomentType>, PrayerTimePackageAbstractClass> RetrieveMuwaqqitTimeData(
+            Map<Map.Entry<EPrayerTimeType, EPrayerTimeMomentType>, PrayerTimeBeginningEndSettingsEntity> toBeCalculatedPrayerTimes,
+            CustomLocation location)
+            throws Exception
+    {
+        Map<Map.Entry<EPrayerTimeType, EPrayerTimeMomentType>, PrayerTimePackageAbstractClass> muwaqqitTimesHashMap = new HashMap<>();
 
         Map<Map.Entry<EPrayerTimeType, EPrayerTimeMomentType>, PrayerTimeBeginningEndSettingsEntity> muwaqqitPrayerTimeTypesHashMap =
                 toBeCalculatedPrayerTimes.entrySet().stream()
@@ -176,7 +215,9 @@ public class DataManagementUtil
 
         Double asrKarahaDegree = null;
 
-        if(AppEnvironment.prayerSettingsByPrayerType.get(EPrayerTimeType.Asr).getSubPrayer1Settings() != null && AppEnvironment.prayerSettingsByPrayerType.get(EPrayerTimeType.Asr).getSubPrayer1Settings().isEnabled2())
+        if(AppEnvironment.prayerSettingsByPrayerType.get(EPrayerTimeType.Asr).getSubPrayer1Settings() != null
+            &&
+            AppEnvironment.prayerSettingsByPrayerType.get(EPrayerTimeType.Asr).getSubPrayer1Settings().isEnabled2())
         {
             asrKarahaDegree = AppEnvironment.prayerSettingsByPrayerType.get(EPrayerTimeType.Asr).getSubPrayer1Settings().getAsrKarahaDegree();
         }
@@ -193,7 +234,7 @@ public class DataManagementUtil
                             .filter(x -> PrayerTimeBeginningEndSettingsEntity.ISHA_DEGREE_TYPES.contains(x.getKey()))
                             .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
-            // MERGE CALCULATIONS FOR MERGABLE TIMES
+            // CALCULATIONS FOR MERGABLE DEGREE TIMES
             while(fajrDegreeMuwaqqitTimesHashMap.size() > 0 && ishaDegreeMuwaqqitTimesHashMap.size() > 0)
             {
                 Map.Entry<Map.Entry<EPrayerTimeType, EPrayerTimeMomentType>, PrayerTimeBeginningEndSettingsEntity> fajrDegreeEntry = fajrDegreeMuwaqqitTimesHashMap.entrySet().stream().findFirst().get();
@@ -205,7 +246,7 @@ public class DataManagementUtil
                 Double fajrDegree = fajrDegreeSettingsEntity.getFajrCalculationDegree();
                 Double ishaDegree = ishaDegreeSettingsEntity.getIshaCalculationDegree();
 
-                DayPrayerTimesPackageEntity degreeMuwaqqitTimeEntity = HttpAPIRequestUtil.RetrieveMuwaqqitTimes(targetLocation, fajrDegree, ishaDegree, asrKarahaDegree);
+                MuwaqqitPrayerTimeDayEntity degreeMuwaqqitTimeEntity = HttpAPIRequestUtil.RetrieveMuwaqqitTimes(location, fajrDegree, ishaDegree, asrKarahaDegree);
 
                 if(degreeMuwaqqitTimeEntity == null)
                 {
@@ -223,7 +264,7 @@ public class DataManagementUtil
                 fajrIshaDegreeSettingsMuwaqqitPrayerTimeTypesHashMap.remove(ishaDegreeEntry.getKey());
             }
 
-            // ADD REMAINING CALCULATIONS FOR NON MERGABLE DEGREE TIMES
+            // CALCULATIONS FOR NON MERGABLE DEGREE TIMES
             for(Map.Entry<Map.Entry<EPrayerTimeType, EPrayerTimeMomentType>, PrayerTimeBeginningEndSettingsEntity> entry : fajrIshaDegreeSettingsMuwaqqitPrayerTimeTypesHashMap.entrySet())
             {
                 PrayerTimeBeginningEndSettingsEntity settingsEntity = entry.getValue();
@@ -231,7 +272,7 @@ public class DataManagementUtil
                 Double fajrDegree = settingsEntity.getFajrCalculationDegree();
                 Double ishaDegree = settingsEntity.getIshaCalculationDegree();
 
-                DayPrayerTimesPackageEntity degreeMuwaqqitTimeEntity = HttpAPIRequestUtil.RetrieveMuwaqqitTimes(targetLocation, fajrDegree, ishaDegree, asrKarahaDegree);
+                MuwaqqitPrayerTimeDayEntity degreeMuwaqqitTimeEntity = HttpAPIRequestUtil.RetrieveMuwaqqitTimes(location, fajrDegree, ishaDegree, asrKarahaDegree);
 
                 if(degreeMuwaqqitTimeEntity == null)
                 {
@@ -245,16 +286,16 @@ public class DataManagementUtil
         // ADD CALCULATIONS FOR NON DEGREE TIMES
         if(nonFajrIshaDegreeSettingsMuwaqqitPrayerTimeTypesHashMap.size() > 0)
         {
-            DayPrayerTimesPackageEntity nonDegreeMuwaqqitTimeEntity;
+            PrayerTimePackageAbstractClass nonDegreeMuwaqqitTimeEntity;
 
             // any other muwaqqit request will suffice
-            if(muwaqqitTimesHashMap.values().stream().findFirst().isPresent())
+            if(muwaqqitTimesHashMap.size() > 0)
             {
                 nonDegreeMuwaqqitTimeEntity = muwaqqitTimesHashMap.values().stream().findFirst().get();
             }
             else
             {
-                nonDegreeMuwaqqitTimeEntity = HttpAPIRequestUtil.RetrieveMuwaqqitTimes(targetLocation, null, null, asrKarahaDegree);
+                nonDegreeMuwaqqitTimeEntity = HttpAPIRequestUtil.RetrieveMuwaqqitTimes(location, null, null, asrKarahaDegree);
             }
 
             if(nonDegreeMuwaqqitTimeEntity != null)
@@ -268,7 +309,7 @@ public class DataManagementUtil
 
         if(asrKarahaDegree != null)
         {
-            DayPrayerTimesPackageEntity asrKarahaTimePackage = null;
+            PrayerTimePackageAbstractClass asrKarahaTimePackage = null;
 
             // any other muwaqqit request will suffice
             if(muwaqqitTimesHashMap.values().stream().findFirst().isPresent())
@@ -277,7 +318,7 @@ public class DataManagementUtil
             }
             else
             {
-                asrKarahaTimePackage = HttpAPIRequestUtil.RetrieveMuwaqqitTimes(targetLocation, null, null, asrKarahaDegree);
+                asrKarahaTimePackage = HttpAPIRequestUtil.RetrieveMuwaqqitTimes(location, null, null, asrKarahaDegree);
             }
 
             if(asrKarahaTimePackage != null)

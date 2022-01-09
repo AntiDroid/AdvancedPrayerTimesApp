@@ -25,12 +25,13 @@ import com.example.advancedprayertimes.Logic.DB.DBHelper;
 import com.example.advancedprayertimes.Logic.DataManagementUtil;
 import com.example.advancedprayertimes.Logic.Entities.API_Entities.CustomPlaceEntity;
 import com.example.advancedprayertimes.Logic.Entities.CustomLocation;
-import com.example.advancedprayertimes.Logic.Entities.DayPrayerTimesPackageEntity;
 import com.example.advancedprayertimes.Logic.Entities.PrayerTimeEntity;
+import com.example.advancedprayertimes.Logic.Entities.PrayerTimePackageAbstractClass;
 import com.example.advancedprayertimes.Logic.Entities.Setting_Entities.PrayerSettingsEntity;
 import com.example.advancedprayertimes.Logic.Entities.Setting_Entities.PrayerTimeBeginningEndSettingsEntity;
 import com.example.advancedprayertimes.Logic.Entities.Setting_Entities.SubTimeSettingsEntity;
 import com.example.advancedprayertimes.Logic.Enums.EHttpRequestMethod;
+import com.example.advancedprayertimes.Logic.Enums.EHttpResponseStatusType;
 import com.example.advancedprayertimes.Logic.Enums.EPrayerTimeMomentType;
 import com.example.advancedprayertimes.Logic.Enums.EPrayerTimeType;
 import com.example.advancedprayertimes.Logic.Enums.ESupportedAPIs;
@@ -87,29 +88,22 @@ public class TimeOverviewActivity extends AppCompatActivity
                 @Override
                 public void run()
                 {
-                    //coolCoolStuff();
+//                    try
+//                    {
+//                        AlAdhanPrayerTimeDayEntity dayPrayerTimesPackageEntity = HttpAPIRequestUtil.RetrieveAlAdhanTimes(AppEnvironment.PlaceEntity.getLocation());
+//
+//                        String lol = dayPrayerTimesPackageEntity.getAsrTime().toString();
+//                    }
+//                    catch(Exception e)
+//                    {
+//                        e.printStackTrace();
+//                    }
                 }
             }).start();
         });
 
         configurePrayerTimeTextViews();
         configureGooglePlacesAPI();
-    }
-
-    private void coolCoolStuff()
-    {
-        //Toast.makeText(this.getApplicationContext(), "Test-Text by \nTalip\nTalip\nTalip\nTalip\nTalip", Toast.LENGTH_LONG).show();
-
-        String urlText = "https://api.positionstack.com/v1/forward";
-
-        HashMap<String, String> parameters = new HashMap<String, String>();
-        parameters.put("access_key", "42e6660aa35168f9e7860cf87c32e474");
-        parameters.put("query", "Otto-Winter-Straße");
-
-        StringBuilder responseContent = new StringBuilder();
-        HttpAPIRequestUtil.RetrieveAPIFeedback(responseContent, urlText, EHttpRequestMethod.GET, parameters);
-
-        String response = responseContent.toString();
     }
 
     private CustomPlaceEntity findPlaceFromGoogle(String placeID) throws JSONException
@@ -121,42 +115,33 @@ public class TimeOverviewActivity extends AppCompatActivity
         String urlText = "https://maps.googleapis.com/maps/api/place/details/json";
 
         StringBuilder response = new StringBuilder();
-        int googlePlacesApiRequestStatus = HttpAPIRequestUtil.RetrieveAPIFeedback(response, urlText, EHttpRequestMethod.GET, parameters);
 
-        if(googlePlacesApiRequestStatus == 0 && googlePlacesApiRequestStatus > 299)
+        EHttpResponseStatusType googlePlacesApiRequestStatus = EHttpResponseStatusType.None;
+
+        try
+        {
+            googlePlacesApiRequestStatus = HttpAPIRequestUtil.RetrieveAPIFeedback(response, urlText, EHttpRequestMethod.GET, parameters);
+        }
+        catch(Exception e)
+        {
+            // DO STUFF
+        }
+
+        if(googlePlacesApiRequestStatus != EHttpResponseStatusType.Success)
         {
             return null;
         }
 
         JSONObject jsonBaseObj = new JSONObject(response.toString());
+        JSONObject jsonResultObj = jsonBaseObj.getJSONObject("result");
+        JSONObject jsonGeometryObj = jsonResultObj.getJSONObject("geometry");
+        JSONObject jsonLocationObj = jsonGeometryObj.getJSONObject("location");
 
-        if(jsonBaseObj.has("result"))
-        {
-            JSONObject jsonResultObj = new JSONObject(response.toString()).getJSONObject("result");
+        String name = jsonResultObj.getString("name");
+        double longitude = jsonLocationObj.getDouble("lng");
+        double latitude = jsonLocationObj.getDouble("lat");
 
-            if(jsonResultObj.has("geometry")
-                    && jsonResultObj.has("place_id")
-                    && jsonResultObj.has("name"))
-            {
-                JSONObject jsonGeometryObj = jsonResultObj.getJSONObject("geometry");
-
-                if(jsonGeometryObj.has("location"))
-                {
-                    JSONObject jsonLocationObj = jsonResultObj.getJSONObject("location");
-
-                    if(jsonLocationObj.has("lng") && jsonLocationObj.has("lat"))
-                    {
-                        String name = jsonResultObj.getString("name");
-                        double longitude = jsonLocationObj.getDouble("lng");
-                        double latitude = jsonLocationObj.getDouble("lat");
-
-                        return new CustomPlaceEntity(placeID, latitude, longitude, name);
-                    }
-                }
-            }
-        }
-
-        return null;
+        return new CustomPlaceEntity(placeID, latitude, longitude, name);
     }
 
     private void doErrorToastyToast(String message)
@@ -188,7 +173,7 @@ public class TimeOverviewActivity extends AppCompatActivity
 
         try
         {
-            Address geoLocationAddress = LocationUtil.RetrieveCityByLocation(this.getApplicationContext(), AppEnvironment.PlaceEntity.getLocation());
+            Address geoLocationAddress = LocationUtil.RetrieveCityByLocation(this.getApplicationContext(), AppEnvironment.PlaceEntity.getLocation().getLongitude(), AppEnvironment.PlaceEntity.getLocation().getLatitude());
             retrieveTimeData(geoLocationAddress);
         }
         catch(Exception e)
@@ -271,18 +256,16 @@ public class TimeOverviewActivity extends AppCompatActivity
             @Override
             public void onPlaceSelected(@NonNull Place place)
             {
-                CustomLocation targetLocation = new CustomLocation(place.getLatLng().longitude, place.getLatLng().latitude);
-
                 try
                 {
-                    Address cityAddress = LocationUtil.RetrieveCityByLocation(getApplicationContext(), targetLocation);
+                    Address cityAddress = LocationUtil.RetrieveCityByLocation(getApplicationContext(), place.getLatLng().longitude, place.getLatLng().latitude);
                     AppEnvironment.PlaceEntity = new CustomPlaceEntity(cityAddress);
 
                     Toast.makeText(getApplicationContext(), place.getName(), Toast.LENGTH_SHORT).show();
                 }
                 catch(Exception e)
                 {
-                    Toast.makeText(getApplicationContext(), "Error - Place could not be retrieved!", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getApplicationContext(), "UnknownError - Place could not be retrieved!", Toast.LENGTH_SHORT).show();
                 }
             }
 
@@ -290,7 +273,7 @@ public class TimeOverviewActivity extends AppCompatActivity
             public void onError(@NonNull Status status)
             {
                 AppEnvironment.PlaceEntity = null;
-                Toast.makeText(getApplicationContext(), "Error", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getApplicationContext(), "UnknownError", Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -501,8 +484,9 @@ public class TimeOverviewActivity extends AppCompatActivity
         }
     }
 
-    Map<Map.Entry<EPrayerTimeType, EPrayerTimeMomentType>, DayPrayerTimesPackageEntity> muwaqqitTimesHashMap = new HashMap<>();
-    Map<Map.Entry<EPrayerTimeType, EPrayerTimeMomentType>, DayPrayerTimesPackageEntity> diyanetTimesHashMap = new HashMap<>();
+    Map<Map.Entry<EPrayerTimeType, EPrayerTimeMomentType>, PrayerTimePackageAbstractClass> diyanetTimesHashMap = new HashMap<>();
+    Map<Map.Entry<EPrayerTimeType, EPrayerTimeMomentType>, PrayerTimePackageAbstractClass> muwaqqitTimesHashMap = new HashMap<>();
+    Map<Map.Entry<EPrayerTimeType, EPrayerTimeMomentType>, PrayerTimePackageAbstractClass> alAdhanTimesHashMap = new HashMap<>();
 
     private void resetLoadingUIFeedback()
     {
@@ -514,8 +498,12 @@ public class TimeOverviewActivity extends AppCompatActivity
     {
         Map<Map.Entry<EPrayerTimeType, EPrayerTimeMomentType>, PrayerTimeBeginningEndSettingsEntity> toBeCalculatedPrayerTimes = AppEnvironment.GetPrayerTimeSettingsByPrayerTimeTypeHashMap();
 
+        String timeZone = HttpAPIRequestUtil.RetrieveTimeZoneByLocation(cityAddress.getLongitude(), cityAddress.getLatitude());
+        CustomLocation targetLocation = new CustomLocation(cityAddress.getLongitude(), cityAddress.getLatitude(), timeZone);
+
         this.diyanetTimesHashMap = DataManagementUtil.RetrieveDiyanetTimeData(toBeCalculatedPrayerTimes, cityAddress);
-        this.muwaqqitTimesHashMap = DataManagementUtil.RetrieveMuwaqqitTimeData(toBeCalculatedPrayerTimes, cityAddress);
+        this.muwaqqitTimesHashMap = DataManagementUtil.RetrieveMuwaqqitTimeData(toBeCalculatedPrayerTimes, targetLocation);
+        this.alAdhanTimesHashMap = DataManagementUtil.RetrieveAlAdhanTimeData(toBeCalculatedPrayerTimes, targetLocation);
     }
 
     private void mapTimeDataToTimesEntities()
@@ -583,6 +571,12 @@ public class TimeOverviewActivity extends AppCompatActivity
                 {
                     correctTime = diyanetTimesHashMap.get(prayerTimeWithType).GetTimeByType(prayerType, prayerTypeTimeType);
                 }
+                else if (prayerBeginningEndSettings.get_api() == ESupportedAPIs.AlAdhan
+                        && alAdhanTimesHashMap.containsKey(prayerTimeWithType)
+                        && alAdhanTimesHashMap.get(prayerTimeWithType) != null)
+                {
+                    correctTime = alAdhanTimesHashMap.get(prayerTimeWithType).GetTimeByType(prayerType, prayerTypeTimeType);
+                }
 
                 if(correctTime != null)
                 {
@@ -623,7 +617,7 @@ public class TimeOverviewActivity extends AppCompatActivity
                 {
                     if(prayerTypeTimeType == EPrayerTimeMomentType.SubTimeOne && subTimeSettings.isEnabled1())
                     {
-                        return muwaqqitTimesHashMap.get(new AbstractMap.SimpleEntry(prayerType, prayerTypeTimeType)).getAsrMitlhaynTime();
+                        return muwaqqitTimesHashMap.get(new AbstractMap.SimpleEntry(prayerType, prayerTypeTimeType)).getMithlaynTime();
                     }
                     else if(prayerTypeTimeType == EPrayerTimeMomentType.SubTimeTwo && subTimeSettings.isEnabled2())
                     {

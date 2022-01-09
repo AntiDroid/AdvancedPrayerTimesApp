@@ -6,15 +6,17 @@ public class CustomLocation
 
     private double _longitude;
     private double _latitude;
+    private String _timezone;
 
     // endregion fields
 
     // region constructors
 
-    public CustomLocation(double longitude, double latitude)
+    public CustomLocation(double longitude, double latitude, String timezone)
     {
         this._longitude = longitude;
         this._latitude = latitude;
+        this._timezone = timezone;
     }
 
     // endregion constructors
@@ -39,6 +41,16 @@ public class CustomLocation
     public void setLatitude(double latitude)
     {
         _latitude = latitude;
+    }
+
+    public String getTimezone()
+    {
+        return _timezone;
+    }
+
+    public void setTimezone(String timezone)
+    {
+        _timezone = timezone;
     }
 
     // endregion getter & setter

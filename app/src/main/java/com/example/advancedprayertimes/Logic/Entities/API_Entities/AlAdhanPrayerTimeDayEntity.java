@@ -1,13 +1,12 @@
 package com.example.advancedprayertimes.Logic.Entities.API_Entities;
 
 import com.example.advancedprayertimes.Logic.Entities.PrayerTimePackageAbstractClass;
-import com.google.gson.annotations.SerializedName;
 
 import java.time.LocalDateTime;
 
 import kotlin.NotImplementedError;
 
-public class MuwaqqitPrayerTimeDayEntity extends PrayerTimePackageAbstractClass
+public class AlAdhanPrayerTimeDayEntity extends PrayerTimePackageAbstractClass
 {
     // region static fields
 
@@ -15,152 +14,151 @@ public class MuwaqqitPrayerTimeDayEntity extends PrayerTimePackageAbstractClass
 
     // region fields
 
-    @SerializedName("fajr_time")
     private LocalDateTime _fajrTime;
-
-    @SerializedName("fajr_angle")
-    private double _fajrAngle;
-
-    @SerializedName("sunrise_time")
     private LocalDateTime _sunriseTime;
-    @SerializedName("duha_time")
-    private LocalDateTime _duhaTime;
 
-    @SerializedName("zohr_time")
     private LocalDateTime _dhuhrTime;
-
-    @SerializedName("mithl_time")
     private LocalDateTime _asrTime;
-    @SerializedName("mithlain_time")
-    private LocalDateTime _mithlaynTime;
+    private LocalDateTime _mitlhaynTime;
 
-    @SerializedName("karaha_time")
-    private LocalDateTime _asrKarahaTime;
-    @SerializedName("karaha_angle")
-    private double _asrKarahaAngle;
-
-    @SerializedName("sunset_time")
     private LocalDateTime _maghribTime;
-
-    @SerializedName("esha_time")
+    private LocalDateTime _ishtibaqAnNujumTime;
     private LocalDateTime _ishaTime;
 
-    @SerializedName("esha_angle")
-    private double _ishaAngle;
-
-    @SerializedName("fajr_date")
-    private String _fajrDate;
+    private String _date;
 
     // endregion fields
 
     // region constructors
 
-    public MuwaqqitPrayerTimeDayEntity(LocalDateTime fajrTime, LocalDateTime sunriseTime, LocalDateTime duhaTime, LocalDateTime dhuhrTime, LocalDateTime asrTime, LocalDateTime mithlaynTime, LocalDateTime maghribTime, LocalDateTime ishaTime, String fajrDate)
+    public AlAdhanPrayerTimeDayEntity(
+        LocalDateTime fajrTime,
+        LocalDateTime sunriseTime,
+        LocalDateTime dhuhrTime,
+        LocalDateTime asrTime,
+        LocalDateTime mitlhaynTime,
+        LocalDateTime maghribTime,
+        LocalDateTime ishtibaqAnNujumTime,
+        LocalDateTime ishaTime
+        )
     {
         this._fajrTime = fajrTime;
-
         this._sunriseTime = sunriseTime;
-        this._duhaTime = duhaTime;
-
         this._dhuhrTime = dhuhrTime;
         this._asrTime = asrTime;
-        this._mithlaynTime = mithlaynTime;
-
+        this._mitlhaynTime = mitlhaynTime;
         this._maghribTime = maghribTime;
+        this._ishtibaqAnNujumTime = ishtibaqAnNujumTime;
         this._ishaTime = ishaTime;
-
-        this._fajrDate = fajrDate;
     }
 
     // endregion constructors
 
     // region getter & setter
 
+    @Override
+    public String getDate()
+    {
+        return _date;
+    }
+
+    @Override
+    public void setDate(String date)
+    {
+        _date = date;
+    }
+
+    @Override
     public LocalDateTime getFajrTime()
     {
         return _fajrTime;
     }
 
+    @Override
     public void setFajrTime(LocalDateTime fajrTime)
     {
         _fajrTime = fajrTime;
     }
 
+    @Override
     public LocalDateTime getSunriseTime()
     {
         return _sunriseTime;
     }
 
-    public void setSunriseTime(LocalDateTime sunrise_time)
+    @Override
+    public void setSunriseTime(LocalDateTime sunriseTime)
     {
-        _sunriseTime = sunrise_time;
+        _sunriseTime = sunriseTime;
     }
 
+    @Override
     public LocalDateTime getDuhaTime()
     {
-        return _duhaTime;
+        return null;
     }
 
+    @Override
     public void setDuhaTime(LocalDateTime duhaTime)
     {
-        _duhaTime = duhaTime;
+        throw new NotImplementedError();
     }
 
+    @Override
     public LocalDateTime getDhuhrTime()
     {
         return _dhuhrTime;
     }
 
+    @Override
     public void setDhuhrTime(LocalDateTime dhuhrTime)
     {
         _dhuhrTime = dhuhrTime;
     }
 
+    @Override
     public LocalDateTime getAsrTime()
     {
         return _asrTime;
     }
 
+    @Override
     public void setAsrTime(LocalDateTime asrTime)
     {
         _asrTime = asrTime;
     }
 
+    @Override
     public LocalDateTime getMithlaynTime()
     {
-        return _mithlaynTime;
+        return _mitlhaynTime;
     }
 
+    @Override
     public void setMithlaynTime(LocalDateTime mithlaynTime)
     {
-        _mithlaynTime = mithlaynTime;
+        _mitlhaynTime = mithlaynTime;
     }
 
+    @Override
     public LocalDateTime getAsrKarahaTime()
     {
-        return _asrKarahaTime;
+        return null;
     }
 
+    @Override
     public void setAsrKarahaTime(LocalDateTime asrKarahaTime)
     {
-        _asrKarahaTime = asrKarahaTime;
+        throw new NotImplementedError();
     }
 
-    public double getAsrKarahaAngle()
-    {
-        return _asrKarahaAngle;
-    }
-
-    public void setAsrKarahaAngle(double asrKarahaAngle)
-    {
-        _asrKarahaAngle = asrKarahaAngle;
-    }
-
+    @Override
     public LocalDateTime getMaghribTime()
     {
         return _maghribTime;
     }
 
+    @Override
     public void setMaghribTime(LocalDateTime maghribTime)
     {
         _maghribTime = maghribTime;
@@ -169,54 +167,27 @@ public class MuwaqqitPrayerTimeDayEntity extends PrayerTimePackageAbstractClass
     @Override
     public LocalDateTime getIshtibaqAnNujumTime()
     {
-        return null;
+        return this._ishtibaqAnNujumTime;
     }
 
     @Override
-    public void setIshtibaqAnNujumTime(LocalDateTime ishtibaqAnNujumTime)
+    public void setIshtibaqAnNujumTime(LocalDateTime ishtibaqAnNujum)
     {
-        throw new NotImplementedError();
+        this._ishtibaqAnNujumTime = ishtibaqAnNujum;
     }
 
+    @Override
     public LocalDateTime getIshaTime()
     {
         return _ishaTime;
     }
 
+    @Override
     public void setIshaTime(LocalDateTime ishaTime)
     {
         _ishaTime = ishaTime;
     }
 
-    public String getDate()
-    {
-        return _fajrDate;
-    }
-
-    public void setDate(String fajrDate)
-    {
-        _fajrDate = fajrDate;
-    }
-
-    public double getFajrAngle()
-    {
-        return _fajrAngle;
-    }
-
-    public void setFajrAngle(double fajrAngle)
-    {
-        _fajrAngle = fajrAngle;
-    }
-
-    public double getIshaAngle()
-    {
-        return _ishaAngle;
-    }
-
-    public void setIshaAngle(double ishaAngle)
-    {
-        _ishaAngle = ishaAngle;
-    }
 
     // endregion getter & setter
 

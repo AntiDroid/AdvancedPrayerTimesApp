@@ -4,18 +4,16 @@ import android.content.Context;
 import android.location.Address;
 import android.location.Geocoder;
 
-import com.example.advancedprayertimes.Logic.Entities.CustomLocation;
-
 import java.util.List;
 import java.util.Locale;
 
 public class LocationUtil
 {
-    public static Address RetrieveCityByLocation(Context context, CustomLocation location) throws Exception
+    public static Address RetrieveCityByLocation(Context context, double longitude, double latitude) throws Exception
     {
         Geocoder geocoder = new Geocoder(context, Locale.getDefault());
 
-        List<Address> addresses = geocoder.getFromLocation(location.getLatitude(),location.getLongitude(),5);
+        List<Address> addresses = geocoder.getFromLocation(latitude, longitude,5);
 
         if (Geocoder.isPresent() && addresses.size() > 0)
         {
