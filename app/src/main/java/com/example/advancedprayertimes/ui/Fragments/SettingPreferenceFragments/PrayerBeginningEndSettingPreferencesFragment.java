@@ -133,40 +133,33 @@ public class PrayerBeginningEndSettingPreferencesFragment extends PreferenceFrag
             return;
         }
 
-       try
-       {
-           if(key.equals(apiSelectionListPreference.getKey()) && sharedPreferences.contains(apiSelectionListPreference.getKey()))
-           {
-               ESupportedAPIs api = ESupportedAPIs.valueOf(sharedPreferences.getString(apiSelectionListPreference.getKey(), null));
-               prayerSettings.GetBeginningEndSettingByMomentType(_isBeginning).set_api(api);
+        if(key.equals(apiSelectionListPreference.getKey()) && sharedPreferences.contains(apiSelectionListPreference.getKey()))
+        {
+            ESupportedAPIs api = ESupportedAPIs.valueOf(sharedPreferences.getString(apiSelectionListPreference.getKey(), null));
+            prayerSettings.GetBeginningEndSettingByMomentType(_isBeginning).set_api(api);
 
-               updatePreferenceVisibility();
-           }
-           else if(key.equals(minuteAdjustmentListPreference.getKey()) && sharedPreferences.contains(minuteAdjustmentListPreference.getKey()))
-           {
-               int minuteAdjustment = sharedPreferences.getInt(minuteAdjustmentListPreference.getKey(), 0);
-               prayerSettings.GetBeginningEndSettingByMomentType(_isBeginning).set_minuteAdjustment(minuteAdjustment);
-           }
-           else if(key.equals(fajrDegreesListPreference.getKey()) && sharedPreferences.contains(fajrDegreesListPreference.getKey()))
-           {
-               Double fajrCalculationDegrees = (double) sharedPreferences.getFloat(fajrDegreesListPreference.getKey(), 0.0f);
-               prayerSettings.GetBeginningEndSettingByMomentType(_isBeginning).setFajrCalculationDegree(fajrCalculationDegrees);
-           }
-           else if(key.equals(ishaDegreesListPreference.getKey()) && sharedPreferences.contains(ishaDegreesListPreference.getKey()))
-           {
-               Double ishaCalculationDegrees = (double) sharedPreferences.getFloat(ishaDegreesListPreference.getKey(), 0.0f);
-               prayerSettings.GetBeginningEndSettingByMomentType(_isBeginning).setIshaCalculationDegree(ishaCalculationDegrees);
-           }
+            updatePreferenceVisibility();
+        }
+        else if(key.equals(minuteAdjustmentListPreference.getKey()) && sharedPreferences.contains(minuteAdjustmentListPreference.getKey()))
+        {
+            int minuteAdjustment = Integer.parseInt(sharedPreferences.getString(minuteAdjustmentListPreference.getKey(), "0"));
+            prayerSettings.GetBeginningEndSettingByMomentType(_isBeginning).set_minuteAdjustment(minuteAdjustment);
+        }
+        else if(key.equals(fajrDegreesListPreference.getKey()) && sharedPreferences.contains(fajrDegreesListPreference.getKey()))
+        {
+            Double fajrCalculationDegrees = Double.parseDouble(sharedPreferences.getString(fajrDegreesListPreference.getKey(), "0.0"));
+            prayerSettings.GetBeginningEndSettingByMomentType(_isBeginning).setFajrCalculationDegree(fajrCalculationDegrees);
+        }
+        else if(key.equals(ishaDegreesListPreference.getKey()) && sharedPreferences.contains(ishaDegreesListPreference.getKey()))
+        {
+            Double ishaCalculationDegrees = Double.parseDouble(sharedPreferences.getString(ishaDegreesListPreference.getKey(), "0.0"));
+            prayerSettings.GetBeginningEndSettingByMomentType(_isBeginning).setIshaCalculationDegree(ishaCalculationDegrees);
+        }
 
-           Gson gson = new Gson();
+        String jsonString = new Gson().toJson(prayerSettings);
 
-           String jsonString = gson.toJson(prayerSettings);
-           this.getActivity().getSharedPreferences(AppEnvironment.GLOBAL_SHARED_PREFERENCE_NAME, MODE_PRIVATE).edit().putString(DataManagementUtil.GetTimeSettingsEntityKeyForSharedPreference(prayerTypeWithMomentType.getKey()), jsonString).commit();
-       }
-       catch(Exception e)
-       {
-            e.printStackTrace();
-       }
+        SharedPreferences globalSharedPreference = this.getActivity().getSharedPreferences(AppEnvironment.GLOBAL_SHARED_PREFERENCE_NAME, MODE_PRIVATE);
+        globalSharedPreference.edit().putString(DataManagementUtil.GetTimeSettingsEntityKeyForSharedPreference(prayerTypeWithMomentType.getKey()), jsonString).commit();
     }
 
     // region methods

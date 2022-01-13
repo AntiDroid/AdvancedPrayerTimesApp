@@ -15,22 +15,10 @@ import com.example.advancedprayertimes.UI.Fragments.SettingPreferenceFragments.P
 
 public class TabPrayerEndSettingsFragment extends Fragment
 {
-    // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
     private static final String ARG_PRAYER_TYPE = "prayerType";
 
     private EPrayerTimeType _prayerType;
 
-    public TabPrayerEndSettingsFragment()
-    {
-        // Required empty public constructor
-    }
-
-    /**
-     * Use this factory method to create a new instance of
-     * this fragment using the provided parameters.
-     *
-     * @return A new instance of fragment PrayerEndSettingsFragment.
-     */
     public static TabPrayerEndSettingsFragment newInstance(EPrayerTimeType prayerType)
     {
         TabPrayerEndSettingsFragment fragment = new TabPrayerEndSettingsFragment();
@@ -56,8 +44,6 @@ public class TabPrayerEndSettingsFragment extends Fragment
         return inflater.inflate(R.layout.fragment_prayer_end_settings, container, false);
     }
 
-    PrayerBeginningEndSettingPreferencesFragment prayerBeginningEndSettingPreferencesFragment;
-
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState)
     {
@@ -68,7 +54,7 @@ public class TabPrayerEndSettingsFragment extends Fragment
             _prayerType = EPrayerTimeType.valueOf(getArguments().getString(ARG_PRAYER_TYPE));
         }
 
-        prayerBeginningEndSettingPreferencesFragment = new PrayerBeginningEndSettingPreferencesFragment(_prayerType, false);
+        PrayerBeginningEndSettingPreferencesFragment prayerBeginningEndSettingPreferencesFragment = new PrayerBeginningEndSettingPreferencesFragment(_prayerType, false);
 
         if (savedInstanceState == null)
         {
