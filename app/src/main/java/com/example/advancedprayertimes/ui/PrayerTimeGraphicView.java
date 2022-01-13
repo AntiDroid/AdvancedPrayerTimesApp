@@ -119,7 +119,7 @@ public class PrayerTimeGraphicView extends View
         long timeShare = 0;
 
         // TODO: Fix Isha
-        if(this.getDisplayPrayerEntity().getEndTime().isBefore(this.getDisplayPrayerEntity().getBeginningTime()))
+        if(this.getDisplayPrayerEntity().getEndTime().isBefore(this.getDisplayPrayerEntity().getBeginningTime()) && currentDate.isBefore(this.getDisplayPrayerEntity().getBeginningTime()))
         {
             timeShare = ChronoUnit.MILLIS.between(this.getDisplayPrayerEntity().getBeginningTime().minusDays(1), currentDate);
         }

@@ -1,12 +1,75 @@
 <resources>
-    <!-- Reply Preference -->
-    <string-array name="reply_entries">
-        <item>Reply</item>
-        <item>Reply to all</item>
+
+    <string-array name="fajrIshaDegree_entries">
+        <item>-12.0°</item><item>-12.5°</item>
+        <item>-13.0°</item><item>-13.5°</item>
+        <item>-14.0°</item><item>-14.5°</item>
+        <item>-15.0°</item><item>-15.5°</item>
+        <item>-16.0°</item><item>-16.5°</item>
+        <item>-17.0°</item><item>-17.5°</item>
+        <item>-18.0°</item><item>-18.5°</item>
+        <item>-19.0°</item><item>-19.5°</item>
+        <item>-20.0°</item>
+    </string-array>
+    <string-array name="fajrIshaDegree_values">
+        <item>-12.0</item><item>-12.5</item>
+        <item>-13.0</item><item>-13.5</item>
+        <item>-14.0</item><item>-14.5</item>
+        <item>-15.0</item><item>-15.5</item>
+        <item>-16.0</item><item>-16.5</item>
+        <item>-17.0</item><item>-17.5</item>
+        <item>-18.0</item><item>-18.5</item>
+        <item>-19.0</item><item>-19.5</item>
+        <item>-20.0</item>
     </string-array>
 
-    <string-array name="reply_values">
-        <item>reply</item>
-        <item>reply_all</item>
+    <string-array name="asrKarahaDegree_entries">
+        <item>1.0°</item><item>1.5°</item>
+        <item>2.0°</item><item>2.5°</item>
+        <item>3.0°</item><item>3.5°</item>
+        <item>4.0°</item><item>4.5°</item>
+        <item>5.0°</item><item>5.5°</item>
+        <item>6.0°</item><item>6.5°</item>
+        <item>7.0°</item><item>7.5°</item>
+        <item>8.0°</item><item>8.5°</item>
+        <item>9.0°</item><item>10.0°</item>
+    </string-array>
+    <string-array name="asrKarahaDegree_values">
+        <item>1.0</item><item>1.5</item>
+        <item>2.0</item><item>2.5</item>
+        <item>3.0</item><item>3.5</item>
+        <item>4.0</item><item>4.5</item>
+        <item>5.0</item><item>5.5</item>
+        <item>6.0</item><item>6.5</item>
+        <item>7.0</item><item>7.5</item>
+        <item>8.0</item><item>8.5</item>
+        <item>9.0</item><item>10.0</item>
+    </string-array>
+
+    <string-array name="minuteAdjustment_entries">
+        <item>-15 min</item><item>-14 min</item><item>-13 min</item>
+        <item>-12 min</item><item>-11 min</item><item>-10 min</item>
+        <item>-9 min</item><item>-8 min</item><item>-7 min</item>
+        <item>-6 min</item><item>-5 min</item><item>-4 min</item>
+        <item>-3 min</item><item>-2 min</item><item>-1 min</item>
+        <item>0 min</item>
+        <item>1 min</item><item>2 min</item><item>3 min</item>
+        <item>4 min</item><item>5 min</item><item>6 min</item>
+        <item>7 min</item><item>8 min</item><item>9 min</item>
+        <item>10 min</item><item>11 min</item><item>12 min</item>
+        <item>13 min</item><item>14 min</item><item>15 min</item>
+    </string-array>
+    <string-array name="minuteAdjustment_values">
+        <item>-15</item><item>-14</item><item>-13</item>
+        <item>-12</item><item>-11</item><item>-10</item>
+        <item>-9</item><item>-8</item><item>-7</item>
+        <item>-6</item><item>-5</item><item>-4</item>
+        <item>-3</item><item>-2</item><item>-1</item>
+        <item>0</item>
+        <item>1</item><item>2</item><item>3</item>
+        <item>4</item><item>5</item><item>6</item>
+        <item>7</item><item>8</item><item>9</item>
+        <item>10</item><item>11</item><item>12</item>
+        <item>13</item><item>14</item><item>15</item>
     </string-array>
 </resources>

@@ -12,6 +12,8 @@
             app:useSimpleSummaryProvider="true" />
         <ListPreference
             app:defaultValue="false"
+            app:entries="@array/minuteAdjustment_entries"
+            app:entryValues="@array/minuteAdjustment_values"
             app:key="minuteAdjustmentSelection"
             app:title="Adjust minutes"
             app:useSimpleSummaryProvider="true" />
@@ -24,11 +26,15 @@
         app:title="API-Settings">
         <ListPreference
             app:defaultValue="false"
+            app:entries="@array/fajrIshaDegree_entries"
+            app:entryValues="@array/fajrIshaDegree_values"
             app:key="fajrCalculationDegree"
             app:title="Fajr calculation degree"
             app:useSimpleSummaryProvider="true" />
         <ListPreference
             app:defaultValue="false"
+            app:entries="@array/fajrIshaDegree_entries"
+            app:entryValues="@array/fajrIshaDegree_values"
             app:key="ishaCalculationDegree"
             app:title="Isha calculation degree"
             app:useSimpleSummaryProvider="true" />

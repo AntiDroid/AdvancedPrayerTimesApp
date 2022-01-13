@@ -23,6 +23,8 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             app:defaultValue="false"
+            app:entries="@array/asrKarahaDegree_entries"
+            app:entryValues="@array/asrKarahaDegree_values"
             app:key="karahaCalculationDegree"
             app:title="Calculation degree"
             app:useSimpleSummaryProvider="true" />

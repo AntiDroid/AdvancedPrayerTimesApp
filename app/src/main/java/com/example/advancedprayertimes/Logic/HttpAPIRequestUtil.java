@@ -44,7 +44,7 @@ public class HttpAPIRequestUtil
     private static final String DIYANET_JSON_URL = "https://ezanvakti.herokuapp.com";
     private static final String ALADHAN_JSON_URL = "https://api.aladhan.com/v1/calendar";
 
-    private static final long MUWAQQIT_API_COOLDOWN_MILLISECONDS = 11000;
+    private static final long MUWAQQIT_API_COOLDOWN_MILLISECONDS = 12000;
 
     private static final String BING_MAPS_URL = "https://dev.virtualearth.net/REST/v1/timezone/";
 
@@ -361,7 +361,7 @@ public class HttpAPIRequestUtil
         EHttpResponseStatusType muwaqqitResponseStatusType = HttpAPIRequestUtil.RetrieveAPIFeedback(response, HttpAPIRequestUtil.MUWAQQIT_JSON_URL, EHttpRequestMethod.POST, queryParameters);
 
         // Muwaqqit API requires 10 seconds cool down after every successful or unsuccessful request
-        if(muwaqqitResponseStatusType == EHttpResponseStatusType.TooManyRequests)
+        if(muwaqqitResponseStatusType == EHttpResponseStatusType.TooManyRequests || response.toString().startsWith("429 TOO MANY REQUESTS"))
         {
             try { TimeUnit.MILLISECONDS.sleep(HttpAPIRequestUtil.MUWAQQIT_API_COOLDOWN_MILLISECONDS); }
             catch(Exception e) { /* DO NOTHING */ }
@@ -502,7 +502,9 @@ public class HttpAPIRequestUtil
                 os.close();
             }
 
-            responseStatusType = HttpAPIRequestUtil.GetHttpResponseStatusTypeByResponseCode(conn.getResponseCode());
+            int responseCode = conn.getResponseCode();
+
+            responseStatusType = HttpAPIRequestUtil.GetHttpResponseStatusTypeByResponseCode(responseCode);
 
             if (responseStatusType != EHttpResponseStatusType.Success)
             {
@@ -513,7 +515,7 @@ public class HttpAPIRequestUtil
                 reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
             }
 
-            while ((line = reader.readLine()) != null) { responseContent.append(line); }
+            while ((line = reader.readLine()) != null) { if(line != null) responseContent.append(line); }
             reader.close();
         }
         finally

@@ -4,7 +4,9 @@ import static android.content.Context.MODE_PRIVATE;
 
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.view.MenuItem;
 
+import androidx.annotation.NonNull;
 import androidx.preference.ListPreference;
 import androidx.preference.PreferenceCategory;
 import androidx.preference.PreferenceFragmentCompat;
@@ -20,9 +22,6 @@ import com.example.advancedprayertimes.R;
 import com.google.gson.Gson;
 
 import java.util.AbstractMap;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class PrayerBeginningEndSettingPreferencesFragment extends PreferenceFragmentCompat
@@ -78,12 +77,7 @@ public class PrayerBeginningEndSettingPreferencesFragment extends PreferenceFrag
             return;
         }
 
-        // change listener for all preference value changes
-        _preferenceChangeListener = this::onPreferenceChange;
-
         configureAPISelector(apiSelectionListPreference);
-        configureMinuteAdjustmentSelector(minuteAdjustmentListPreference);
-        configureDegreeSelectors(fajrDegreesListPreference, ishaDegreesListPreference);
 
         ESupportedAPIs selectedAPI = ESupportedAPIs.Undefined;
         int minuteAdjustmentValue = 0;
@@ -119,6 +113,15 @@ public class PrayerBeginningEndSettingPreferencesFragment extends PreferenceFrag
         ishaDegreesListPreference.setValue(ishaDegreeValue + "");
 
         updatePreferenceVisibility();
+
+        // change listener for all preference value changes
+        _preferenceChangeListener = this::onPreferenceChange;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item)
+    {
+        return super.onOptionsItemSelected(item);
     }
 
     private void onPreferenceChange(SharedPreferences sharedPreferences, String key)
@@ -130,86 +133,70 @@ public class PrayerBeginningEndSettingPreferencesFragment extends PreferenceFrag
             return;
         }
 
-        if(key.equals(apiSelectionListPreference.getKey()))
-        {
-            ESupportedAPIs api = ESupportedAPIs.valueOf(apiSelectionListPreference.getValue());
-            prayerSettings.GetBeginningEndSettingByMomentType(_isBeginning).set_api(api);
+       try
+       {
+           if(key.equals(apiSelectionListPreference.getKey()) && sharedPreferences.contains(apiSelectionListPreference.getKey()))
+           {
+               ESupportedAPIs api = ESupportedAPIs.valueOf(sharedPreferences.getString(apiSelectionListPreference.getKey(), null));
+               prayerSettings.GetBeginningEndSettingByMomentType(_isBeginning).set_api(api);
 
-            updatePreferenceVisibility();
-        }
-        else if(key.equals(minuteAdjustmentListPreference.getKey()))
-        {
-            int minuteAdjustment = Integer.parseInt(minuteAdjustmentListPreference.getValue());
-            prayerSettings.GetBeginningEndSettingByMomentType(_isBeginning).set_minuteAdjustment(minuteAdjustment);
-        }
-        else if(key.equals(fajrDegreesListPreference.getKey()))
-        {
-            Double fajrCalculationDegrees = Double.parseDouble(fajrDegreesListPreference.getValue());
-            prayerSettings.GetBeginningEndSettingByMomentType(_isBeginning).setFajrCalculationDegree(fajrCalculationDegrees);
-        }
-        else if(key.equals(ishaDegreesListPreference.getKey()))
-        {
-            Double ishaCalculationDegrees = Double.parseDouble(ishaDegreesListPreference.getValue());
-            prayerSettings.GetBeginningEndSettingByMomentType(_isBeginning).setIshaCalculationDegree(ishaCalculationDegrees);
-        }
+               updatePreferenceVisibility();
+           }
+           else if(key.equals(minuteAdjustmentListPreference.getKey()) && sharedPreferences.contains(minuteAdjustmentListPreference.getKey()))
+           {
+               int minuteAdjustment = sharedPreferences.getInt(minuteAdjustmentListPreference.getKey(), 0);
+               prayerSettings.GetBeginningEndSettingByMomentType(_isBeginning).set_minuteAdjustment(minuteAdjustment);
+           }
+           else if(key.equals(fajrDegreesListPreference.getKey()) && sharedPreferences.contains(fajrDegreesListPreference.getKey()))
+           {
+               Double fajrCalculationDegrees = (double) sharedPreferences.getFloat(fajrDegreesListPreference.getKey(), 0.0f);
+               prayerSettings.GetBeginningEndSettingByMomentType(_isBeginning).setFajrCalculationDegree(fajrCalculationDegrees);
+           }
+           else if(key.equals(ishaDegreesListPreference.getKey()) && sharedPreferences.contains(ishaDegreesListPreference.getKey()))
+           {
+               Double ishaCalculationDegrees = (double) sharedPreferences.getFloat(ishaDegreesListPreference.getKey(), 0.0f);
+               prayerSettings.GetBeginningEndSettingByMomentType(_isBeginning).setIshaCalculationDegree(ishaCalculationDegrees);
+           }
 
-        Gson gson = new Gson();
+           Gson gson = new Gson();
 
-        String jsonString = gson.toJson(prayerSettings);
-        this.getActivity().getSharedPreferences(AppEnvironment.GLOBAL_SHARED_PREFERENCE_NAME, MODE_PRIVATE).edit().putString(DataManagementUtil.GetTimeSettingsEntityKeyForSharedPreference(prayerTypeWithMomentType.getKey()), jsonString).commit();
+           String jsonString = gson.toJson(prayerSettings);
+           this.getActivity().getSharedPreferences(AppEnvironment.GLOBAL_SHARED_PREFERENCE_NAME, MODE_PRIVATE).edit().putString(DataManagementUtil.GetTimeSettingsEntityKeyForSharedPreference(prayerTypeWithMomentType.getKey()), jsonString).commit();
+       }
+       catch(Exception e)
+       {
+            e.printStackTrace();
+       }
     }
 
     // region methods
 
     private void configureAPISelector(ListPreference apiSelectionListPreference)
     {
-        String[] apiNamesArray = Stream.of(ESupportedAPIs.values()).map(ESupportedAPIs::name).toArray(String[]::new);
+        String[] apiNamesArray = null;
+
+        if(prayerTypeWithMomentType.getKey() == EPrayerTimeType.Duha)
+        {
+            apiNamesArray = Stream.of(ESupportedAPIs.values()).filter(x -> x == ESupportedAPIs.Undefined || x == ESupportedAPIs.Muwaqqit).map(ESupportedAPIs::name).toArray(String[]::new);
+        }
+        else
+        {
+            apiNamesArray = Stream.of(ESupportedAPIs.values()).map(ESupportedAPIs::name).toArray(String[]::new);
+        }
 
         apiSelectionListPreference.setEntries(apiNamesArray);
         apiSelectionListPreference.setEntryValues(apiNamesArray);
-        apiSelectionListPreference.setValue(ESupportedAPIs.Undefined.toString());
-    }
-
-    private void configureMinuteAdjustmentSelector(ListPreference minuteAdjustmentListPreference)
-    {
-        ArrayList<String> minuteAdjustmentValuesArrayList = new ArrayList<>();
-
-        for (int i = -15; i < 16; i++)
-        {
-            minuteAdjustmentValuesArrayList.add("" + i);
-        }
-
-        minuteAdjustmentListPreference.setEntries(minuteAdjustmentValuesArrayList.toArray(new String[0]));
-        minuteAdjustmentListPreference.setEntryValues(minuteAdjustmentValuesArrayList.toArray(new String[0]));
-        minuteAdjustmentListPreference.setValue("0");
-    }
-
-    private void configureDegreeSelectors(ListPreference fajrDegreesListPreference, ListPreference ishaDegreesListPreference)
-    {
-        ArrayList<String> degreeValuesArrayList = new ArrayList<>();
-
-        for (double i = -12.0; i > -21.0; i -= 0.5)
-        {
-            degreeValuesArrayList.add("" + i);
-        }
-
-        String[] degreeValuesArray = degreeValuesArrayList.toArray(new String[0]);
-
-        fajrDegreesListPreference.setEntries(Arrays.stream(degreeValuesArray).map(x -> x + "°").collect(Collectors.toList()).toArray(new String[0]));
-        fajrDegreesListPreference.setEntryValues(degreeValuesArray);
-        fajrDegreesListPreference.setValue("-12.0");
-
-        ishaDegreesListPreference.setEntries(Arrays.stream(degreeValuesArray).map(x -> x + "°").collect(Collectors.toList()).toArray(new String[0]));
-        ishaDegreesListPreference.setEntryValues(degreeValuesArray);
-        ishaDegreesListPreference.setValue("-12.0");
     }
 
     private void updatePreferenceVisibility()
     {
-        boolean isMuwaqqitAPISelected = ESupportedAPIs.valueOf(apiSelectionListPreference.getValue()) == ESupportedAPIs.Muwaqqit;
+        boolean isDegreeAPISelected =
+                ESupportedAPIs.valueOf(apiSelectionListPreference.getValue()) == ESupportedAPIs.Muwaqqit
+                ||
+                ESupportedAPIs.valueOf(apiSelectionListPreference.getValue()) == ESupportedAPIs.AlAdhan;
 
-        boolean showFajrDegreeSelector = PrayerTimeBeginningEndSettingsEntity.FAJR_DEGREE_TYPES.contains(prayerTypeWithMomentType) && isMuwaqqitAPISelected;
-        boolean showIshaDegreeSelector = PrayerTimeBeginningEndSettingsEntity.ISHA_DEGREE_TYPES.contains(prayerTypeWithMomentType) && isMuwaqqitAPISelected;
+        boolean showFajrDegreeSelector = isDegreeAPISelected && PrayerTimeBeginningEndSettingsEntity.FAJR_DEGREE_TYPES.contains(prayerTypeWithMomentType);
+        boolean showIshaDegreeSelector = isDegreeAPISelected && PrayerTimeBeginningEndSettingsEntity.ISHA_DEGREE_TYPES.contains(prayerTypeWithMomentType);
 
         fajrDegreesListPreference.setVisible(showFajrDegreeSelector);
         ishaDegreesListPreference.setVisible(showIshaDegreeSelector);
@@ -220,9 +207,9 @@ public class PrayerBeginningEndSettingPreferencesFragment extends PreferenceFrag
     // endregion methods
 
     @Override
-    public void onStop()
+    public void onPause()
     {
-        super.onStop();
+        super.onPause();
         getPreferenceScreen().getSharedPreferences().unregisterOnSharedPreferenceChangeListener(_preferenceChangeListener);
     }
 

@@ -37,6 +37,7 @@ import com.example.advancedprayertimes.Logic.Enums.EPrayerTimeType;
 import com.example.advancedprayertimes.Logic.Enums.ESupportedAPIs;
 import com.example.advancedprayertimes.Logic.HttpAPIRequestUtil;
 import com.example.advancedprayertimes.Logic.LocationUtil;
+import com.example.advancedprayertimes.Logic.PrayTime;
 import com.example.advancedprayertimes.R;
 import com.example.advancedprayertimes.databinding.ActivityTimeOverviewBinding;
 import com.google.android.gms.common.api.Status;
@@ -55,6 +56,7 @@ import java.time.temporal.ChronoField;
 import java.time.temporal.ChronoUnit;
 import java.util.AbstractMap;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -82,6 +84,12 @@ public class TimeOverviewActivity extends AppCompatActivity
         binding.initiateRedrawingOfPrayerGraphicButton.setOnClickListener(view ->
         {
             binding.prayerTimeGraphicView.invalidate();
+
+            PrayTime prayTime = new PrayTime();
+
+            Calendar today = Calendar.getInstance();
+
+            //prayTime.getPrayerTimes(today, 47.2820223, 11.420481, 1);
 
             new Thread(new Runnable()
             {
@@ -613,48 +621,63 @@ public class TimeOverviewActivity extends AppCompatActivity
 
             if(subTimeSettings != null)
             {
-                if(prayerType == EPrayerTimeType.Asr)
+                switch(prayerType)
                 {
-                    if(prayerTypeTimeType == EPrayerTimeMomentType.SubTimeOne && subTimeSettings.isEnabled1())
-                    {
-                        return muwaqqitTimesHashMap.get(new AbstractMap.SimpleEntry(prayerType, prayerTypeTimeType)).getMithlaynTime();
-                    }
-                    else if(prayerTypeTimeType == EPrayerTimeMomentType.SubTimeTwo && subTimeSettings.isEnabled2())
-                    {
-                        return muwaqqitTimesHashMap.get(new AbstractMap.SimpleEntry(prayerType, prayerTypeTimeType)).getAsrKarahaTime();
-                    }
-                }
-                else if(prayerType == EPrayerTimeType.Isha)
-                {
-                    if(prayerTimeEntity.getDuration() == 0 || PrayerTimeEntity.Prayers.get(4).getDuration() == 0)
-                    {
-                        return null;
-                    }
-                    long timeBetweenIshaBeginningAndMaghribEnd = ChronoUnit.MILLIS.between(PrayerTimeEntity.Prayers.get(4).getEndTime(), prayerTimeEntity.getBeginningTime());
-                    long nightDuration = prayerTimeEntity.getDuration() + PrayerTimeEntity.Prayers.get(4).getDuration() + timeBetweenIshaBeginningAndMaghribEnd;
+                    case Asr:
 
-                    if(subTimeSettings.isEnabled1() && prayerTypeTimeType != EPrayerTimeMomentType.SubTimeThree)
-                    {
-                        long thirdOfNight = nightDuration / 3;
-
-                        switch(prayerTypeTimeType)
+                        if(prayerTypeTimeType == EPrayerTimeMomentType.SubTimeOne && subTimeSettings.isEnabled1())
                         {
-                            case SubTimeOne:
-                                return PrayerTimeEntity.Prayers.get(4).getBeginningTime().plus(thirdOfNight, ChronoField.MILLI_OF_DAY.getBaseUnit());
-                            case SubTimeTwo:
-                                return PrayerTimeEntity.Prayers.get(4).getBeginningTime().plus(2 * thirdOfNight, ChronoField.MILLI_OF_DAY.getBaseUnit());
+                            return muwaqqitTimesHashMap.get(new AbstractMap.SimpleEntry(prayerType, prayerTypeTimeType)).getMithlaynTime();
                         }
-                    }
-                    else if(subTimeSettings.isEnabled2())
-                    {
-                        long halfOfNight = nightDuration / 2;
-
-                        switch(prayerTypeTimeType)
+                        else if(prayerTypeTimeType == EPrayerTimeMomentType.SubTimeTwo && subTimeSettings.isEnabled2())
                         {
-                            case SubTimeThree:
-                                return PrayerTimeEntity.Prayers.get(4).getBeginningTime().plus(halfOfNight, ChronoField.MILLI_OF_DAY.getBaseUnit());
+                            return muwaqqitTimesHashMap.get(new AbstractMap.SimpleEntry(prayerType, prayerTypeTimeType)).getAsrKarahaTime();
                         }
-                    }
+
+                        break;
+
+//                    case Maghrib:
+//
+//                        if(prayerTypeTimeType == EPrayerTimeMomentType.SubTimeOne && subTimeSettings.isEnabled1())
+//                        {
+//                            return muwaqqitTimesHashMap.get(new AbstractMap.SimpleEntry(prayerType, prayerTypeTimeType)).getIshtibaqAnNujumTime();
+//                        }
+//
+//                        break;
+
+                    case Isha:
+
+                        if(prayerTimeEntity.getDuration() == 0 || PrayerTimeEntity.Prayers.get(4).getDuration() == 0)
+                        {
+                            return null;
+                        }
+                        long timeBetweenIshaBeginningAndMaghribEnd = ChronoUnit.MILLIS.between(PrayerTimeEntity.Prayers.get(4).getEndTime(), prayerTimeEntity.getBeginningTime());
+                        long nightDuration = prayerTimeEntity.getDuration() + PrayerTimeEntity.Prayers.get(4).getDuration() + timeBetweenIshaBeginningAndMaghribEnd;
+
+                        if(subTimeSettings.isEnabled1() && prayerTypeTimeType != EPrayerTimeMomentType.SubTimeThree)
+                        {
+                            long thirdOfNight = nightDuration / 3;
+
+                            switch(prayerTypeTimeType)
+                            {
+                                case SubTimeOne:
+                                    return PrayerTimeEntity.Prayers.get(4).getBeginningTime().plus(thirdOfNight, ChronoField.MILLI_OF_DAY.getBaseUnit());
+                                case SubTimeTwo:
+                                    return PrayerTimeEntity.Prayers.get(4).getBeginningTime().plus(2 * thirdOfNight, ChronoField.MILLI_OF_DAY.getBaseUnit());
+                            }
+                        }
+                        else if(subTimeSettings.isEnabled2())
+                        {
+                            long halfOfNight = nightDuration / 2;
+
+                            switch(prayerTypeTimeType)
+                            {
+                                case SubTimeThree:
+                                    return PrayerTimeEntity.Prayers.get(4).getBeginningTime().plus(halfOfNight, ChronoField.MILLI_OF_DAY.getBaseUnit());
+                            }
+                        }
+
+                        break;
                 }
             }
         }

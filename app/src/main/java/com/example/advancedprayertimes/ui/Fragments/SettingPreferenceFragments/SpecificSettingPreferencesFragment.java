@@ -1,5 +1,7 @@
 package com.example.advancedprayertimes.UI.Fragments.SettingPreferenceFragments;
 
+import static android.content.Context.MODE_PRIVATE;
+
 import android.content.SharedPreferences;
 import android.os.Bundle;
 
@@ -8,9 +10,12 @@ import androidx.preference.PreferenceFragmentCompat;
 import androidx.preference.SwitchPreference;
 
 import com.example.advancedprayertimes.Logic.AppEnvironment;
+import com.example.advancedprayertimes.Logic.DataManagementUtil;
+import com.example.advancedprayertimes.Logic.Entities.Setting_Entities.PrayerSettingsEntity;
 import com.example.advancedprayertimes.Logic.Entities.Setting_Entities.SubTimeSettingsEntity;
 import com.example.advancedprayertimes.Logic.Enums.EPrayerTimeType;
 import com.example.advancedprayertimes.R;
+import com.google.gson.Gson;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -40,89 +45,93 @@ public class SpecificSettingPreferencesFragment extends PreferenceFragmentCompat
     @Override
     public void onCreatePreferences(Bundle savedInstanceState, String rootKey)
     {
+        SubTimeSettingsEntity settings = AppEnvironment.prayerSettingsByPrayerType.get(_prayerType).getSubPrayer1Settings();
+
+        if(settings == null)
+        {
+            settings = new SubTimeSettingsEntity(false, false, 4.5);
+            AppEnvironment.prayerSettingsByPrayerType.get(_prayerType).setSubPrayer1Settings(settings);
+        }
+
         if(_prayerType == EPrayerTimeType.Asr)
         {
             setPreferencesFromResource(R.xml.asr_prayer_night_settings_preferences, rootKey);
-            createAsrPreferences();
+            createAsrPreferences(settings);
         }
         else if(_prayerType == EPrayerTimeType.Isha)
         {
             setPreferencesFromResource(R.xml.isha_prayer_night_settings_preferences, rootKey);
-            createIshaPreferences();
+            createIshaPreferences(settings);
         }
         else
         {
             return;
         }
 
-//        SwitchPreference isSubtimeOneEnabledSwitchPreference = this.findPreference("isSubtimeOneEnabled");
-//        ListPreference subtimeOneTimeListPreference = this.findPreference("subtimeOneTimeSelection");
-//
-//        SwitchPreference isSubtimeTwoEnabledSwitchPreference = this.findPreference("isSubtimeTwoEnabled");
-//        ListPreference subtimeTwoTimeListPreference = this.findPreference("subtimeTwoTimeSelection");
-//
-//        SwitchPreference isSubtimeThreeEnabledSwitchPreference = this.findPreference("isSubtimeThreeEnabled");
-//        ListPreference subtimeThreeTimeListPreference = this.findPreference("subtimeThreeTimeSelection");
-//
-//        if (isSubtimeOneEnabledSwitchPreference == null || subtimeOneTimeListPreference == null || isSubtimeTwoEnabledSwitchPreference == null
-//                || subtimeTwoTimeListPreference == null || isSubtimeThreeEnabledSwitchPreference == null ||
-//                subtimeThreeTimeListPreference == null)
-//        {
-//            return;
-//        }
-//
-//        // change listener for all preference value changes
-//        _preferenceChangeListener = new SharedPreferences.OnSharedPreferenceChangeListener()
-//        {
-//            @Override
-//            public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key)
-//            {
-////                if(key.equals(PREFERENCE_NAME_API_SELECTION))
-////                {
-////                    updatePreferenceVisibility();
-////                }
-//            }
-//        };
-//
-//        configureStuffCorrectly(subtimeOneTimeListPreference, subtimeTwoTimeListPreference, subtimeThreeTimeListPreference);
-//
-//        SubTimeSettingsEntity subPrayer1 = AppEnvironment.prayerSettingsByPrayerType.get(_prayerType).getSubPrayer1Settings();
-//        SubTimeSettingsEntity subPrayer2 = AppEnvironment.prayerSettingsByPrayerType.get(_prayerType).getSubPrayer2Settings();
-//        SubTimeSettingsEntity subPrayer3 = AppEnvironment.prayerSettingsByPrayerType.get(_prayerType).getSubPrayer3Settings();
-//
-//        if(subPrayer1 != null)
-//        {
-//            isSubtimeOneEnabledSwitchPreference.setChecked(subPrayer1.isEnabled1());
-//            subtimeOneTimeListPreference.setValue(subPrayer1.getTimeConfig() + "");
-//        }
-//        else
-//        {
-//            isSubtimeOneEnabledSwitchPreference.setChecked(false);
-//            subtimeOneTimeListPreference.setValue("10");
-//        }
-//
-//        if(subPrayer2 != null)
-//        {
-//            isSubtimeTwoEnabledSwitchPreference.setChecked(subPrayer2.isEnabled1());
-//            subtimeTwoTimeListPreference.setValue(subPrayer2.getTimeConfig() + "");
-//        }
-//        else
-//        {
-//            isSubtimeTwoEnabledSwitchPreference.setChecked(false);
-//            subtimeTwoTimeListPreference.setValue("10");
-//        }
-//
-//        if(subPrayer3 != null)
-//        {
-//            isSubtimeThreeEnabledSwitchPreference.setChecked(subPrayer3.isEnabled1());
-//            subtimeThreeTimeListPreference.setValue(subPrayer3.getTimeConfig() + "");
-//        }
-//        else
-//        {
-//            isSubtimeThreeEnabledSwitchPreference.setChecked(false);
-//            subtimeThreeTimeListPreference.setValue("10");
-//        }
+        // change listener for all preference value changes
+        _preferenceChangeListener = this::onPreferenceChange;
     }
+
+    private SwitchPreference isTwoShadowLengthsEnabledSwitchPreference = null;
+    private SwitchPreference isKarahaTimeEnabledSwitchPreference = null;
+    private ListPreference karahaCalculationDegreeListPreference = null;
+
+    private SwitchPreference isThirdsOfNightEnabledSwitchPreference = null;
+    private SwitchPreference isHalfsOfNightEnabledSwitchPreference = null;
+
+    private void onPreferenceChange(SharedPreferences sharedPreferences, String key)
+    {
+        PrayerSettingsEntity prayerSettings = AppEnvironment.prayerSettingsByPrayerType.get(_prayerType);
+
+        if(prayerSettings == null)
+        {
+            return;
+        }
+
+        try
+        {
+            if(_prayerType == EPrayerTimeType.Asr)
+            {
+                if(key.equals(isTwoShadowLengthsEnabledSwitchPreference.getKey()) && sharedPreferences.contains(isTwoShadowLengthsEnabledSwitchPreference.getKey()))
+                {
+                    boolean isTwoShadowLengthsEnabled = sharedPreferences.getBoolean(isTwoShadowLengthsEnabledSwitchPreference.getKey(), false);
+                    prayerSettings.getSubPrayer1Settings().setEnabled1(isTwoShadowLengthsEnabled);
+                }
+                else if(key.equals(isKarahaTimeEnabledSwitchPreference.getKey()) && sharedPreferences.contains(isKarahaTimeEnabledSwitchPreference.getKey()))
+                {
+                    boolean isKarahaTimeEnabled = sharedPreferences.getBoolean(isKarahaTimeEnabledSwitchPreference.getKey(), false);
+                    prayerSettings.getSubPrayer1Settings().setEnabled2(isKarahaTimeEnabled);
+                }
+                else if(key.equals(karahaCalculationDegreeListPreference.getKey()) && sharedPreferences.contains(karahaCalculationDegreeListPreference.getKey()))
+                {
+                    Double fajrCalculationDegrees = (double) sharedPreferences.getFloat(karahaCalculationDegreeListPreference.getKey(), 0.0f);
+                    prayerSettings.getSubPrayer1Settings().setAsrKarahaDegree(fajrCalculationDegrees);
+                }
+            }
+            else if(_prayerType == EPrayerTimeType.Isha)
+            {
+                if(key.equals(isThirdsOfNightEnabledSwitchPreference.getKey()) && sharedPreferences.contains(isThirdsOfNightEnabledSwitchPreference.getKey()))
+                {
+                    boolean isThirdsOfNightEnabled = sharedPreferences.getBoolean(isThirdsOfNightEnabledSwitchPreference.getKey(), false);
+                    prayerSettings.getSubPrayer1Settings().setEnabled1(isThirdsOfNightEnabled);
+                }
+                else if(key.equals(isHalfsOfNightEnabledSwitchPreference.getKey()) && sharedPreferences.contains(isHalfsOfNightEnabledSwitchPreference.getKey()))
+                {
+                    boolean isHalfsOfNightEnabled = sharedPreferences.getBoolean(isHalfsOfNightEnabledSwitchPreference.getKey(), false);
+                    prayerSettings.getSubPrayer1Settings().setEnabled2(isHalfsOfNightEnabled);
+                }
+            }
+
+            Gson gson = new Gson();
+
+            String jsonString = gson.toJson(prayerSettings);
+            this.getActivity().getSharedPreferences(AppEnvironment.GLOBAL_SHARED_PREFERENCE_NAME, MODE_PRIVATE).edit().putString(DataManagementUtil.GetTimeSettingsEntityKeyForSharedPreference(_prayerType), jsonString).commit();
+        }
+        catch(Exception e)
+        {
+            e.printStackTrace();
+        }
+}
 
     private void configureStuffCorrectly(ListPreference subtimeOneTimeListPreference, ListPreference subtimeTwoTimeListPreference, ListPreference subtimeThreeTimeListPreference)
     {
@@ -143,11 +152,11 @@ public class SpecificSettingPreferencesFragment extends PreferenceFragmentCompat
         subtimeThreeTimeListPreference.setEntryValues(percentageArrayList.toArray(new String[0]));
     }
 
-    private void createAsrPreferences()
+    private void createAsrPreferences(SubTimeSettingsEntity settings)
     {
-        SwitchPreference isTwoShadowLengthsEnabledSwitchPreference = this.findPreference("isTwoShadowLengthsEnabled");
-        SwitchPreference isKarahaTimeEnabledSwitchPreference = this.findPreference("isKarahaTimeEnabled");
-        ListPreference karahaCalculationDegreeListPreference = this.findPreference("karahaCalculationDegree");
+        isTwoShadowLengthsEnabledSwitchPreference = this.findPreference("isTwoShadowLengthsEnabled");
+        isKarahaTimeEnabledSwitchPreference = this.findPreference("isKarahaTimeEnabled");
+        karahaCalculationDegreeListPreference = this.findPreference("karahaCalculationDegree");
 
         if (isTwoShadowLengthsEnabledSwitchPreference == null ||
                 isKarahaTimeEnabledSwitchPreference == null || karahaCalculationDegreeListPreference == null)
@@ -166,56 +175,37 @@ public class SpecificSettingPreferencesFragment extends PreferenceFragmentCompat
 
         karahaCalculationDegreeListPreference.setEntries(Arrays.stream(degreeValuesArray).map(x -> x + "°").collect(Collectors.toList()).toArray(new String[0]));
         karahaCalculationDegreeListPreference.setEntryValues(degreeValuesArray);
-        karahaCalculationDegreeListPreference.setValue("4.5");
 
-        SubTimeSettingsEntity subPrayerSettings = AppEnvironment.prayerSettingsByPrayerType.get(_prayerType).getSubPrayer1Settings();
-
-        if(subPrayerSettings != null)
-        {
-            isTwoShadowLengthsEnabledSwitchPreference.setChecked(subPrayerSettings.isEnabled1());
-            isKarahaTimeEnabledSwitchPreference.setChecked(subPrayerSettings.isEnabled2());
-            karahaCalculationDegreeListPreference.setValue(subPrayerSettings.getAsrKarahaDegree() + "");
-        }
-        else
-        {
-            isTwoShadowLengthsEnabledSwitchPreference.setChecked(false);
-            isKarahaTimeEnabledSwitchPreference.setChecked(false);
-        }
+        isTwoShadowLengthsEnabledSwitchPreference.setChecked(settings.isEnabled1());
+        isKarahaTimeEnabledSwitchPreference.setChecked(settings.isEnabled2());
+        karahaCalculationDegreeListPreference.setValue(settings.getAsrKarahaDegree() + "");
     }
 
-    private void createIshaPreferences()
+    private void createIshaPreferences(SubTimeSettingsEntity settings)
     {
-        SwitchPreference isThirdsOfNightEnabledSwitchPreference = this.findPreference("isThirdsOfNightEnabled");
-        SwitchPreference isHalfsOfNightEnabledSwitchPreference = this.findPreference("isHalfsOfNightEnabled");
+        isThirdsOfNightEnabledSwitchPreference = this.findPreference("isThirdsOfNightEnabled");
+        isHalfsOfNightEnabledSwitchPreference = this.findPreference("isHalfsOfNightEnabled");
 
         if (isThirdsOfNightEnabledSwitchPreference == null || isHalfsOfNightEnabledSwitchPreference == null)
         {
             return;
         }
 
-        SubTimeSettingsEntity subPrayerSettings = AppEnvironment.prayerSettingsByPrayerType.get(_prayerType).getSubPrayer1Settings();
-
-        if(subPrayerSettings != null)
-        {
-            isThirdsOfNightEnabledSwitchPreference.setChecked(subPrayerSettings.isEnabled1());
-            isHalfsOfNightEnabledSwitchPreference.setChecked(subPrayerSettings.isEnabled2());
-        }
-        else
-        {
-            isThirdsOfNightEnabledSwitchPreference.setChecked(false);
-            isHalfsOfNightEnabledSwitchPreference.setChecked(false);
-        }
+        isThirdsOfNightEnabledSwitchPreference.setChecked(settings.isEnabled1());
+        isHalfsOfNightEnabledSwitchPreference.setChecked(settings.isEnabled2());
     }
 
     @Override
-    public void onStop()
+    public void onPause()
     {
-        super.onStop();
+        super.onPause();
+        getPreferenceScreen().getSharedPreferences().unregisterOnSharedPreferenceChangeListener(_preferenceChangeListener);
     }
 
     @Override
     public void onResume()
     {
         super.onResume();
+        getPreferenceScreen().getSharedPreferences().registerOnSharedPreferenceChangeListener(_preferenceChangeListener);
     }
 }
