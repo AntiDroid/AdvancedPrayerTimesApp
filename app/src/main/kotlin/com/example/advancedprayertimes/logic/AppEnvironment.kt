@@ -45,21 +45,16 @@ object AppEnvironment {
 
     fun GetPrayerTimeSettingsByPrayerTimeTypeHashMap(): Map<Map.Entry<EPrayerTimeType, EPrayerTimeMomentType>, PrayerTimeBeginningEndSettingsEntity> {
 
-        val resultMap: MutableMap<Map.Entry<EPrayerTimeType, EPrayerTimeMomentType>, PrayerTimeBeginningEndSettingsEntity> =
-            HashMap()
+        val resultMap: MutableMap<Map.Entry<EPrayerTimeType, EPrayerTimeMomentType>, PrayerTimeBeginningEndSettingsEntity> = HashMap()
 
         for ((key, value) in prayerSettingsByPrayerType) {
 
             if (value.beginningSettings != null) {
-                resultMap[AbstractMap.SimpleEntry<EPrayerTimeType, EPrayerTimeMomentType>(
-                    key,
-                    EPrayerTimeMomentType.Beginning
-                )] = value.beginningSettings!!
+                resultMap[AbstractMap.SimpleEntry(key, EPrayerTimeMomentType.Beginning)] = value.beginningSettings!!
             }
 
             if (value.endSettings != null) {
-                resultMap[AbstractMap.SimpleEntry<EPrayerTimeType, EPrayerTimeMomentType>(key, EPrayerTimeMomentType.End)] =
-                    value.endSettings!!
+                resultMap[AbstractMap.SimpleEntry(key, EPrayerTimeMomentType.End)] = value.endSettings!!
             }
         }
 
@@ -68,18 +63,17 @@ object AppEnvironment {
 
     @JvmStatic
     fun BuildGSON(dateTimeFormatString: String?): Gson {
+
         val timeFormat = DateTimeFormatter.ofPattern(dateTimeFormatString)
-        val ser =
-            JsonSerializer { src: LocalDateTime?, _: Type?, _: JsonSerializationContext? ->
-                if (src == null)
-                {
+        val ser = JsonSerializer { src: LocalDateTime?, _: Type?, _: JsonSerializationContext? ->
+                if (src == null) {
                     null
                 }
                 JsonPrimitive(src!!.format(timeFormat))
             }
 
         val deser =
-            JsonDeserializer<LocalDateTime> { json: JsonElement?, typeOfT: Type?, context: JsonDeserializationContext? ->
+            JsonDeserializer<LocalDateTime> { json: JsonElement?, _: Type?, _: JsonDeserializationContext? ->
                 if (json == null) {
                     null
                 }

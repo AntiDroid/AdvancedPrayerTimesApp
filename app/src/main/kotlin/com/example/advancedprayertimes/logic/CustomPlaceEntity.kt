@@ -10,8 +10,8 @@ class CustomPlaceEntity(id: String?, latitude: Double, longitude: Double, name: 
 
     constructor(place: Place) : this(
         place.id,
-        place.latLng.latitude,
-        place.latLng.longitude,
+        place.latLng!!.latitude,
+        place.latLng!!.longitude,
         place.name
     ) {
     }

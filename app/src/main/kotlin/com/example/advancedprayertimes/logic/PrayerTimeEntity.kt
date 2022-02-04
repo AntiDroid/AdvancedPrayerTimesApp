@@ -9,14 +9,6 @@ import java.util.*
 
 class PrayerTimeEntity private constructor(val prayerTimeType: EPrayerTimeType, val title: String)
 {
-    init
-    {
-        if(this.prayerTimeType == EPrayerTimeType.Asr)
-        {
-            //this.prayerTimeType = this.prayerTimeType;
-        }
-    }
-
     var beginningTime: LocalDateTime? = null
     var endTime: LocalDateTime? = null
     var subtime1BeginningTime: LocalDateTime? = null
@@ -46,7 +38,7 @@ class PrayerTimeEntity private constructor(val prayerTimeType: EPrayerTimeType, 
             return duration
         }
 
-    fun GetTimeByMomentType(prayerTimeMomentType: EPrayerTimeMomentType): LocalDateTime?
+    fun getTimeByMomentType(prayerTimeMomentType: EPrayerTimeMomentType): LocalDateTime?
     {
         return when (prayerTimeMomentType)
         {
@@ -59,7 +51,7 @@ class PrayerTimeEntity private constructor(val prayerTimeType: EPrayerTimeType, 
         }
     }
 
-    fun SetTimeByMomentType(prayerTimeMomentType: EPrayerTimeMomentType, date: LocalDateTime?)
+    fun setTimeByMomentType(prayerTimeMomentType: EPrayerTimeMomentType, date: LocalDateTime?)
     {
         when (prayerTimeMomentType)
         {
@@ -88,8 +80,20 @@ class PrayerTimeEntity private constructor(val prayerTimeType: EPrayerTimeType, 
             }
         }
 
-        @kotlin.jvm.JvmStatic
-        fun GetPrayerByTime(time: LocalDateTime): PrayerTimeEntity?
+        val Fajr: PrayerTimeEntity
+            get() = Prayers[0]
+        val Duha: PrayerTimeEntity
+            get() = Prayers[1]
+        val Dhuhr: PrayerTimeEntity
+            get() = Prayers[2]
+        val Asr: PrayerTimeEntity
+            get() = Prayers[3]
+        val Maghrib: PrayerTimeEntity
+            get() = Prayers[4]
+        val Isha: PrayerTimeEntity
+            get() = Prayers[5]
+
+        fun getPrayerByTime(time: LocalDateTime): PrayerTimeEntity?
         {
             val targetPrayer: PrayerTimeEntity? =
                 Prayers.asSequence().filter { prayerTimeEntity: PrayerTimeEntity ->
@@ -102,21 +106,20 @@ class PrayerTimeEntity private constructor(val prayerTimeType: EPrayerTimeType, 
                         time.isBefore(prayerTimeEntity.endTime)
                 }.firstOrNull();
 
-            if (targetPrayer != null)
+            return if (targetPrayer != null)
             {
-                return targetPrayer
+                targetPrayer
             }
             else if (
                 (// before fajr beginning
-                time.isAfter(Prayers[5].beginningTime)
+                time.isAfter(Isha.beginningTime)
                 ||  // before isha end
-                time.isBefore(Prayers[5].endTime))
+                time.isBefore(Isha.endTime))
             )
             {
-                return Prayers[5]
+                Isha
             }
-
-            return null
+            else null
         }
     }
 }

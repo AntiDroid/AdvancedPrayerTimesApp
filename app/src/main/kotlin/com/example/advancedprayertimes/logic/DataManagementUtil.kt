@@ -15,7 +15,6 @@ import java.lang.Exception
 import java.time.format.DateTimeFormatter
 import java.util.AbstractMap
 import java.util.HashMap
-import java.util.function.Function
 import java.util.stream.Collectors
 
 object DataManagementUtil {
@@ -80,9 +79,7 @@ object DataManagementUtil {
         // RETRIEVE PRAYER TIME DATA
         for (i in PrayerTimeEntity.Prayers.indices) {
 
-            val key = GetPrayerTimeEntityKeyForSharedPreference(
-                PrayerTimeEntity.Prayers[i].prayerTimeType
-            )
+            val key = GetPrayerTimeEntityKeyForSharedPreference(PrayerTimeEntity.Prayers[i].prayerTimeType)
 
             val storedValue = sharedPref.getString(key, null)
 
@@ -117,25 +114,16 @@ object DataManagementUtil {
         cityAddress: Address?
     ): Map<Map.Entry<EPrayerTimeType, EPrayerTimeMomentType>, PrayerTimePackageAbstractClass> {
 
-        val diyanetPrayerTimeTypesHashMap: Map<Map.Entry<EPrayerTimeType, EPrayerTimeMomentType>, PrayerTimeBeginningEndSettingsEntity> =
-            toBeCalculatedPrayerTimes.entries.stream()
-                .filter { x: Map.Entry<Map.Entry<EPrayerTimeType, EPrayerTimeMomentType>, PrayerTimeBeginningEndSettingsEntity> -> x.value.api === ESupportedAPIs.Diyanet }
-                .collect(
-                    Collectors.toMap(
-                        { x: Map.Entry<Map.Entry<EPrayerTimeType, EPrayerTimeMomentType>, PrayerTimeBeginningEndSettingsEntity> -> x.key },
-                        { y: Map.Entry<Map.Entry<EPrayerTimeType, EPrayerTimeMomentType>, PrayerTimeBeginningEndSettingsEntity> -> y.value })
-                )
+        val diyanetPrayerTimeTypesHashMap = toBeCalculatedPrayerTimes
+                .filter { x -> x.value.api == ESupportedAPIs.Diyanet }
 
         // ADD ALL DIYANET TIME CALCULATIONS
-        return if (diyanetPrayerTimeTypesHashMap.size > 0) {
+        return if (diyanetPrayerTimeTypesHashMap.isNotEmpty()) {
             try {
                 val diyanetTime = HttpAPIRequestUtil.RetrieveDiyanetTimes(cityAddress)
+
                 if (diyanetTime != null) {
-                    diyanetPrayerTimeTypesHashMap.entries.stream().collect(
-                        Collectors.toMap(
-                            { x: Map.Entry<Map.Entry<EPrayerTimeType, EPrayerTimeMomentType>, PrayerTimeBeginningEndSettingsEntity> -> x.key },
-                            { y: Map.Entry<Map.Entry<EPrayerTimeType, EPrayerTimeMomentType>, PrayerTimeBeginningEndSettingsEntity> -> diyanetTime })
-                    )
+                    diyanetPrayerTimeTypesHashMap.keys.associateWith { diyanetTime }
                 } else {
                     throw Exception(
                         "Could not retrieve Diyanet prayer time data for an unknown reason!",
@@ -156,30 +144,24 @@ object DataManagementUtil {
         toBeCalculatedPrayerTimes: Map<Map.Entry<EPrayerTimeType, EPrayerTimeMomentType>, PrayerTimeBeginningEndSettingsEntity>,
         location: CustomLocation?
     ): Map<Map.Entry<EPrayerTimeType, EPrayerTimeMomentType>, PrayerTimePackageAbstractClass> {
-        val alAdhanPrayerTimeTypesHashMap: Map<Map.Entry<EPrayerTimeType, EPrayerTimeMomentType>, PrayerTimeBeginningEndSettingsEntity> =
-            toBeCalculatedPrayerTimes.entries.stream()
-                .filter { x: Map.Entry<Map.Entry<EPrayerTimeType, EPrayerTimeMomentType>, PrayerTimeBeginningEndSettingsEntity> -> x.value.api === ESupportedAPIs.AlAdhan }
-                .collect(
-                    Collectors.toMap(
-                        { x: Map.Entry<Map.Entry<EPrayerTimeType, EPrayerTimeMomentType>, PrayerTimeBeginningEndSettingsEntity> -> x.key },
-                        { y: Map.Entry<Map.Entry<EPrayerTimeType, EPrayerTimeMomentType>, PrayerTimeBeginningEndSettingsEntity> -> y.value })
-                )
-        val alAdhanTimesHashMap: MutableMap<Map.Entry<EPrayerTimeType, EPrayerTimeMomentType>, PrayerTimePackageAbstractClass> =
-            HashMap()
 
-        // ADD ALL DIYANET TIME CALCULATIONS
-        if (alAdhanPrayerTimeTypesHashMap.size > 0) {
+        val alAdhanPrayerTimeTypesHashMap = toBeCalculatedPrayerTimes
+                .filter { x -> x.value.api == ESupportedAPIs.AlAdhan }
+
+        val alAdhanTimesHashMap: MutableMap<Map.Entry<EPrayerTimeType, EPrayerTimeMomentType>, PrayerTimePackageAbstractClass> = HashMap()
+
+        // ADD ALL ALADHAN TIME CALCULATIONS
+        if (alAdhanPrayerTimeTypesHashMap.isNotEmpty()) {
             try {
                 for ((key, value) in alAdhanPrayerTimeTypesHashMap) {
-                    val fajrDegree = value.fajrCalculationDegree
-                    //Double ishtibaqAnNujumDegree = prayerTimeWithMoment.getValue().getFajrCalculationDegree();
-                    val ishaDegree = value.ishaCalculationDegree
+
                     val alAdhanTime = HttpAPIRequestUtil.RetrieveAlAdhanTimes(
                         location,
-                        fajrDegree,
-                        ishaDegree,
+                        value.fajrCalculationDegree,
+                        value.ishaCalculationDegree,
                         null
                     )
+
                     if (alAdhanTime != null) {
                         alAdhanTimesHashMap[key] = alAdhanTime
                     }
@@ -191,6 +173,35 @@ object DataManagementUtil {
                 )
             }
         }
+
+        var ishtibaqDegree: Double? =
+            if (AppEnvironment.prayerSettingsByPrayerType[EPrayerTimeType.Maghrib]?.subPrayer1Settings?.isEnabled1 == true) {
+                AppEnvironment.prayerSettingsByPrayerType[EPrayerTimeType.Maghrib]!!.subPrayer1Settings!!.ishtibaqDegree
+            }
+            else {
+                null
+            }
+
+        if (ishtibaqDegree != null) {
+
+            // any other muwaqqit request will suffice
+            var ishtibaqTimePackage = HttpAPIRequestUtil.RetrieveAlAdhanTimes(
+                        location,
+                        10.0,
+                        10.0,
+                        ishtibaqDegree
+                    )
+
+            if (ishtibaqTimePackage != null) {
+
+                // mithlayn
+                alAdhanTimesHashMap[AbstractMap.SimpleEntry<EPrayerTimeType, EPrayerTimeMomentType>(
+                    EPrayerTimeType.Maghrib,
+                    EPrayerTimeMomentType.SubTimeOne
+                )] = ishtibaqTimePackage
+            }
+        }
+
         return alAdhanTimesHashMap
     }
 
@@ -199,157 +210,124 @@ object DataManagementUtil {
         toBeCalculatedPrayerTimes: Map<Map.Entry<EPrayerTimeType, EPrayerTimeMomentType>, PrayerTimeBeginningEndSettingsEntity>,
         location: CustomLocation
     ): Map<Map.Entry<EPrayerTimeType, EPrayerTimeMomentType>, PrayerTimePackageAbstractClass> {
-        val muwaqqitTimesHashMap: MutableMap<Map.Entry<EPrayerTimeType, EPrayerTimeMomentType>, PrayerTimePackageAbstractClass> =
-            HashMap()
-        val muwaqqitPrayerTimeTypesHashMap = toBeCalculatedPrayerTimes.entries.stream()
-            .filter { x: Map.Entry<Map.Entry<EPrayerTimeType, EPrayerTimeMomentType>, PrayerTimeBeginningEndSettingsEntity> -> x.value.api === ESupportedAPIs.Muwaqqit }
-            .collect(
-                Collectors.toMap(
-                    { x: Map.Entry<Map.Entry<EPrayerTimeType, EPrayerTimeMomentType>, PrayerTimeBeginningEndSettingsEntity> -> x.key },
-                    { y: Map.Entry<Map.Entry<EPrayerTimeType, EPrayerTimeMomentType>, PrayerTimeBeginningEndSettingsEntity> -> y.value })
-            )
-        val fajrIshaDegreeSettingsMuwaqqitPrayerTimeTypesHashMap: MutableMap<Map.Entry<EPrayerTimeType, EPrayerTimeMomentType>, PrayerTimeBeginningEndSettingsEntity> =
-            muwaqqitPrayerTimeTypesHashMap.entries.stream()
-                .filter { x: Map.Entry<Map.Entry<EPrayerTimeType, EPrayerTimeMomentType>, PrayerTimeBeginningEndSettingsEntity> ->
-                    PrayerTimeBeginningEndSettingsEntity.DEGREE_TYPES.contains(
-                        x.key
-                    )
-                }
-                .collect(
-                    Collectors.toMap(
-                        { x: Map.Entry<Map.Entry<EPrayerTimeType, EPrayerTimeMomentType>, PrayerTimeBeginningEndSettingsEntity> -> x.key },
-                        { y: Map.Entry<Map.Entry<EPrayerTimeType, EPrayerTimeMomentType>, PrayerTimeBeginningEndSettingsEntity> -> y.value })
-                )
-        val nonFajrIshaDegreeSettingsMuwaqqitPrayerTimeTypesHashMap: Map<Map.Entry<EPrayerTimeType, EPrayerTimeMomentType>, PrayerTimeBeginningEndSettingsEntity> =
-            muwaqqitPrayerTimeTypesHashMap.entries.stream()
-                .filter { x: Map.Entry<Map.Entry<EPrayerTimeType, EPrayerTimeMomentType>, PrayerTimeBeginningEndSettingsEntity> ->
-                    !PrayerTimeBeginningEndSettingsEntity.DEGREE_TYPES.contains(
-                        x.key
-                    )
-                }
-                .collect(
-                    Collectors.toMap(
-                        { x: Map.Entry<Map.Entry<EPrayerTimeType, EPrayerTimeMomentType>, PrayerTimeBeginningEndSettingsEntity> -> x.key },
-                        { y: Map.Entry<Map.Entry<EPrayerTimeType, EPrayerTimeMomentType>, PrayerTimeBeginningEndSettingsEntity> -> y.value })
-                )
-        var asrKarahaDegree: Double? = null
-        if (AppEnvironment.prayerSettingsByPrayerType[EPrayerTimeType.Asr]!!.subPrayer1Settings != null
-            &&
-            AppEnvironment.prayerSettingsByPrayerType[EPrayerTimeType.Asr]!!.subPrayer1Settings!!.isEnabled2
-        ) {
-            asrKarahaDegree =
+
+        val muwaqqitTimesHashMap: MutableMap<Map.Entry<EPrayerTimeType, EPrayerTimeMomentType>, PrayerTimePackageAbstractClass> = HashMap()
+
+        val toBeCalculatedMuwaqqitTimesMap = toBeCalculatedPrayerTimes
+            .filter { x -> x.value.api == ESupportedAPIs.Muwaqqit }
+
+        val toBeCalculatedMuwaqqitDegreeTimesMap = toBeCalculatedMuwaqqitTimesMap
+            .filter { x -> PrayerTimeBeginningEndSettingsEntity.DEGREE_TYPES.contains(x.key) }
+            .toMutableMap()
+
+        val toBeCalculatedMuwaqqitNonDegreeTimesMap = toBeCalculatedMuwaqqitTimesMap
+            .filter { x -> !PrayerTimeBeginningEndSettingsEntity.DEGREE_TYPES.contains(x.key) }
+            .toMutableMap()
+
+        var asrKarahaDegree: Double? =
+            if (AppEnvironment.prayerSettingsByPrayerType[EPrayerTimeType.Asr]?.subPrayer1Settings?.isEnabled2 == true) {
                 AppEnvironment.prayerSettingsByPrayerType[EPrayerTimeType.Asr]!!.subPrayer1Settings!!.asrKarahaDegree
-        }
-        if (fajrIshaDegreeSettingsMuwaqqitPrayerTimeTypesHashMap.size > 0) {
-            val fajrDegreeMuwaqqitTimesHashMap: MutableMap<Map.Entry<EPrayerTimeType, EPrayerTimeMomentType>, PrayerTimeBeginningEndSettingsEntity> =
-                fajrIshaDegreeSettingsMuwaqqitPrayerTimeTypesHashMap.entries.stream()
+            }
+            else {
+                null
+            }
+
+        if (toBeCalculatedMuwaqqitDegreeTimesMap.isNotEmpty()) {
+
+            val fajrDegreeMuwaqqitTimesHashMap = toBeCalculatedMuwaqqitDegreeTimesMap
                     .filter { x: Map.Entry<Map.Entry<EPrayerTimeType, EPrayerTimeMomentType>, PrayerTimeBeginningEndSettingsEntity> ->
-                        PrayerTimeBeginningEndSettingsEntity.FAJR_DEGREE_TYPES.contains(
-                            x.key
-                        )
-                    }
-                    .collect(
-                        Collectors.toMap(
-                            { x: Map.Entry<Map.Entry<EPrayerTimeType, EPrayerTimeMomentType>, PrayerTimeBeginningEndSettingsEntity> -> x.key },
-                            { y: Map.Entry<Map.Entry<EPrayerTimeType, EPrayerTimeMomentType>, PrayerTimeBeginningEndSettingsEntity> -> y.value })
-                    )
-            val ishaDegreeMuwaqqitTimesHashMap: MutableMap<Map.Entry<EPrayerTimeType, EPrayerTimeMomentType>, PrayerTimeBeginningEndSettingsEntity> =
-                fajrIshaDegreeSettingsMuwaqqitPrayerTimeTypesHashMap.entries.stream()
+                        PrayerTimeBeginningEndSettingsEntity.FAJR_DEGREE_TYPES.contains(x.key)
+                    }.toMutableMap()
+
+            val ishaDegreeMuwaqqitTimesHashMap = toBeCalculatedMuwaqqitDegreeTimesMap
                     .filter { x: Map.Entry<Map.Entry<EPrayerTimeType, EPrayerTimeMomentType>, PrayerTimeBeginningEndSettingsEntity> ->
                         PrayerTimeBeginningEndSettingsEntity.ISHA_DEGREE_TYPES.contains(
                             x.key
                         )
-                    }
-                    .collect(
-                        Collectors.toMap(
-                            { x: Map.Entry<Map.Entry<EPrayerTimeType, EPrayerTimeMomentType>, PrayerTimeBeginningEndSettingsEntity> -> x.key },
-                            { y: Map.Entry<Map.Entry<EPrayerTimeType, EPrayerTimeMomentType>, PrayerTimeBeginningEndSettingsEntity> -> y.value })
-                    )
+                    }.toMutableMap()
 
             // CALCULATIONS FOR MERGABLE DEGREE TIMES
-            while (fajrDegreeMuwaqqitTimesHashMap.size > 0 && ishaDegreeMuwaqqitTimesHashMap.size > 0) {
-                val fajrDegreeEntry: Map.Entry<Map.Entry<EPrayerTimeType, EPrayerTimeMomentType>, PrayerTimeBeginningEndSettingsEntity> =
-                    fajrDegreeMuwaqqitTimesHashMap.entries.stream().findFirst().get()
-                val ishaDegreeEntry: Map.Entry<Map.Entry<EPrayerTimeType, EPrayerTimeMomentType>, PrayerTimeBeginningEndSettingsEntity> =
-                    ishaDegreeMuwaqqitTimesHashMap.entries.stream().findFirst().get()
-                val fajrDegreeSettingsEntity = fajrDegreeEntry.value
-                val ishaDegreeSettingsEntity = ishaDegreeEntry.value
-                val fajrDegree = fajrDegreeSettingsEntity.fajrCalculationDegree
-                val ishaDegree = ishaDegreeSettingsEntity.ishaCalculationDegree
+            while (fajrDegreeMuwaqqitTimesHashMap.isNotEmpty() && ishaDegreeMuwaqqitTimesHashMap.isNotEmpty()) {
+
+                val fajrDegreeEntry = fajrDegreeMuwaqqitTimesHashMap.entries.first()
+                val ishaDegreeEntry = ishaDegreeMuwaqqitTimesHashMap.entries.first()
+
                 val degreeMuwaqqitTimeEntity = HttpAPIRequestUtil.RetrieveMuwaqqitTimes(
                     location,
-                    fajrDegree,
-                    ishaDegree,
+                    fajrDegreeEntry.value.fajrCalculationDegree,
+                    ishaDegreeEntry.value.ishaCalculationDegree,
                     asrKarahaDegree
                 )
                     ?: throw Exception(
                         "Could not retrieve Fajr/Isha Muwaqqit prayer time data for an unknown reason!",
                         null
                     )
+
                 muwaqqitTimesHashMap[fajrDegreeEntry.key] = degreeMuwaqqitTimeEntity
                 muwaqqitTimesHashMap[ishaDegreeEntry.key] = degreeMuwaqqitTimeEntity
 
                 // remove handled entries from the lists
                 fajrDegreeMuwaqqitTimesHashMap.remove(fajrDegreeEntry.key)
                 ishaDegreeMuwaqqitTimesHashMap.remove(ishaDegreeEntry.key)
-                fajrIshaDegreeSettingsMuwaqqitPrayerTimeTypesHashMap.remove(fajrDegreeEntry.key)
-                fajrIshaDegreeSettingsMuwaqqitPrayerTimeTypesHashMap.remove(ishaDegreeEntry.key)
+                toBeCalculatedMuwaqqitDegreeTimesMap.remove(fajrDegreeEntry.key)
+                toBeCalculatedMuwaqqitDegreeTimesMap.remove(ishaDegreeEntry.key)
             }
 
             // CALCULATIONS FOR NON MERGABLE DEGREE TIMES
-            for ((key, settingsEntity) in fajrIshaDegreeSettingsMuwaqqitPrayerTimeTypesHashMap) {
-                val fajrDegree = settingsEntity.fajrCalculationDegree
-                val ishaDegree = settingsEntity.ishaCalculationDegree
+            for ((key, settingsEntity) in toBeCalculatedMuwaqqitDegreeTimesMap) {
+
                 val degreeMuwaqqitTimeEntity = HttpAPIRequestUtil.RetrieveMuwaqqitTimes(
                     location,
-                    fajrDegree,
-                    ishaDegree,
+                    settingsEntity.fajrCalculationDegree,
+                    settingsEntity.ishaCalculationDegree,
                     asrKarahaDegree
                 )
                     ?: throw Exception(
                         "Could not retrieve Non-Fajr/Isha Muwaqqit prayer time data for an unknown reason!",
                         null
                     )
+
                 muwaqqitTimesHashMap[key] = degreeMuwaqqitTimeEntity
             }
         }
 
         // ADD CALCULATIONS FOR NON DEGREE TIMES
-        if (nonFajrIshaDegreeSettingsMuwaqqitPrayerTimeTypesHashMap.size > 0) {
-            val nonDegreeMuwaqqitTimeEntity: PrayerTimePackageAbstractClass?
+        if (toBeCalculatedMuwaqqitNonDegreeTimesMap.isNotEmpty()) {
 
             // any other muwaqqit request will suffice
-            nonDegreeMuwaqqitTimeEntity = if (muwaqqitTimesHashMap.size > 0) {
-                muwaqqitTimesHashMap.values.stream().findFirst().get()
-            } else {
-                HttpAPIRequestUtil.RetrieveMuwaqqitTimes(location, null, null, asrKarahaDegree)
-            }
+            var nonDegreeMuwaqqitTimeEntity = muwaqqitTimesHashMap.values.firstOrNull()
+                ?: HttpAPIRequestUtil.RetrieveMuwaqqitTimes(location, null, null, asrKarahaDegree)
+
             if (nonDegreeMuwaqqitTimeEntity != null) {
-                for (prayerTimeType in nonFajrIshaDegreeSettingsMuwaqqitPrayerTimeTypesHashMap.keys) {
+                for (prayerTimeType in toBeCalculatedMuwaqqitNonDegreeTimesMap.keys) {
                     muwaqqitTimesHashMap[prayerTimeType] = nonDegreeMuwaqqitTimeEntity
                 }
             }
         }
+
         if (asrKarahaDegree != null) {
-            var asrKarahaTimePackage: PrayerTimePackageAbstractClass? = null
 
             // any other muwaqqit request will suffice
-            asrKarahaTimePackage = if (muwaqqitTimesHashMap.values.stream().findFirst().isPresent) {
-                muwaqqitTimesHashMap.values.stream().findFirst().get()
-            } else {
-                HttpAPIRequestUtil.RetrieveMuwaqqitTimes(location, null, null, asrKarahaDegree)
-            }
+           var asrKarahaTimePackage =
+                muwaqqitTimesHashMap.values.firstOrNull()
+                    ?: HttpAPIRequestUtil.RetrieveMuwaqqitTimes(location, null, null, asrKarahaDegree)
+
             if (asrKarahaTimePackage != null) {
+
+                // mithlayn
                 muwaqqitTimesHashMap[AbstractMap.SimpleEntry<EPrayerTimeType, EPrayerTimeMomentType>(
                     EPrayerTimeType.Asr,
                     EPrayerTimeMomentType.SubTimeOne
                 )] = asrKarahaTimePackage
+
+                // karaha
                 muwaqqitTimesHashMap[AbstractMap.SimpleEntry<EPrayerTimeType, EPrayerTimeMomentType>(
                     EPrayerTimeType.Asr,
                     EPrayerTimeMomentType.SubTimeTwo
                 )] = asrKarahaTimePackage
             }
         }
+
         return muwaqqitTimesHashMap
     }
 }

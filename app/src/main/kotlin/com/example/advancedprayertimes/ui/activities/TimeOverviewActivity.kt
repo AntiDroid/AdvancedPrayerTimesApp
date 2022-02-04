@@ -1,7 +1,7 @@
 package com.example.advancedprayertimes.ui.activities
 
 import com.example.advancedprayertimes.logic.LocationUtil.RetrieveCityByLocation
-import com.example.advancedprayertimes.logic.PrayerTimeEntity.Companion.GetPrayerByTime
+import com.example.advancedprayertimes.logic.PrayerTimeEntity.Companion.getPrayerByTime
 import androidx.appcompat.app.AppCompatActivity
 import com.example.advancedprayertimes.logic.enums.EPrayerTimeType
 import android.widget.TextView
@@ -22,7 +22,6 @@ import android.widget.Toast
 import com.google.android.libraries.places.api.Places
 import com.google.android.libraries.places.api.model.Place
 import androidx.appcompat.widget.AppCompatEditText
-import androidx.appcompat.widget.AppCompatImageButton
 import com.google.android.libraries.places.widget.listener.PlaceSelectionListener
 import com.example.advancedprayertimes.logic.DataManagementUtil
 import com.example.advancedprayertimes.logic.enums.EPrayerTimeMomentType
@@ -92,18 +91,20 @@ class TimeOverviewActivity : AppCompatActivity()
 
     @Throws(JSONException::class)
     private fun findPlaceFromGoogle(placeID: String): CustomPlaceEntity? {
-        val parameters = HashMap<String, String>()
 
-        parameters["place_id"] = placeID
-        parameters["key"] = BuildConfig.GP_API_KEY
+        val parameters = hashMapOf(
+            "place_id" to placeID,
+            "key" to BuildConfig.GP_API_KEY,
+        )
 
         val urlText = "https://maps.googleapis.com/maps/api/place/details/json"
         val response = StringBuilder()
+
         var googlePlacesApiRequestStatus = EHttpResponseStatusType.None
 
         try
         {
-            googlePlacesApiRequestStatus = HttpAPIRequestUtil.RetrieveAPIFeedback(
+            googlePlacesApiRequestStatus = HttpAPIRequestUtil.retrieveAPIFeedback(
                 response,
                 urlText,
                 EHttpRequestMethod.GET,
@@ -115,7 +116,7 @@ class TimeOverviewActivity : AppCompatActivity()
             // DO STUFF
         }
 
-        if (googlePlacesApiRequestStatus !== EHttpResponseStatusType.Success)
+        if (googlePlacesApiRequestStatus != EHttpResponseStatusType.Success)
         {
             return null
         }
@@ -141,11 +142,11 @@ class TimeOverviewActivity : AppCompatActivity()
 
     var errorMessage: StringBuilder? = null
 
-    fun loadPrayerTimes()
+    private fun loadPrayerTimes()
     {
         errorMessage = StringBuilder()
 
-        if (AppEnvironment.GetPrayerTimeSettingsByPrayerTimeTypeHashMap().size == 0)
+        if (AppEnvironment.GetPrayerTimeSettingsByPrayerTimeTypeHashMap().isEmpty())
         {
             doErrorToastyToast("There are no prayer time settings!")
             return
@@ -217,30 +218,34 @@ class TimeOverviewActivity : AppCompatActivity()
 
         _placesClient = Places.createClient(applicationContext)
 
-        var autocompleteSupportFragment = googlePlaceSearchAutoCompleteFragment as AutocompleteSupportFragment
+        val autocompleteSupportFragment = googlePlaceSearchAutoCompleteFragment as AutocompleteSupportFragment
 
-        autocompleteSupportFragment!!.setPlaceFields(
+        autocompleteSupportFragment.setPlaceFields(
             listOf(
                 Place.Field.ID,
                 Place.Field.LAT_LNG,
                 Place.Field.NAME
             )
         )
-        val searchFieldEditText: AppCompatEditText =
-            autocompleteSupportFragment.requireView().findViewById(R.id.places_autocomplete_search_input)
-        val clearSearchFieldButton: AppCompatImageButton = autocompleteSupportFragment.requireView()
-            .findViewById(R.id.places_autocomplete_clear_button)
+
+//        val searchFieldEditText: AppCompatEditText =
+//            autocompleteSupportFragment.requireView().findViewById(R.id.places_autocomplete_search_input)
+//        val clearSearchFieldButton: AppCompatImageButton = autocompleteSupportFragment.requireView()
+//            .findViewById(R.id.places_autocomplete_clear_button)
+
         autocompleteSupportFragment.requireView().setBackgroundColor(Color.LTGRAY)
         autocompleteSupportFragment.requireView().setBackgroundResource(R.drawable.rounded_corner)
-        searchFieldEditText.setTextColor(Color.BLACK)
-        clearSearchFieldButton.viewTreeObserver.addOnGlobalLayoutListener {
-            if (clearSearchFieldButton.visibility != View.GONE) {
-                clearSearchFieldButton.visibility = View.GONE
-            }
-        }
+
+//        searchFieldEditText.setTextColor(Color.BLACK)
+//
+//        clearSearchFieldButton.viewTreeObserver.addOnGlobalLayoutListener {
+//            if (clearSearchFieldButton.visibility != View.GONE) {
+//                clearSearchFieldButton.visibility = View.GONE
+//            }
+//        }
 
         // Set up a PlaceSelectionListener to handle the response.
-        autocompleteSupportFragment!!.setOnPlaceSelectedListener(object : PlaceSelectionListener {
+        autocompleteSupportFragment.setOnPlaceSelectedListener(object : PlaceSelectionListener {
             override fun onPlaceSelected(place: Place) {
                 try {
                     val cityAddress = RetrieveCityByLocation(
@@ -290,7 +295,7 @@ class TimeOverviewActivity : AppCompatActivity()
         prayerTimeTypeWithAssociatedTextView[EPrayerTimeType.Isha] = ishaTextLabel
 
         for ((key, prayerTimeTextLabel) in prayerTimeTypeWithAssociatedTextView) {
-            prayerTimeTextLabel.setOnClickListener { view: View? ->
+            prayerTimeTextLabel.setOnClickListener { _: View? ->
                 openSettingsForSpecificPrayerTimeType(
                     key
                 )
@@ -325,129 +330,35 @@ class TimeOverviewActivity : AppCompatActivity()
         prayerTimeType: EPrayerTimeType,
         prayerPointInTimeType: EPrayerTimeMomentType
     ): TextView? {
-        when (prayerTimeType) {
-            EPrayerTimeType.Fajr -> {
-                when (prayerPointInTimeType) {
-                    EPrayerTimeMomentType.Beginning -> return fajrTimeBeginningTextLabel
-                    EPrayerTimeMomentType.End -> return fajrTimeEndTextLabel
-                }
-                when (prayerPointInTimeType) {
-                    EPrayerTimeMomentType.Beginning -> return duhaTimeBeginningTextLabel
-                    EPrayerTimeMomentType.End -> return duhaTimeEndTextLabel
-                }
-                when (prayerPointInTimeType) {
-                    EPrayerTimeMomentType.Beginning -> return dhuhrTimeBeginningTextLabel
-                    EPrayerTimeMomentType.End -> return dhuhrTimeEndTextLabel
-                }
-                when (prayerPointInTimeType) {
-                    EPrayerTimeMomentType.Beginning -> return asrTimeBeginningTextLabel
-                    EPrayerTimeMomentType.End -> return asrTimeEndTextLabel
-                    EPrayerTimeMomentType.SubTimeOne -> return asrSubtimeOneTextLabel
-                    EPrayerTimeMomentType.SubTimeTwo -> return asrSubtimeTwoTextLabel
-                }
-                when (prayerPointInTimeType) {
-                    EPrayerTimeMomentType.Beginning -> return maghribTimeBeginningTextLabel
-                    EPrayerTimeMomentType.End -> return maghribTimeEndTextLabel
-                }
-                when (prayerPointInTimeType) {
-                    EPrayerTimeMomentType.Beginning -> return ishaTimeBeginningTextLabel
-                    EPrayerTimeMomentType.End -> return ishaTimeEndTextLabel
-                    EPrayerTimeMomentType.SubTimeOne -> return ishaSubtimeOneTextLabel
-                    EPrayerTimeMomentType.SubTimeTwo -> return ishaSubtimeTwoTextLabel
-                    EPrayerTimeMomentType.SubTimeThree -> return ishaSubtimeThreeTextLabel
-                }
-            }
-            EPrayerTimeType.Duha -> {
-                when (prayerPointInTimeType) {
-                    EPrayerTimeMomentType.Beginning -> return duhaTimeBeginningTextLabel
-                    EPrayerTimeMomentType.End -> return duhaTimeEndTextLabel
-                }
-                when (prayerPointInTimeType) {
-                    EPrayerTimeMomentType.Beginning -> return dhuhrTimeBeginningTextLabel
-                    EPrayerTimeMomentType.End -> return dhuhrTimeEndTextLabel
-                }
-                when (prayerPointInTimeType) {
-                    EPrayerTimeMomentType.Beginning -> return asrTimeBeginningTextLabel
-                    EPrayerTimeMomentType.End -> return asrTimeEndTextLabel
-                    EPrayerTimeMomentType.SubTimeOne -> return asrSubtimeOneTextLabel
-                    EPrayerTimeMomentType.SubTimeTwo -> return asrSubtimeTwoTextLabel
-                }
-                when (prayerPointInTimeType) {
-                    EPrayerTimeMomentType.Beginning -> return maghribTimeBeginningTextLabel
-                    EPrayerTimeMomentType.End -> return maghribTimeEndTextLabel
-                }
-                when (prayerPointInTimeType) {
-                    EPrayerTimeMomentType.Beginning -> return ishaTimeBeginningTextLabel
-                    EPrayerTimeMomentType.End -> return ishaTimeEndTextLabel
-                    EPrayerTimeMomentType.SubTimeOne -> return ishaSubtimeOneTextLabel
-                    EPrayerTimeMomentType.SubTimeTwo -> return ishaSubtimeTwoTextLabel
-                    EPrayerTimeMomentType.SubTimeThree -> return ishaSubtimeThreeTextLabel
-                }
-            }
-            EPrayerTimeType.Dhuhr -> {
-                when (prayerPointInTimeType) {
-                    EPrayerTimeMomentType.Beginning -> return dhuhrTimeBeginningTextLabel
-                    EPrayerTimeMomentType.End -> return dhuhrTimeEndTextLabel
-                }
-                when (prayerPointInTimeType) {
-                    EPrayerTimeMomentType.Beginning -> return asrTimeBeginningTextLabel
-                    EPrayerTimeMomentType.End -> return asrTimeEndTextLabel
-                    EPrayerTimeMomentType.SubTimeOne -> return asrSubtimeOneTextLabel
-                    EPrayerTimeMomentType.SubTimeTwo -> return asrSubtimeTwoTextLabel
-                }
-                when (prayerPointInTimeType) {
-                    EPrayerTimeMomentType.Beginning -> return maghribTimeBeginningTextLabel
-                    EPrayerTimeMomentType.End -> return maghribTimeEndTextLabel
-                }
-                when (prayerPointInTimeType) {
-                    EPrayerTimeMomentType.Beginning -> return ishaTimeBeginningTextLabel
-                    EPrayerTimeMomentType.End -> return ishaTimeEndTextLabel
-                    EPrayerTimeMomentType.SubTimeOne -> return ishaSubtimeOneTextLabel
-                    EPrayerTimeMomentType.SubTimeTwo -> return ishaSubtimeTwoTextLabel
-                    EPrayerTimeMomentType.SubTimeThree -> return ishaSubtimeThreeTextLabel
-                }
-            }
-            EPrayerTimeType.Asr -> {
-                when (prayerPointInTimeType) {
-                    EPrayerTimeMomentType.Beginning -> return asrTimeBeginningTextLabel
-                    EPrayerTimeMomentType.End -> return asrTimeEndTextLabel
-                    EPrayerTimeMomentType.SubTimeOne -> return asrSubtimeOneTextLabel
-                    EPrayerTimeMomentType.SubTimeTwo -> return asrSubtimeTwoTextLabel
-                }
-                when (prayerPointInTimeType) {
-                    EPrayerTimeMomentType.Beginning -> return maghribTimeBeginningTextLabel
-                    EPrayerTimeMomentType.End -> return maghribTimeEndTextLabel
-                }
-                when (prayerPointInTimeType) {
-                    EPrayerTimeMomentType.Beginning -> return ishaTimeBeginningTextLabel
-                    EPrayerTimeMomentType.End -> return ishaTimeEndTextLabel
-                    EPrayerTimeMomentType.SubTimeOne -> return ishaSubtimeOneTextLabel
-                    EPrayerTimeMomentType.SubTimeTwo -> return ishaSubtimeTwoTextLabel
-                    EPrayerTimeMomentType.SubTimeThree -> return ishaSubtimeThreeTextLabel
-                }
-            }
-            EPrayerTimeType.Maghrib -> {
-                when (prayerPointInTimeType) {
-                    EPrayerTimeMomentType.Beginning -> return maghribTimeBeginningTextLabel
-                    EPrayerTimeMomentType.End -> return maghribTimeEndTextLabel
-                }
-                when (prayerPointInTimeType) {
-                    EPrayerTimeMomentType.Beginning -> return ishaTimeBeginningTextLabel
-                    EPrayerTimeMomentType.End -> return ishaTimeEndTextLabel
-                    EPrayerTimeMomentType.SubTimeOne -> return ishaSubtimeOneTextLabel
-                    EPrayerTimeMomentType.SubTimeTwo -> return ishaSubtimeTwoTextLabel
-                    EPrayerTimeMomentType.SubTimeThree -> return ishaSubtimeThreeTextLabel
-                }
-            }
-            EPrayerTimeType.Isha -> when (prayerPointInTimeType) {
-                EPrayerTimeMomentType.Beginning -> return ishaTimeBeginningTextLabel
-                EPrayerTimeMomentType.End -> return ishaTimeEndTextLabel
-                EPrayerTimeMomentType.SubTimeOne -> return ishaSubtimeOneTextLabel
-                EPrayerTimeMomentType.SubTimeTwo -> return ishaSubtimeTwoTextLabel
-                EPrayerTimeMomentType.SubTimeThree -> return ishaSubtimeThreeTextLabel
-            }
+
+        return when (AbstractMap.SimpleEntry(prayerTimeType, prayerPointInTimeType)) {
+
+            AbstractMap.SimpleEntry(EPrayerTimeType.Fajr, EPrayerTimeMomentType.Beginning) -> fajrTimeBeginningTextLabel
+            AbstractMap.SimpleEntry(EPrayerTimeType.Fajr, EPrayerTimeMomentType.End) -> fajrTimeEndTextLabel
+
+            AbstractMap.SimpleEntry(EPrayerTimeType.Duha, EPrayerTimeMomentType.Beginning) -> duhaTimeBeginningTextLabel
+            AbstractMap.SimpleEntry(EPrayerTimeType.Duha, EPrayerTimeMomentType.End) -> duhaTimeEndTextLabel
+
+            AbstractMap.SimpleEntry(EPrayerTimeType.Dhuhr, EPrayerTimeMomentType.Beginning) -> dhuhrTimeBeginningTextLabel
+            AbstractMap.SimpleEntry(EPrayerTimeType.Dhuhr, EPrayerTimeMomentType.End) -> dhuhrTimeEndTextLabel
+
+            AbstractMap.SimpleEntry(EPrayerTimeType.Asr, EPrayerTimeMomentType.Beginning) -> asrTimeBeginningTextLabel
+            AbstractMap.SimpleEntry(EPrayerTimeType.Asr, EPrayerTimeMomentType.End) -> asrTimeEndTextLabel
+            AbstractMap.SimpleEntry(EPrayerTimeType.Asr, EPrayerTimeMomentType.SubTimeOne) -> asrSubtimeOneTextLabel
+            AbstractMap.SimpleEntry(EPrayerTimeType.Asr, EPrayerTimeMomentType.SubTimeTwo) -> asrSubtimeTwoTextLabel
+
+            AbstractMap.SimpleEntry(EPrayerTimeType.Maghrib, EPrayerTimeMomentType.Beginning) -> maghribTimeBeginningTextLabel
+            AbstractMap.SimpleEntry(EPrayerTimeType.Maghrib, EPrayerTimeMomentType.End) -> maghribTimeEndTextLabel
+            AbstractMap.SimpleEntry(EPrayerTimeType.Maghrib, EPrayerTimeMomentType.SubTimeOne) -> maghribSubtimeOneTextLabel
+
+            AbstractMap.SimpleEntry(EPrayerTimeType.Isha, EPrayerTimeMomentType.Beginning) -> ishaTimeBeginningTextLabel
+            AbstractMap.SimpleEntry(EPrayerTimeType.Isha, EPrayerTimeMomentType.End) -> ishaTimeEndTextLabel
+            AbstractMap.SimpleEntry(EPrayerTimeType.Isha, EPrayerTimeMomentType.SubTimeOne) -> ishaSubtimeOneTextLabel
+            AbstractMap.SimpleEntry(EPrayerTimeType.Isha, EPrayerTimeMomentType.SubTimeTwo) -> ishaSubtimeTwoTextLabel
+            AbstractMap.SimpleEntry(EPrayerTimeType.Isha, EPrayerTimeMomentType.SubTimeThree) -> ishaSubtimeThreeTextLabel
+
+            else -> null
         }
-        return null
     }
 
     private fun asyncLoadPrayerTimes() {
@@ -464,7 +375,9 @@ class TimeOverviewActivity : AppCompatActivity()
         prayerTimeType: EPrayerTimeType,
         isBeginning: Boolean
     ): Boolean {
+
         var dontPassEventOnToOtherListeners = false
+
         when (event.action) {
             MotionEvent.ACTION_DOWN -> lastTouchBeginnTimePerTextViewHashMap[textView] =
                 System.currentTimeMillis()
@@ -528,19 +441,19 @@ class TimeOverviewActivity : AppCompatActivity()
 
     @Throws(Exception::class)
     private fun retrieveTimeData(cityAddress: Address?) {
-        val toBeCalculatedPrayerTimes =
-            AppEnvironment.GetPrayerTimeSettingsByPrayerTimeTypeHashMap()
+
+        val toBeCalculatedPrayerTimes = AppEnvironment.GetPrayerTimeSettingsByPrayerTimeTypeHashMap()
+
         val timeZone = HttpAPIRequestUtil.RetrieveTimeZoneByLocation(
             cityAddress!!.longitude,
             cityAddress.latitude
         )
+
         val targetLocation = CustomLocation(cityAddress.longitude, cityAddress.latitude, timeZone)
-        diyanetTimesHashMap =
-            DataManagementUtil.RetrieveDiyanetTimeData(toBeCalculatedPrayerTimes, cityAddress)
-        muwaqqitTimesHashMap =
-            DataManagementUtil.RetrieveMuwaqqitTimeData(toBeCalculatedPrayerTimes, targetLocation)
-        alAdhanTimesHashMap =
-            DataManagementUtil.RetrieveAlAdhanTimeData(toBeCalculatedPrayerTimes, targetLocation)
+
+        diyanetTimesHashMap = DataManagementUtil.RetrieveDiyanetTimeData(toBeCalculatedPrayerTimes, cityAddress)
+        muwaqqitTimesHashMap = DataManagementUtil.RetrieveMuwaqqitTimeData(toBeCalculatedPrayerTimes, targetLocation)
+        alAdhanTimesHashMap = DataManagementUtil.RetrieveAlAdhanTimeData(toBeCalculatedPrayerTimes, targetLocation)
     }
 
     private fun mapTimeDataToTimesEntities() {
@@ -589,7 +502,9 @@ class TimeOverviewActivity : AppCompatActivity()
         prayerType: EPrayerTimeType,
         prayerTypeTimeType: EPrayerTimeMomentType
     ): LocalDateTime? {
+
         val prayerSettings = AppEnvironment.prayerSettingsByPrayerType[prayerType]
+
         if (prayerSettings != null
             && (prayerTypeTimeType === EPrayerTimeMomentType.Beginning || prayerTypeTimeType === EPrayerTimeMomentType.End)
         ) {
@@ -609,28 +524,22 @@ class TimeOverviewActivity : AppCompatActivity()
                 val prayerTimeWithType: AbstractMap.SimpleEntry<EPrayerTimeType, EPrayerTimeMomentType> =
                     AbstractMap.SimpleEntry<EPrayerTimeType, EPrayerTimeMomentType>(prayerType, prayerTypeTimeType)
 
-                if (prayerBeginningEndSettings.api === ESupportedAPIs.Muwaqqit && muwaqqitTimesHashMap.containsKey(
-                        prayerTimeWithType
-                    )
-                    && muwaqqitTimesHashMap.get(prayerTimeWithType) != null
+                if (prayerBeginningEndSettings.api === ESupportedAPIs.Muwaqqit
+                    && muwaqqitTimesHashMap[prayerTimeWithType] != null
                 ) {
-                    correctTime = muwaqqitTimesHashMap.get(prayerTimeWithType)!!
-                        .GetTimeByType(prayerType, prayerTypeTimeType)
-                } else if (prayerBeginningEndSettings.api === ESupportedAPIs.Diyanet && diyanetTimesHashMap.containsKey(
-                        prayerTimeWithType
-                    )
-                    && diyanetTimesHashMap.get(prayerTimeWithType) != null
-                ) {
-                    correctTime = diyanetTimesHashMap.get(prayerTimeWithType)!!
-                        .GetTimeByType(prayerType, prayerTypeTimeType)
-                } else if (prayerBeginningEndSettings.api === ESupportedAPIs.AlAdhan && alAdhanTimesHashMap.containsKey(
-                        prayerTimeWithType
-                    )
-                    && alAdhanTimesHashMap.get(prayerTimeWithType) != null
-                ) {
-                    correctTime = alAdhanTimesHashMap.get(prayerTimeWithType)!!
-                        .GetTimeByType(prayerType, prayerTypeTimeType)
+                    correctTime = muwaqqitTimesHashMap[prayerTimeWithType]!!.GetTimeByType(prayerType, prayerTypeTimeType)
                 }
+                else if (prayerBeginningEndSettings.api === ESupportedAPIs.Diyanet
+                    && diyanetTimesHashMap[prayerTimeWithType] != null
+                ) {
+                    correctTime = diyanetTimesHashMap[prayerTimeWithType]!!.GetTimeByType(prayerType, prayerTypeTimeType)
+                }
+                else if (prayerBeginningEndSettings.api === ESupportedAPIs.AlAdhan
+                    && alAdhanTimesHashMap[prayerTimeWithType] != null
+                ) {
+                    correctTime = alAdhanTimesHashMap[prayerTimeWithType]!!.GetTimeByType(prayerType, prayerTypeTimeType)
+                }
+
                 if (correctTime != null) {
                     val minuteAdjustment = prayerBeginningEndSettings.minuteAdjustment.toLong()
 
@@ -648,60 +557,76 @@ class TimeOverviewActivity : AppCompatActivity()
         prayerTypeTimeType: EPrayerTimeMomentType,
         prayerTimeEntity: PrayerTimeEntity
     ): LocalDateTime? {
+
         val prayerSettings = AppEnvironment.prayerSettingsByPrayerType[prayerType]
-        if (prayerSettings != null && prayerTypeTimeType !== EPrayerTimeMomentType.Beginning && prayerTypeTimeType !== EPrayerTimeMomentType.End) {
-            var subTimeSettings: SubTimeSettingsEntity? = null
-            when (prayerTypeTimeType) {
-                EPrayerTimeMomentType.SubTimeOne, EPrayerTimeMomentType.SubTimeTwo, EPrayerTimeMomentType.SubTimeThree -> subTimeSettings =
-                    prayerSettings.subPrayer1Settings
-            }
+
+        if (prayerSettings != null
+            && prayerTypeTimeType != EPrayerTimeMomentType.Beginning
+            && prayerTypeTimeType != EPrayerTimeMomentType.End) {
+
+            var subTimeSettings: SubTimeSettingsEntity? =
+                when (prayerTypeTimeType) {
+                    EPrayerTimeMomentType.SubTimeOne,
+                    EPrayerTimeMomentType.SubTimeTwo,
+                    EPrayerTimeMomentType.SubTimeThree -> prayerSettings.subPrayer1Settings
+                    else -> null
+                }
+
             if (subTimeSettings != null) {
+
+                val prayerTimeWithMomentType = AbstractMap.SimpleEntry<EPrayerTimeType, EPrayerTimeMomentType>(prayerType, prayerTypeTimeType)
+
                 when (prayerType) {
-                    EPrayerTimeType.Asr -> if (prayerTypeTimeType === EPrayerTimeMomentType.SubTimeOne && subTimeSettings.isEnabled1) {
-                        return muwaqqitTimesHashMap.get(
-                            AbstractMap.SimpleEntry<EPrayerTimeType, EPrayerTimeMomentType>(
-                                prayerType,
-                                prayerTypeTimeType
-                            )
-                        )!!.mithlaynTime
-                    } else if (prayerTypeTimeType === EPrayerTimeMomentType.SubTimeTwo && subTimeSettings.isEnabled2) {
-                        return muwaqqitTimesHashMap.get(
-                            AbstractMap.SimpleEntry<EPrayerTimeType, EPrayerTimeMomentType>(
-                                prayerType,
-                                prayerTypeTimeType
-                            )
-                        )!!.asrKarahaTime
-                    }
+
+                    EPrayerTimeType.Asr ->
+
+                        if (prayerTypeTimeType === EPrayerTimeMomentType.SubTimeOne && subTimeSettings.isEnabled1) {
+                            return muwaqqitTimesHashMap.get(prayerTimeWithMomentType)!!.mithlaynTime
+                        }
+                        else if (prayerTypeTimeType === EPrayerTimeMomentType.SubTimeTwo && subTimeSettings.isEnabled2) {
+                            return muwaqqitTimesHashMap.get(prayerTimeWithMomentType)!!.asrKarahaTime
+                        }
+
+                    EPrayerTimeType.Maghrib ->
+
+                        if (prayerTypeTimeType === EPrayerTimeMomentType.SubTimeOne && subTimeSettings.isEnabled1) {
+                            return alAdhanTimesHashMap.get(prayerTimeWithMomentType)?.ishtibaqAnNujumTime
+                        }
+
                     EPrayerTimeType.Isha -> {
-                        if (prayerTimeEntity.Duration == 0L || PrayerTimeEntity.Prayers[4].Duration == 0L) {
+
+                        if (prayerTimeEntity.Duration == 0L || PrayerTimeEntity.Maghrib.Duration == 0L) {
                             return null
                         }
-                        val timeBetweenIshaBeginningAndMaghribEnd = ChronoUnit.MILLIS.between(
-                            PrayerTimeEntity.Prayers[4].endTime, prayerTimeEntity.beginningTime
-                        )
-                        val nightDuration =
-                            prayerTimeEntity.Duration + PrayerTimeEntity.Prayers[4].Duration + timeBetweenIshaBeginningAndMaghribEnd
-                        if (subTimeSettings.isEnabled1 && prayerTypeTimeType !== EPrayerTimeMomentType.SubTimeThree) {
+
+                        val timeBetweenIshaBeginningAndMaghribEnd =
+                            ChronoUnit.MILLIS.between(PrayerTimeEntity.Maghrib.endTime, prayerTimeEntity.beginningTime)
+
+                        val nightDuration = prayerTimeEntity.Duration + PrayerTimeEntity.Maghrib.Duration + timeBetweenIshaBeginningAndMaghribEnd
+
+                        if (prayerTypeTimeType !== EPrayerTimeMomentType.SubTimeThree && subTimeSettings.isEnabled1) {
+
                             val thirdOfNight = nightDuration / 3
-                            when (prayerTypeTimeType) {
-                                EPrayerTimeMomentType.SubTimeOne -> return PrayerTimeEntity.Prayers[4].beginningTime!!.plus(
-                                    thirdOfNight,
-                                    ChronoField.MILLI_OF_DAY.baseUnit
-                                )
-                                EPrayerTimeMomentType.SubTimeTwo -> return PrayerTimeEntity.Prayers[4].beginningTime!!.plus(
-                                    2 * thirdOfNight,
-                                    ChronoField.MILLI_OF_DAY.baseUnit
-                                )
+
+                            if(prayerTypeTimeType == EPrayerTimeMomentType.SubTimeOne) {
+                                return PrayerTimeEntity.Maghrib
+                                    .beginningTime!!.plus(thirdOfNight, ChronoField.MILLI_OF_DAY.baseUnit)
                             }
+                            else if(prayerTypeTimeType == EPrayerTimeMomentType.SubTimeTwo) {
+                                return PrayerTimeEntity.Maghrib
+                                    .beginningTime!!.plus(2 * thirdOfNight, ChronoField.MILLI_OF_DAY.baseUnit)
+                            }
+
                         } else if (subTimeSettings.isEnabled2) {
+
                             val halfOfNight = nightDuration / 2
-                            when (prayerTypeTimeType) {
-                                EPrayerTimeMomentType.SubTimeThree -> return PrayerTimeEntity.Prayers[4].beginningTime!!.plus(
-                                    halfOfNight,
-                                    ChronoField.MILLI_OF_DAY.baseUnit
-                                )
+
+                            if(prayerTypeTimeType == EPrayerTimeMomentType.SubTimeThree) {
+                                return PrayerTimeEntity.Maghrib
+                                    .beginningTime!!.plus(halfOfNight, ChronoField.MILLI_OF_DAY.baseUnit)
                             }
                         }
+
                     }
                 }
             }
@@ -781,7 +706,7 @@ class TimeOverviewActivity : AppCompatActivity()
 
             val currentLocalDateTime = LocalDateTime.now()
             prayerTimeGraphicView.displayPrayerEntity =
-                GetPrayerByTime(currentLocalDateTime)
+                getPrayerByTime(currentLocalDateTime)
             prayerTimeGraphicView.invalidate()
         }
         catch (e: Exception) {

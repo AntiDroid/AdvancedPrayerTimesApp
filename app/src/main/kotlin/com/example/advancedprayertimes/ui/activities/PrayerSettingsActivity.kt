@@ -22,8 +22,8 @@ class PrayerSettingsActivity : AppCompatActivity()
         // Get the Intent that started this activity and extract the string
         _prayerType =  this.intent.getSerializableExtra(TimeOverviewActivity.INTENT_EXTRA) as EPrayerTimeType?
 
-        this.actionBar?.setDisplayHomeAsUpEnabled(true)
-        actionBar?.title = _prayerType.toString() + " settings"
+        this.supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        this.supportActionBar?.title = _prayerType.toString() + " settings"
 
         configureTabs()
     }

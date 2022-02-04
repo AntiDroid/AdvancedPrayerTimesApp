@@ -16,43 +16,18 @@ class PrayerTimeBeginningEndSettingsEntity(
 )
 {
     companion object {
-        @JvmField
-        var DEGREE_TYPES: java.util.HashSet<*> = Stream.of<AbstractMap.SimpleEntry<*, *>>(
-            AbstractMap.SimpleEntry<Any?, Any?>(
-                EPrayerTimeType.Fajr,
-                EPrayerTimeMomentType.Beginning
-            ),
-            AbstractMap.SimpleEntry<Any?, Any?>(EPrayerTimeType.Maghrib, EPrayerTimeMomentType.End),
-            AbstractMap.SimpleEntry<Any?, Any?>(
-                EPrayerTimeType.Isha,
-                EPrayerTimeMomentType.Beginning
-            ),
-            AbstractMap.SimpleEntry<Any?, Any?>(EPrayerTimeType.Isha, EPrayerTimeMomentType.End)
-        ).collect(
-            Collectors.toCollection(
-                Supplier { HashSet() })
-        )
-        @JvmField
-        var ISHA_DEGREE_TYPES: java.util.HashSet<*> = Stream.of<AbstractMap.SimpleEntry<*, *>>(
-            AbstractMap.SimpleEntry<Any?, Any?>(EPrayerTimeType.Maghrib, EPrayerTimeMomentType.End),
-            AbstractMap.SimpleEntry<Any?, Any?>(
-                EPrayerTimeType.Isha,
-                EPrayerTimeMomentType.Beginning
+
+        val DEGREE_TYPES
+            get() = ISHA_DEGREE_TYPES + FAJR_DEGREE_TYPES
+
+        val ISHA_DEGREE_TYPES = listOf(
+                AbstractMap.SimpleEntry(EPrayerTimeType.Maghrib, EPrayerTimeMomentType.End),
+                AbstractMap.SimpleEntry(EPrayerTimeType.Isha, EPrayerTimeMomentType.Beginning)
             )
-        ).collect(
-            Collectors.toCollection(
-                Supplier { HashSet() })
-        )
-        @JvmField
-        var FAJR_DEGREE_TYPES: java.util.HashSet<*> = Stream.of<AbstractMap.SimpleEntry<*, *>>(
-            AbstractMap.SimpleEntry<Any?, Any?>(
-                EPrayerTimeType.Fajr,
-                EPrayerTimeMomentType.Beginning
-            ),
-            AbstractMap.SimpleEntry<Any?, Any?>(EPrayerTimeType.Isha, EPrayerTimeMomentType.End)
-        ).collect(
-            Collectors.toCollection(
-                Supplier { HashSet() })
-        )
-    }
+
+        val FAJR_DEGREE_TYPES = listOf(
+                AbstractMap.SimpleEntry(EPrayerTimeType.Fajr, EPrayerTimeMomentType.Beginning),
+                AbstractMap.SimpleEntry(EPrayerTimeType.Isha, EPrayerTimeMomentType.End)
+            )
+        }
 }

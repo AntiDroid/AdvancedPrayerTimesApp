@@ -21,8 +21,8 @@ import java.util.stream.Stream
 import kotlin.streams.asSequence
 
 class PrayerBeginningEndSettingPreferencesFragment(
-    prayerType: EPrayerTimeType,
-    private val _isBeginning: Boolean
+    private var prayerType: EPrayerTimeType = EPrayerTimeType.Fajr,
+    private var _isBeginning: Boolean = true
 ) : PreferenceFragmentCompat() {
 
     private var _preferenceChangeListener: OnSharedPreferenceChangeListener? = null
@@ -31,18 +31,27 @@ class PrayerBeginningEndSettingPreferencesFragment(
     private var minuteAdjustmentListPreference: ListPreference? = null
     private var fajrDegreesListPreference: ListPreference? = null
     private var ishaDegreesListPreference: ListPreference? = null
-    var prayerTypeWithMomentType: AbstractMap.SimpleEntry<EPrayerTimeType, EPrayerTimeMomentType>
 
-    override fun onCreatePreferences(savedInstanceState: Bundle, rootKey: String) {
+    private var prayerTypeWithMomentType: AbstractMap.SimpleEntry<EPrayerTimeType, EPrayerTimeMomentType> =
+        AbstractMap.SimpleEntry(
+            prayerType,
+            if (_isBeginning) EPrayerTimeMomentType.Beginning else EPrayerTimeMomentType.End
+        )
+
+    override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
+
         setPreferencesFromResource(R.xml.prayer_beginning_end_settings_preferences, rootKey)
         apiSettingsPreferenceCategory = findPreference(PREFERENCE_CATEGORY_API_SETTINGS)
         apiSelectionListPreference = findPreference(PREFERENCE_NAME_API_SELECTION)
         minuteAdjustmentListPreference = findPreference(PREFERENCE_NAME_MINUTE_ADJUSTMENT_SELECTION)
         fajrDegreesListPreference = findPreference(PREFERENCE_NAME_FAJR_DEGREE_SELECTION)
         ishaDegreesListPreference = findPreference(PREFERENCE_NAME_ISHA_DEGREE_SELECTION)
-        if (apiSelectionListPreference == null || minuteAdjustmentListPreference == null || fajrDegreesListPreference == null || ishaDegreesListPreference == null || apiSettingsPreferenceCategory == null) {
+
+        if (apiSelectionListPreference == null || minuteAdjustmentListPreference == null ||
+            fajrDegreesListPreference == null || ishaDegreesListPreference == null || apiSettingsPreferenceCategory == null) {
             return
         }
+
         configureAPISelector(apiSelectionListPreference!!)
         var selectedAPI = ESupportedAPIs.Undefined
         var minuteAdjustmentValue = 0
@@ -90,43 +99,38 @@ class PrayerBeginningEndSettingPreferencesFragment(
     }
 
     private fun onPreferenceChange(sharedPreferences: SharedPreferences, key: String) {
+
         val prayerSettings = AppEnvironment.prayerSettingsByPrayerType[prayerTypeWithMomentType.key]
             ?: return
-        if (key == apiSelectionListPreference!!.key && sharedPreferences.contains(
-                apiSelectionListPreference!!.key
-            )
-        ) {
-            val api = ESupportedAPIs.valueOf(apiSelectionListPreference!!.value)
-            prayerSettings.GetBeginningEndSettingByMomentType(_isBeginning)!!.api = api
-            updatePreferenceVisibility()
-        } else if (key == minuteAdjustmentListPreference!!.key && sharedPreferences.contains(
-                minuteAdjustmentListPreference!!.key
-            )
-        ) {
-            val minuteAdjustment = minuteAdjustmentListPreference!!.value.toInt()
-            prayerSettings.GetBeginningEndSettingByMomentType(_isBeginning)!!.minuteAdjustment =
-                minuteAdjustment
-        } else if (key == fajrDegreesListPreference!!.key && sharedPreferences.contains(
-                fajrDegreesListPreference!!.key
-            )
-        ) {
-            val fajrCalculationDegrees = fajrDegreesListPreference!!.value.toDouble()
-            prayerSettings.GetBeginningEndSettingByMomentType(_isBeginning)!!.fajrCalculationDegree =
-                fajrCalculationDegrees
-        } else if (key == ishaDegreesListPreference!!.key && sharedPreferences.contains(
-                ishaDegreesListPreference!!.key
-            )
-        ) {
-            val ishaCalculationDegrees = ishaDegreesListPreference!!.value.toDouble()
-            prayerSettings.GetBeginningEndSettingByMomentType(_isBeginning)!!.ishaCalculationDegree =
-                ishaCalculationDegrees
+
+        if(sharedPreferences.contains(key))
+        {
+            val beginningEndSettings: PrayerTimeBeginningEndSettingsEntity? = prayerSettings.GetBeginningEndSettingByMomentType(_isBeginning)
+
+            when(key) {
+                apiSelectionListPreference!!.key -> {
+                    beginningEndSettings!!.api = ESupportedAPIs.valueOf(apiSelectionListPreference!!.value)
+                    updatePreferenceVisibility()
+                }
+                minuteAdjustmentListPreference!!.key -> {
+                    beginningEndSettings!!.minuteAdjustment = minuteAdjustmentListPreference!!.value.toInt()
+                }
+                fajrDegreesListPreference!!.key -> {
+                    beginningEndSettings!!.fajrCalculationDegree = fajrDegreesListPreference!!.value.toDouble()
+                }
+                ishaDegreesListPreference!!.key -> {
+                    beginningEndSettings!!.ishaCalculationDegree = ishaDegreesListPreference!!.value.toDouble()
+                }
+            }
         }
+
         val jsonString = Gson().toJson(prayerSettings)
         val globalSharedPreference = this.requireActivity()
             .getSharedPreferences(
                 AppEnvironment.GLOBAL_SHARED_PREFERENCE_NAME,
                 Context.MODE_PRIVATE
             )
+
         globalSharedPreference.edit().putString(
             GetTimeSettingsEntityKeyForSharedPreference(prayerTypeWithMomentType.key),
             jsonString
@@ -194,11 +198,4 @@ class PrayerBeginningEndSettingPreferencesFragment(
         private const val PREFERENCE_NAME_ISHA_DEGREE_SELECTION = "ishaCalculationDegree"
     }
 
-    // endregion fields
-    init {
-        prayerTypeWithMomentType = AbstractMap.SimpleEntry(
-            prayerType,
-            if (_isBeginning) EPrayerTimeMomentType.Beginning else EPrayerTimeMomentType.End
-        )
-    }
 }

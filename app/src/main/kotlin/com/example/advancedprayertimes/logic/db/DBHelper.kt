@@ -208,6 +208,12 @@ class DBHelper(context: Context?) : SQLiteOpenHelper(context, DB_NAME, null, DB_
         return returnID
     }
 
+    "SELECT $DIYANET_ILCE_TABLE.$idColumn FROM $DIYANET_ULKE_TABLE" +
+    " INNER JOIN $DIYANET_SEHIR_TABLE ON $DIYANET_SEHIR_TABLE.$parentIDColumn = $DIYANET_ULKE_TABLE.$idColumn" +
+    " INNER JOIN $DIYANET_ILCE_TABLE ON $DIYANET_ILCE_TABLE.$parentIDColumn = $DIYANET_SEHIR_TABLE.$idColumn" +
+    " WHERE $DIYANET_ULKE_TABLE.$nameColumn  = '$countryName' AND $DIYANET_ILCE_TABLE.$nameColumn = '$cityName'"
+
+
     // ######################################################
     // ######################################################
     // ############## MUWAQQIT_PRAYER_TIME_TABLE ############

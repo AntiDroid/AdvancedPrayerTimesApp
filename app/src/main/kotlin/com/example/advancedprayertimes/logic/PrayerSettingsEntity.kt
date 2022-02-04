@@ -11,21 +11,12 @@ class PrayerSettingsEntity(
     var subPrayer3Settings: SubTimeSettingsEntity?
 )
 {
-    constructor() : this (null, null, null, null, null)
-    {
-
-    }
+    constructor() : this (null, null, null, null, null) { }
 
     fun GetBeginningEndSettingByMomentType(isBeginning: Boolean): PrayerTimeBeginningEndSettingsEntity?
     {
-        return if (isBeginning)
-        {
-            beginningSettings
-        }
-        else
-        {
-            endSettings
-        }
+        return if (isBeginning) beginningSettings
+        else  endSettings
     }
 
     fun SetBeginningEndSettingByMomentType(
