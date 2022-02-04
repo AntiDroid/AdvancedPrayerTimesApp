@@ -28,8 +28,8 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.ArrayList
-import java.util.HashMap
 import java.util.concurrent.TimeUnit
+import kotlin.math.abs
 
 object HttpAPIRequestUtil {
     private const val MUWAQQIT_JSON_URL = "https://www.muwaqqit.com/api.json"
@@ -59,10 +59,9 @@ object HttpAPIRequestUtil {
         if (ilceID == null) {
 
             val ulkelerJSONList = StringBuilder()
-            val ulkelerRequestStatus = 0
 
             try {
-                val ulkelerResponseStatusType = RetrieveAPIFeedback(
+                val ulkelerResponseStatusType = retrieveAPIFeedback(
                     ulkelerJSONList,
                     "$DIYANET_JSON_URL/ulkeler",
                     EHttpRequestMethod.GET,
@@ -101,9 +100,9 @@ object HttpAPIRequestUtil {
 
             // ######################
             val sehirlerList = StringBuilder()
-            val sehirlerRequestStatus = 0
+
             try {
-                val sehirlerResponseStatusType = RetrieveAPIFeedback(
+                val sehirlerResponseStatusType = retrieveAPIFeedback(
                     sehirlerList,
                     "$DIYANET_JSON_URL/sehirler/$targetUlkeID",
                     EHttpRequestMethod.GET,
@@ -140,9 +139,9 @@ object HttpAPIRequestUtil {
 
             // ######################
             val ilcelerList = StringBuilder()
-            val ilcelerRequestStatus = 0
+
             try {
-                val ilcelerResponseStatusType = RetrieveAPIFeedback(
+                val ilcelerResponseStatusType = retrieveAPIFeedback(
                     ilcelerList,
                     "$DIYANET_JSON_URL/ilceler/$sehirID",
                     EHttpRequestMethod.GET,
@@ -178,10 +177,11 @@ object HttpAPIRequestUtil {
 
         // ######################
         val vakitlerList = StringBuilder()
-        val vakitlerRequestStatus = 0
+
         var timesPackageEntity: DiyanetPrayerTimeDayEntity? = null
+
         try {
-            val vakitlerResponseStatusType = RetrieveAPIFeedback(
+            val vakitlerResponseStatusType = retrieveAPIFeedback(
                 vakitlerList,
                 "$DIYANET_JSON_URL/vakitler/$ilceID",
                 EHttpRequestMethod.GET,
@@ -231,94 +231,81 @@ object HttpAPIRequestUtil {
         ishaDegree: Double?,
         ishtibaqAngle: Double?
     ): AlAdhanPrayerTimeDayEntity? {
+
         if (targetLocation == null) {
             throw Exception(
                 "Can not retrieve Diyanet prayer time data without a provided address!",
                 null
             )
         }
+
         val alAdhanJSONList = StringBuilder()
+
         try {
-            var fajrDegreeText = "null"
-            var IshaDegreeText = "null"
-            var ishtibaqDegreeText = "null"
-            if (fajrDegree != null) {
-                fajrDegreeText = "" + Math.abs(fajrDegree)
-            }
-            if (ishaDegree != null) {
-                IshaDegreeText = "" + Math.abs(ishaDegree)
-            }
-            if (ishtibaqAngle != null) {
-                ishtibaqDegreeText = "" + Math.abs(ishtibaqAngle)
-            }
-            val queryParameters = HashMap<String, String>()
-            queryParameters["latitude"] = targetLocation.latitude.toString() + ""
-            queryParameters["longitude"] = targetLocation.longitude.toString() + ""
-            queryParameters["method"] = "99"
-            queryParameters["methodSettings"] =
-                "$fajrDegreeText,$ishtibaqDegreeText,$IshaDegreeText"
-            queryParameters["month"] = LocalDateTime.now().monthValue.toString() + ""
-            queryParameters["year"] = LocalDateTime.now().year.toString() + ""
-            val alAdhanResponseStatusType = RetrieveAPIFeedback(
+
+            val fajrDegreeText = if(fajrDegree == null) { "null" } else { "" + abs(fajrDegree) }
+            val ishaDegreeText = if(ishaDegree == null) { "null" } else { "" + abs(ishaDegree) }
+            val ishtibaqDegreeText = if(ishtibaqAngle == null) { "null" } else { "" + abs(ishtibaqAngle) }
+
+            val queryParameters = hashMapOf(
+                "latitude" to targetLocation.latitude.toString(),
+                "longitude" to targetLocation.longitude.toString(),
+                "method" to "99",
+                "methodSettings" to "$fajrDegreeText,$ishtibaqDegreeText,$ishaDegreeText",
+                "month" to LocalDate.now().monthValue.toString(),
+                "year" to LocalDate.now().year.toString()
+            )
+
+            val alAdhanResponseStatusType = retrieveAPIFeedback(
                 alAdhanJSONList,
                 ALADHAN_JSON_URL,
                 EHttpRequestMethod.GET,
                 queryParameters
             )
+
             if (alAdhanResponseStatusType !== EHttpResponseStatusType.Success) {
                 return null
             }
+
             val jsonObject = JSONObject(alAdhanJSONList.toString())
             val arrayListJson = jsonObject.getJSONArray("data")
             val gson = BuildGSON("HH:mm")
-            val timeFormatter = DateTimeFormatter.ofPattern("HH:mm dd-MM-yyyy")
+
             for (i in 0 until arrayListJson.length()) {
-                val timingsJSONObject = arrayListJson.getJSONObject(i).getJSONObject("timings")
+
+                val jsonObject = arrayListJson.getJSONObject(i)
+
+                val timingsJSONObject = jsonObject.getJSONObject("timings")
+
                 val dateString =
-                    arrayListJson.getJSONObject(i).getJSONObject("date").getJSONObject("gregorian")
+                    jsonObject
+                        .getJSONObject("date")
+                        .getJSONObject("gregorian")
                         .getString("date")
-                val fajrTime = LocalDateTime.parse(
-                    timingsJSONObject.getString("Fajr").substring(0, 5) + " " + dateString,
-                    timeFormatter
-                )
-                val sunRiseTime = LocalDateTime.parse(
-                    timingsJSONObject.getString("Sunrise").substring(0, 5) + " " + dateString,
-                    timeFormatter
-                )
-                val duhaTime: LocalDateTime? = null
-                val dhuhrTime = LocalDateTime.parse(
-                    timingsJSONObject.getString("Dhuhr").substring(0, 5) + " " + dateString,
-                    timeFormatter
-                )
-                val asrTime = LocalDateTime.parse(
-                    timingsJSONObject.getString("Asr").substring(0, 5) + " " + dateString,
-                    timeFormatter
-                )
-                val asrmitlhaynTime: LocalDateTime? = null
-                val asrKarahaTime: LocalDateTime? = null
-                val maghribTime = LocalDateTime.parse(
-                    timingsJSONObject.getString("Sunset").substring(0, 5) + " " + dateString,
-                    timeFormatter
-                )
-                val ishtibaqAnNujumTime = LocalDateTime.parse(
-                    timingsJSONObject.getString("Maghrib").substring(0, 5) + " " + dateString,
-                    timeFormatter
-                )
-                val ishaTime = LocalDateTime.parse(
-                    timingsJSONObject.getString("Isha").substring(0, 5) + " " + dateString,
-                    timeFormatter
-                )
+
+                val dateTimeFormat = "HH:mm dd-MM-yyyy"
+
+                val fajrTime =              "${timingsJSONObject.getString("Fajr")      .substring(0, 5)} $dateString".parse(dateTimeFormat)
+                val sunriseTime =           "${timingsJSONObject.getString("Sunrise")   .substring(0, 5)} $dateString".parse(dateTimeFormat)
+                val dhuhrTime =             "${timingsJSONObject.getString("Dhuhr")     .substring(0, 5)} $dateString".parse(dateTimeFormat)
+                val asrTime =               "${timingsJSONObject.getString("Asr")       .substring(0, 5)} $dateString".parse(dateTimeFormat)
+                val maghribTime =           "${timingsJSONObject.getString("Sunset")    .substring(0, 5)} $dateString".parse(dateTimeFormat)
+                val ishtibaqAnNujumTime =   "${timingsJSONObject.getString("Maghrib")   .substring(0, 5)} $dateString".parse(dateTimeFormat)
+                val ishaTime =              "${timingsJSONObject.getString("Isha")      .substring(0, 5)} $dateString".parse(dateTimeFormat)
+
                 if (fajrTime.toLocalDate().isEqual(LocalDate.now())) {
+
                     return AlAdhanPrayerTimeDayEntity(
-                        fajrTime,
-                        sunRiseTime,
-                        dhuhrTime,
-                        asrTime,
-                        null,
-                        maghribTime,
-                        ishtibaqAnNujumTime,
-                        ishaTime
+                        fajrTime = fajrTime,
+                        sunriseTime = sunriseTime,
+                        dhuhrTime = dhuhrTime,
+                        asrTime = asrTime,
+                        mithlaynTime = null,
+                        maghribTime = maghribTime,
+                        ishtibaqAnNujumTime = ishtibaqAnNujumTime,
+                        ishaTime = ishaTime
                     )
+
                 }
             }
         } catch (e: Exception) {
@@ -351,11 +338,13 @@ object HttpAPIRequestUtil {
         if (storedMuwaqqitTime != null) {
             return storedMuwaqqitTime
         }
-        val queryParameters = HashMap<String, String>()
-        queryParameters["d"] = todayDate
-        queryParameters["ln"] = java.lang.Double.toString(targetLocation.longitude)
-        queryParameters["lt"] = java.lang.Double.toString(targetLocation.latitude)
-        queryParameters["tz"] = targetLocation.timezone!!
+
+        val queryParameters = hashMapOf(
+            "d" to todayDate,
+            "ln" to targetLocation.longitude.toString(),
+            "lt" to targetLocation.latitude.toString(),
+            "tz" to targetLocation.timezone!!
+        )
 
         if (fajrDegree != null) {
             queryParameters["fa"] = fajrDegree.toString()
@@ -370,7 +359,7 @@ object HttpAPIRequestUtil {
         }
 
         var response = StringBuilder()
-        var muwaqqitResponseStatusType = RetrieveAPIFeedback(
+        var muwaqqitResponseStatusType = retrieveAPIFeedback(
             response,
             MUWAQQIT_JSON_URL,
             EHttpRequestMethod.POST,
@@ -378,25 +367,30 @@ object HttpAPIRequestUtil {
         )
 
         // Muwaqqit API requires 10 seconds cool down after every successful or unsuccessful request
-        if (muwaqqitResponseStatusType === EHttpResponseStatusType.TooManyRequests || response.toString()
-                .startsWith("429 TOO MANY REQUESTS")
+        if (muwaqqitResponseStatusType === EHttpResponseStatusType.TooManyRequests
+            ||
+            response.toString().startsWith("429 TOO MANY REQUESTS")
         ) {
             try {
                 TimeUnit.MILLISECONDS.sleep(MUWAQQIT_API_COOLDOWN_MILLISECONDS)
-            } catch (e: Exception) { /* DO NOTHING */
-            }
+            } catch (e: Exception) { /* DO NOTHING */ }
+
             response = StringBuilder()
-            muwaqqitResponseStatusType = RetrieveAPIFeedback(
+
+            muwaqqitResponseStatusType = retrieveAPIFeedback(
                 response,
                 MUWAQQIT_JSON_URL,
                 EHttpRequestMethod.POST,
                 queryParameters
             )
         }
+
         if (muwaqqitResponseStatusType !== EHttpResponseStatusType.Success) {
             return null
         }
+
         var timesPackageEntity: MuwaqqitPrayerTimeDayEntity? = null
+
         try {
             val gson = BuildGSON("HH:mm:ss")
             val outputList = gson.fromJson<List<MuwaqqitPrayerTimeDayEntity>>(
@@ -404,60 +398,80 @@ object HttpAPIRequestUtil {
                 object : TypeToken<ArrayList<MuwaqqitPrayerTimeDayEntity?>?>() {}.type
             )
             AppEnvironment.dbHelper!!.DeleteAllMuwaqqitPrayerTimesByDegrees(fajrDegree, ishaDegree)
+
             for (time in outputList) {
                 AppEnvironment.dbHelper!!.AddMuwaqqitPrayerTime(time, targetLocation)
                 if (todayDate == time.date) {
                     timesPackageEntity = time
                 }
             }
+
         } catch (e: Exception) {
             throw Exception("Could not process Muwaqqit prayer times for an unknown reason!", e)
         }
+
         if (timesPackageEntity == null) {
             throw Exception("Could not retrieve Muwaqqit prayer times for an unknown reason!", null)
         }
+
         return timesPackageEntity
     }
 
     @Throws(Exception::class)
     fun RetrieveTimeZoneByLocation(longitude: Double, latitude: Double): String? {
+
         val urlText = "$BING_MAPS_URL$latitude,$longitude"
-        val parameters = HashMap<String, String>()
-        parameters["key"] = BuildConfig.BING_API_KEY
+        val parameters = hashMapOf(
+            "key" to BuildConfig.BING_API_KEY
+        )
+
         val response = StringBuilder()
-        val timezoneResponseStatusType =
-            RetrieveAPIFeedback(response, urlText, EHttpRequestMethod.GET, parameters)
+
+        val timezoneResponseStatusType = retrieveAPIFeedback(response, urlText, EHttpRequestMethod.GET, parameters)
+
         if (timezoneResponseStatusType !== EHttpResponseStatusType.Success) {
             return null
         }
-        var timezone: String = ""
-        timezone = try {
-            val obj = JSONObject(response.toString())
-            obj.getJSONArray("resourceSets").getJSONObject(0).getJSONArray("resources")
-                .getJSONObject(0).getJSONObject("timeZone").getString("ianaTimeZoneId")
+
+        val timezone: String = try {
+
+            JSONObject(response.toString())
+                .getJSONArray("resourceSets")
+                .getJSONObject(0)
+                .getJSONArray("resources")
+                .getJSONObject(0)
+                .getJSONObject("timeZone")
+                .getString("ianaTimeZoneId")
+
         } catch (e: Exception) {
             throw Exception("Bing timezone response could not be processed!", e)
         }
+
         if (timezone == "") {
             throw Exception("Could not retrieve time zone for an unknown reason!", null)
         }
+
         return timezone
     }
 
-    @Throws(Exception::class)
-    fun RetrieveAPIFeedback(
+    fun retrieveAPIFeedback(
         responseContent: StringBuilder,
         urlText: String?,
         requestMethod: EHttpRequestMethod,
         queryParameters: Map<String, String>?
     ): EHttpResponseStatusType {
+
         var urlText = urlText
         var conn: HttpURLConnection? = null
+
         var responseStatusType = EHttpResponseStatusType.None
+
         try {
             var line: String?
-            if (requestMethod === EHttpRequestMethod.GET && queryParameters != null && queryParameters.size > 0) {
+
+            if (requestMethod === EHttpRequestMethod.GET && queryParameters != null && queryParameters.isNotEmpty()) {
                 var parameterPart = "?"
+
                 for ((key, value) in queryParameters) {
                     parameterPart += "$key=$value&"
                 }
@@ -467,53 +481,66 @@ object HttpAPIRequestUtil {
                 sb.deleteCharAt(sb.length - 1)
                 urlText += sb.toString()
             }
+
             val url = URL(urlText)
             conn = url.openConnection() as HttpURLConnection
 
             // Request setup
             conn.requestMethod = requestMethod.toString()
-            conn!!.connectTimeout = 5000 // 5000 milliseconds = 5 seconds
+            conn.connectTimeout = 5000 // 5000 milliseconds = 5 seconds
             conn.readTimeout = 5000
             if (requestMethod === EHttpRequestMethod.POST) {
+
                 val builder = Uri.Builder()
+
                 for ((key, value) in queryParameters!!) {
                     builder.appendQueryParameter(key, value)
                 }
+
                 val query = builder.build().encodedQuery
                 val os = conn.outputStream
                 val writer = BufferedWriter(OutputStreamWriter(os, StandardCharsets.UTF_8))
-                if (queryParameters.size != 0) {
+
+                if (queryParameters.isNotEmpty()) {
                     writer.write(query)
                 }
+
                 writer.flush()
                 writer.close()
                 os.close()
             }
+
             val responseCode = conn.responseCode
-            responseStatusType = GetHttpResponseStatusTypeByResponseCode(responseCode)
+            responseStatusType = getHttpResponseStatusTypeByResponseCode(responseCode)
+
             val reader: BufferedReader = if (responseStatusType !== EHttpResponseStatusType.Success) {
                 BufferedReader(InputStreamReader(conn.errorStream))
             } else {
                 BufferedReader(InputStreamReader(conn.inputStream))
             }
+
             while (reader.readLine().also { line = it } != null) {
                 if (line != null) responseContent.append(line)
             }
+
             reader.close()
+
         } finally {
             conn?.disconnect()
         }
+
         return responseStatusType
     }
 
-    fun GetHttpResponseStatusTypeByResponseCode(statusCode: Int): EHttpResponseStatusType {
+    fun getHttpResponseStatusTypeByResponseCode(statusCode: Int): EHttpResponseStatusType {
+
         if (statusCode > 299) {
-            return if (statusCode == 429) {
-                EHttpResponseStatusType.TooManyRequests
-            } else EHttpResponseStatusType.UnknownError
+            return if (statusCode == 429) EHttpResponseStatusType.TooManyRequests
+                else EHttpResponseStatusType.UnknownError
         } else if (statusCode in 200..299) {
             return EHttpResponseStatusType.Success
         }
+
         return EHttpResponseStatusType.None
     }
 }
