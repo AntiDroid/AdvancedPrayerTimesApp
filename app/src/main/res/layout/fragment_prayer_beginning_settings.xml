@@ -3,7 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".ui.fragments.tabfragments.TabPrayerBeginningSettingsFragment">
+    tools:context=".ui.prayer_setting_ui_components.tab_fragments.PrayerBeginningSettingsTabFragment">
 
     <FrameLayout
         android:id="@+id/settingsBeginning"

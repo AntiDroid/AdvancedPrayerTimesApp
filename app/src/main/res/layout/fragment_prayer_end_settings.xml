@@ -3,7 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".ui.fragments.tabfragments.TabPrayerEndSettingsFragment">
+    tools:context=".ui.prayer_setting_ui_components.tab_fragments.PrayerEndSettingsTabFragment">
 
     <FrameLayout
         android:id="@+id/settingsEnd"
