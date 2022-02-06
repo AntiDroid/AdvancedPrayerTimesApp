@@ -19,23 +19,19 @@ class PrayerTimeEntity private constructor(val prayerTimeType: EPrayerTimeType, 
     var subtime3EndTime: LocalDateTime? = null
 
     // TODO: Fix Isha
-    val Duration: Long
+    val durationMS: Long?
         get()
         {
-            if (endTime == null || beginningTime == null)
-            {
-                return 0
+            if (endTime == null || beginningTime == null) {
+                return null
             }
-
-            var duration: Long = ChronoUnit.MILLIS.between(beginningTime, endTime)
 
             // TODO: Fix Isha
-            if (endTime!!.isBefore(beginningTime))
-            {
-                duration = ChronoUnit.MILLIS.between(beginningTime, endTime!!.plusDays(1))
+            return if(endTime!!.isBefore(beginningTime)) {
+                ChronoUnit.MILLIS.between(beginningTime, endTime!!.plusDays(1))
+            } else {
+                ChronoUnit.MILLIS.between(beginningTime, endTime)
             }
-
-            return duration
         }
 
     fun getTimeByMomentType(prayerTimeMomentType: EPrayerTimeMomentType): LocalDateTime?
@@ -92,6 +88,21 @@ class PrayerTimeEntity private constructor(val prayerTimeType: EPrayerTimeType, 
             get() = Prayers[4]
         val Isha: PrayerTimeEntity
             get() = Prayers[5]
+
+        val NightDurationMS: Long?
+            get() {
+
+                if (PrayerTimeEntity.Isha.durationMS == null || PrayerTimeEntity.Maghrib.durationMS == null) {
+                    return null
+                }
+
+                val timeBetweenIshaBeginningAndMaghribEnd = ChronoUnit.MILLIS.between(
+                    PrayerTimeEntity.Maghrib.endTime,
+                    PrayerTimeEntity.Isha.beginningTime
+                )
+
+                return PrayerTimeEntity.Isha.durationMS!! + PrayerTimeEntity.Maghrib.durationMS!! + timeBetweenIshaBeginningAndMaghribEnd
+            }
 
         fun getPrayerByTime(time: LocalDateTime): PrayerTimeEntity?
         {

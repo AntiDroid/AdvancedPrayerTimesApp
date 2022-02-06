@@ -1,7 +1,7 @@
-package com.example.advancedprayertimes.ui.fragments
+package com.example.advancedprayertimes.ui.prayer_setting_ui_components
 
 import android.content.Context
-import com.example.advancedprayertimes.logic.DataManagementUtil.GetTimeSettingsEntityKeyForSharedPreference
+import com.example.advancedprayertimes.logic.util.DataManagementUtil.getTimeSettingsEntityKeyForSharedPreference
 import com.example.advancedprayertimes.logic.enums.EPrayerTimeType
 import androidx.preference.PreferenceFragmentCompat
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener
@@ -132,7 +132,7 @@ class PrayerBeginningEndSettingPreferencesFragment(
             )
 
         globalSharedPreference.edit().putString(
-            GetTimeSettingsEntityKeyForSharedPreference(prayerTypeWithMomentType.key),
+            getTimeSettingsEntityKeyForSharedPreference(prayerTypeWithMomentType.key),
             jsonString
         ).commit()
     }
@@ -177,14 +177,14 @@ class PrayerBeginningEndSettingPreferencesFragment(
     // endregion methods
     override fun onPause() {
         super.onPause()
-        preferenceScreen.sharedPreferences.unregisterOnSharedPreferenceChangeListener(
+        preferenceScreen.sharedPreferences!!.unregisterOnSharedPreferenceChangeListener(
             _preferenceChangeListener
         )
     }
 
     override fun onResume() {
         super.onResume()
-        preferenceScreen.sharedPreferences.registerOnSharedPreferenceChangeListener(
+        preferenceScreen.sharedPreferences!!.registerOnSharedPreferenceChangeListener(
             _preferenceChangeListener
         )
     }

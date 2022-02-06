@@ -12,6 +12,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.AdvancedPrayerTimes">
         <activity
+            android:name=".ui.activities.TimeCacheOverviewActivity"
+            android:exported="false" />
+        <activity
             android:name=".ui.activities.PrayerSettingsActivity"
             android:exported="false"
             android:label="@string/title_activity_settings" />
@@ -29,11 +32,10 @@
 
         <meta-data
             android:name="com.google.android.maps.v2.API_KEY"
-            android:value="${GP_API_KEY}"/>
-
+            android:value="${GP_API_KEY}" />
         <meta-data
             android:name="bing.maps.API_KEY"
-            android:value="${BING_API_KEY}"/>
+            android:value="${BING_API_KEY}" />
     </application>
 
 </manifest>

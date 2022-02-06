@@ -1,231 +1,222 @@
-package com.example.advancedprayertimes.logic
+package com.example.advancedprayertimes.logic.util
 
 import android.location.Address
 import android.net.Uri
 import com.example.advancedprayertimes.BuildConfig
+import com.example.advancedprayertimes.logic.AppEnvironment
 import com.example.advancedprayertimes.logic.AppEnvironment.BuildGSON
-import kotlin.Throws
+import com.example.advancedprayertimes.logic.CustomLocation
+import com.example.advancedprayertimes.logic.CustomPlaceEntity
 import com.example.advancedprayertimes.logic.api_entities.DiyanetPrayerTimeDayEntity
 import com.example.advancedprayertimes.logic.enums.EHttpResponseStatusType
 import com.example.advancedprayertimes.logic.enums.EHttpRequestMethod
 import com.example.advancedprayertimes.logic.api_entities.diyanet.DiyanetUlkeEntity
-import com.example.advancedprayertimes.logic.api_entities.diyanet.DiyanetSehirEntity
 import com.example.advancedprayertimes.logic.api_entities.diyanet.DiyanetIlceEntity
 import com.example.advancedprayertimes.logic.api_entities.AlAdhanPrayerTimeDayEntity
 import org.json.JSONObject
 import com.example.advancedprayertimes.logic.api_entities.MuwaqqitPrayerTimeDayEntity
+import com.example.advancedprayertimes.logic.api_entities.diyanet.AbstractDiyanetSubEntity
+import com.example.advancedprayertimes.logic.api_entities.diyanet.DiyanetSehirEntity
+import com.example.advancedprayertimes.logic.extensions.parseToDateTime
+import com.example.advancedprayertimes.logic.extensions.parseToTime
+import com.example.advancedprayertimes.logic.extensions.toStringByFormat
 import com.google.firebase.crashlytics.buildtools.reloc.com.google.common.reflect.TypeToken
+import com.google.gson.Gson
 import java.io.BufferedReader
 import java.io.BufferedWriter
 import java.io.InputStreamReader
 import java.io.OutputStreamWriter
 import java.lang.Exception
-import java.lang.StringBuilder
 import java.net.HttpURLConnection
 import java.net.URL
 import java.nio.charset.StandardCharsets
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 import java.util.ArrayList
 import java.util.concurrent.TimeUnit
 import kotlin.math.abs
+import kotlin.text.StringBuilder
 
-object HttpAPIRequestUtil {
+object HttpRequestUtil {
+
     private const val MUWAQQIT_JSON_URL = "https://www.muwaqqit.com/api.json"
     private const val DIYANET_JSON_URL = "https://ezanvakti.herokuapp.com"
     private const val ALADHAN_JSON_URL = "https://api.aladhan.com/v1/calendar"
-    private const val MUWAQQIT_API_COOLDOWN_MILLISECONDS: Long = 12000
     private const val BING_MAPS_URL = "https://dev.virtualearth.net/REST/v1/timezone/"
+    private const val GOOGLE_PLACES_URL = "https://maps.googleapis.com/maps/api/place/details/json"
 
-    // Der JSON enthält direkt in der ersten Ebene die Gebetszeiteninformationen für alle Tage des jeweiligen Monats.
-    @Throws(Exception::class)
-    fun RetrieveDiyanetTimes(cityAddress: Address?): DiyanetPrayerTimeDayEntity? {
+    private const val MUWAQQIT_API_COOLDOWN_MILLISECONDS: Long = 12000
 
-        if (cityAddress == null) {
+    // region Diyanet
+
+    private inline fun<reified T : AbstractDiyanetSubEntity> retrieveDiyanetSubEntitiy(gson: Gson, urlText: String, compValue: String, parentID: String?) : String? {
+
+        val stringJSONList = StringBuilder()
+
+        if (EHttpResponseStatusType.Success !== retrieveAPIFeedback(
+                responseContent = stringJSONList,
+                urlText = urlText,
+                requestMethod = EHttpRequestMethod.GET,
+                queryParameters = null
+            )
+        ) {
+            return null
+        }
+
+        val typedResponseLst = gson.fromJson<List<T>>(
+            stringJSONList.toString(),
+            object : TypeToken<ArrayList<T?>?>() {}.type
+        )
+
+        if (typedResponseLst.any { x -> x.id.isNullOrBlank() && x.nameEn.isNullOrBlank() }) {
             throw Exception(
-                "Can not retrieve Diyanet prayer time data without a provided address!",
+                "Diyanet data was received incomplete!",
                 null
             )
         }
 
-        val gson = BuildGSON("HH:mm")
+        for (diyanetSubEntity in typedResponseLst) {
+
+            AppEnvironment.dbHelper.createDiyanetSubEntityIfNotExist(
+                diyanetSubEntity = diyanetSubEntity,
+                parentID = parentID
+            )
+
+            if (diyanetSubEntity.nameEn == compValue) {
+                return diyanetSubEntity.id
+            }
+        }
+
+        return null
+    }
+
+    private fun retrieveDiyanetIlce(gson: Gson, cityAddress: Address) : String?
+    {
         var targetUlkeID: String? = null
+
+        try {
+            targetUlkeID = retrieveDiyanetSubEntitiy<DiyanetUlkeEntity>(
+                gson = gson,
+                urlText = "$DIYANET_JSON_URL/ulkeler",
+                compValue = cityAddress.countryName.uppercase(),
+                parentID = null
+            )
+
+            if (targetUlkeID == null) { return null }
+
+        } catch (e: Exception) {
+            throw Exception("Could not process Diyanet ulke information!", e)
+        }
+
         var sehirID: String? = null
 
-        //AppEnvironment.dbHelper.GetDiyanetIlceIDByCountryAndCityName(cityAddress.getCountryName().toUpperCase(), cityAddress.getLocality().toUpperCase());
+        try {
+            sehirID = retrieveDiyanetSubEntitiy<DiyanetSehirEntity>(
+                gson = gson,
+                urlText = "$DIYANET_JSON_URL/sehirler/$targetUlkeID",
+                compValue = cityAddress.countryName.uppercase(),
+                parentID = targetUlkeID
+            )
+
+            if (sehirID == null)  { return null }
+
+        } catch (e: Exception) {
+            throw Exception("Could not process Diyanet sehir information!", e)
+        }
+
+        try {
+            return retrieveDiyanetSubEntitiy<DiyanetIlceEntity>(
+                gson = gson,
+                urlText = "$DIYANET_JSON_URL/ilceler/$sehirID",
+                compValue = cityAddress.locality.uppercase(),
+                parentID = sehirID
+            )
+        } catch (e: Exception) {
+            throw Exception("Could not process Diyanet ilce information!", e)
+        }
+    }
+
+    // Der JSON enthält direkt in der ersten Ebene die Gebetszeiteninformationen für alle Tage des jeweiligen Monats.
+    fun retrieveDiyanetTimes(cityAddress: Address): DiyanetPrayerTimeDayEntity? {
+
+        val gson = BuildGSON("HH:mm")
         var ilceID: String? = null
 
-        if (ilceID == null) {
+        if(AppEnvironment.useCaching)
+        {
+            ilceID = AppEnvironment.dbHelper.GetDiyanetIlceIDByCountryAndCityName(
+                cityAddress.countryName.uppercase(),
+                cityAddress.locality.uppercase()
+            )
+        }
 
-            val ulkelerJSONList = StringBuilder()
+        if(ilceID == null)
+        {
+            ilceID = retrieveDiyanetIlce(gson, cityAddress)
+        }
 
-            try {
-                val ulkelerResponseStatusType = retrieveAPIFeedback(
-                    ulkelerJSONList,
-                    "$DIYANET_JSON_URL/ulkeler",
-                    EHttpRequestMethod.GET,
-                    null
-                )
-                if (ulkelerResponseStatusType !== EHttpResponseStatusType.Success) {
-                    return null
-                }
-
-                // TODO: CHECK WHETHER IS JSON IS VALID
-                val ulkelerLstType = object : TypeToken<ArrayList<DiyanetUlkeEntity?>?>() {}.type
-                val ulkelerLst = gson.fromJson<List<DiyanetUlkeEntity>>(
-                    ulkelerJSONList.toString(),
-                    ulkelerLstType
-                )
-                if (!ulkelerLst.stream()
-                        .allMatch { x: DiyanetUlkeEntity -> x.ulkeID != null && x.ulkeID != "" && x.ulkeAdiEn != null && x.ulkeAdiEn != "" }
-                ) {
-                    // WEIRD
-                }
-                for (ulke in ulkelerLst) {
-                    if (AppEnvironment.dbHelper!!.GetDiyanetUlkeIDByName(ulke.ulkeAdiEn!!) == null) {
-                        AppEnvironment.dbHelper!!.AddDiyanetUlke(ulke)
-                    }
-                    if (ulke.ulkeAdiEn == cityAddress.countryName.toUpperCase()) {
-                        targetUlkeID = ulke.ulkeID
-                        break
-                    }
-                }
-                if (targetUlkeID == null) {
-                    return null
-                }
-            } catch (e: Exception) {
-                throw Exception("Could not process Diyanet ulke information!", e)
-            }
-
-            // ######################
-            val sehirlerList = StringBuilder()
-
-            try {
-                val sehirlerResponseStatusType = retrieveAPIFeedback(
-                    sehirlerList,
-                    "$DIYANET_JSON_URL/sehirler/$targetUlkeID",
-                    EHttpRequestMethod.GET,
-                    null
-                )
-                if (sehirlerResponseStatusType !== EHttpResponseStatusType.Success) {
-                    return null
-                }
-                val sehirlerLstType = object : TypeToken<ArrayList<DiyanetSehirEntity?>?>() {}.type
-                val sehirlerLst = gson.fromJson<List<DiyanetSehirEntity>>(
-                    sehirlerList.toString(),
-                    sehirlerLstType
-                )
-                if (!sehirlerLst.stream()
-                        .allMatch { x: DiyanetSehirEntity -> x.sehirID != null && x.sehirID != "" && x.sehirAdiEn != null && x.sehirAdiEn != "" }
-                ) {
-                    // WEIRD
-                }
-                val sehirEntity = sehirlerLst.stream().findFirst()
-
-                // TODO: Support mulitple sehirler
-                if (sehirEntity.isPresent) {
-                    if (AppEnvironment.dbHelper!!.GetDiyanetSehirIDByName(sehirEntity.get().sehirAdiEn!!) == null) {
-                        AppEnvironment.dbHelper!!.AddDiyanetSehir(targetUlkeID, sehirEntity.get())
-                    }
-                    sehirID = sehirEntity.get().sehirID
-                }
-                if (sehirID == null) {
-                    return null
-                }
-            } catch (e: Exception) {
-                throw Exception("Could not process Diyanet sehir information!", e)
-            }
-
-            // ######################
-            val ilcelerList = StringBuilder()
-
-            try {
-                val ilcelerResponseStatusType = retrieveAPIFeedback(
-                    ilcelerList,
-                    "$DIYANET_JSON_URL/ilceler/$sehirID",
-                    EHttpRequestMethod.GET,
-                    null
-                )
-                if (ilcelerResponseStatusType !== EHttpResponseStatusType.Success) {
-                    return null
-                }
-                val ilcelerLstType = object : TypeToken<ArrayList<DiyanetIlceEntity?>?>() {}.type
-                val ilcelerLst =
-                    gson.fromJson<List<DiyanetIlceEntity>>(ilcelerList.toString(), ilcelerLstType)
-                if (!ilcelerLst.stream()
-                        .allMatch { x: DiyanetIlceEntity -> x.ilceID != null && x.ilceID != "" && x.ilceAdiEn != null && x.ilceAdiEn != "" }
-                ) {
-                    // WEIRD
-                }
-                for (ilceEntity in ilcelerLst) {
-                    if (AppEnvironment.dbHelper!!.GetDiyanetIlceIDByName(ilceEntity.ilceAdiEn!!) == null) {
-                        AppEnvironment.dbHelper!!.AddDiyanetIlce(sehirID, ilceEntity)
-                    }
-                    if (ilceEntity.ilceAdiEn == cityAddress.locality.toUpperCase()) {
-                        ilceID = ilceEntity.ilceID
-                        break
-                    }
-                }
-                if (ilceID == null) {
-                    return null
-                }
-            } catch (e: Exception) {
-                throw Exception("Could not process Diyanet ilce information!", e)
-            }
+        if(ilceID == null)
+        {
+            throw Exception(
+                "Could not find Diyanet ilce information!",
+                null
+            )
         }
 
         // ######################
         val vakitlerList = StringBuilder()
-
         var timesPackageEntity: DiyanetPrayerTimeDayEntity? = null
 
         try {
-            val vakitlerResponseStatusType = retrieveAPIFeedback(
-                vakitlerList,
-                "$DIYANET_JSON_URL/vakitler/$ilceID",
-                EHttpRequestMethod.GET,
-                null
+
+            if (EHttpResponseStatusType.Success !== retrieveAPIFeedback(
+                responseContent = vakitlerList,
+                urlText = "$DIYANET_JSON_URL/vakitler/$ilceID",
+                requestMethod = EHttpRequestMethod.GET,
+                queryParameters = null
             )
-            if (vakitlerResponseStatusType !== EHttpResponseStatusType.Success) {
+            ) {
                 return null
             }
-            val todayDate = DateTimeFormatter.ofPattern("dd.MM.yyyy").format(LocalDateTime.now())
-            val listOfDiyanetPrayerTimeEntity =
-                object : TypeToken<ArrayList<DiyanetPrayerTimeDayEntity?>?>() {}.type
+
+            val todayDate = LocalDateTime.now().toStringByFormat("dd.MM.yyyy")
+
+            // String json, Type typeOfT
             val outputList = gson.fromJson<List<DiyanetPrayerTimeDayEntity>>(
                 vakitlerList.toString(),
-                listOfDiyanetPrayerTimeEntity
+                (object : TypeToken<ArrayList<DiyanetPrayerTimeDayEntity?>?>() {}.type)
             )
-            var element =
-                outputList.stream().filter { x: DiyanetPrayerTimeDayEntity -> todayDate == x.date }
-                    .findFirst()
 
-            //TODO: API schickt heutige Daten manchmal nicht
-            if (!element.isPresent) {
-                val tomorrowDate = DateTimeFormatter.ofPattern("dd.MM.yyyy")
-                    .format(LocalDateTime.now().plusDays(1))
-                element = outputList.stream()
-                    .filter { x: DiyanetPrayerTimeDayEntity -> todayDate == x.date }
-                    .findFirst()
+            timesPackageEntity = outputList.firstOrNull { x -> todayDate == x.date }
+
+            //TODO: Diyanet API schickt manchmal erst Daten für spätere Tage
+            if (timesPackageEntity == null) {
+                val tomorrowDate = LocalDateTime.now().plusDays(1).toStringByFormat("dd.MM.yyyy")
+                timesPackageEntity = outputList.firstOrNull { x -> tomorrowDate == x.date }
             }
-            if (element.isPresent) {
-                timesPackageEntity = element.get()
-            }
+
         } catch (e: Exception) {
-            throw Exception("Could not process Diyanet vakit information!", e)
+            throw Exception(
+                "Could not process Diyanet vakit information!",
+                e
+            )
         }
+
         if (timesPackageEntity == null) {
             throw Exception(
                 "Could not retrieve Diyanet prayer time information for an unknown reason!",
                 null
             )
         }
+
         return timesPackageEntity
     }
 
-    @Throws(Exception::class)
-    fun RetrieveAlAdhanTimes(
+    // endregion Diyanet
+
+    // region AlAdhan
+
+    fun retrieveAlAdhanTimes(
         targetLocation: CustomLocation?,
         fajrDegree: Double?,
         ishaDegree: Double?,
@@ -273,25 +264,25 @@ object HttpAPIRequestUtil {
 
             for (i in 0 until arrayListJson.length()) {
 
-                val jsonObject = arrayListJson.getJSONObject(i)
+                val curJsonObject = arrayListJson.getJSONObject(i)
 
-                val timingsJSONObject = jsonObject.getJSONObject("timings")
+                val timingsJSONObject = curJsonObject.getJSONObject("timings")
 
                 val dateString =
-                    jsonObject
+                    curJsonObject
                         .getJSONObject("date")
                         .getJSONObject("gregorian")
                         .getString("date")
 
                 val dateTimeFormat = "HH:mm dd-MM-yyyy"
 
-                val fajrTime =              "${timingsJSONObject.getString("Fajr")      .substring(0, 5)} $dateString".parse(dateTimeFormat)
-                val sunriseTime =           "${timingsJSONObject.getString("Sunrise")   .substring(0, 5)} $dateString".parse(dateTimeFormat)
-                val dhuhrTime =             "${timingsJSONObject.getString("Dhuhr")     .substring(0, 5)} $dateString".parse(dateTimeFormat)
-                val asrTime =               "${timingsJSONObject.getString("Asr")       .substring(0, 5)} $dateString".parse(dateTimeFormat)
-                val maghribTime =           "${timingsJSONObject.getString("Sunset")    .substring(0, 5)} $dateString".parse(dateTimeFormat)
-                val ishtibaqAnNujumTime =   "${timingsJSONObject.getString("Maghrib")   .substring(0, 5)} $dateString".parse(dateTimeFormat)
-                val ishaTime =              "${timingsJSONObject.getString("Isha")      .substring(0, 5)} $dateString".parse(dateTimeFormat)
+                val fajrTime =              "${timingsJSONObject.getString("Fajr")      .substring(0, 5)} $dateString".parseToDateTime(dateTimeFormat)
+                val sunriseTime =           "${timingsJSONObject.getString("Sunrise")   .substring(0, 5)} $dateString".parseToDateTime(dateTimeFormat)
+                val dhuhrTime =             "${timingsJSONObject.getString("Dhuhr")     .substring(0, 5)} $dateString".parseToDateTime(dateTimeFormat)
+                val asrTime =               "${timingsJSONObject.getString("Asr")       .substring(0, 5)} $dateString".parseToDateTime(dateTimeFormat)
+                val maghribTime =           "${timingsJSONObject.getString("Sunset")    .substring(0, 5)} $dateString".parseToDateTime(dateTimeFormat)
+                val ishtibaqAnNujumTime =   "${timingsJSONObject.getString("Maghrib")   .substring(0, 5)} $dateString".parseToDateTime(dateTimeFormat)
+                val ishaTime =              "${timingsJSONObject.getString("Isha")      .substring(0, 5)} $dateString".parseToDateTime(dateTimeFormat)
 
                 if (fajrTime.toLocalDate().isEqual(LocalDate.now())) {
 
@@ -311,32 +302,39 @@ object HttpAPIRequestUtil {
         } catch (e: Exception) {
             throw Exception("Could not process Diyanet ulke information!", e)
         }
+
         return null
     }
 
-    @Throws(Exception::class)
-    fun RetrieveMuwaqqitTimes(
+    // endregion AlAdhan
+
+    // region Muwaqqit
+
+    fun retrieveMuwaqqitTimes(
         targetLocation: CustomLocation,
         fajrDegree: Double?,
         ishaDegree: Double?,
         karahaDegree: Double?
     ): MuwaqqitPrayerTimeDayEntity? {
-        val todayDate = DateTimeFormatter.ofPattern("yyyy-MM-dd").format(LocalDateTime.now())
+
+        val todayDate = LocalDateTime.now().toStringByFormat("yyyy-MM-dd")
 
         // TODO: CHECK TODAY DATE AS WELL
-        var storedMuwaqqitTime: MuwaqqitPrayerTimeDayEntity? = null
-        if (false && karahaDegree == null) {
-            storedMuwaqqitTime =
-                AppEnvironment.dbHelper!!.GetMuwaqqitPrayerTimesByDateLocationAndDegrees(
-                    todayDate,
-                    targetLocation.longitude,
-                    targetLocation.latitude,
-                    fajrDegree,
-                    ishaDegree
+        if (AppEnvironment.useCaching) {
+
+            val storedMuwaqqitTime =
+                AppEnvironment.dbHelper.getMuwaqqitPrayerTimesByDateLocationAndDegrees(
+                    todayDateString = todayDate,
+                    longitude = targetLocation.longitude,
+                    latitude = targetLocation.latitude,
+                    fajrDegree = fajrDegree,
+                    ishaDegree = ishaDegree,
+                    karahaDegree = karahaDegree
                 )
-        }
-        if (storedMuwaqqitTime != null) {
-            return storedMuwaqqitTime
+
+            if (storedMuwaqqitTime != null) {
+                return storedMuwaqqitTime
+            }
         }
 
         val queryParameters = hashMapOf(
@@ -346,17 +344,9 @@ object HttpAPIRequestUtil {
             "tz" to targetLocation.timezone!!
         )
 
-        if (fajrDegree != null) {
-            queryParameters["fa"] = fajrDegree.toString()
-        }
-
-        if (ishaDegree != null) {
-            queryParameters["ea"] = ishaDegree.toString()
-        }
-
-        if (karahaDegree != null) {
-            queryParameters["ia"] = karahaDegree.toString()
-        }
+        if (fajrDegree != null) { queryParameters["fa"] = fajrDegree.toString() }
+        if (ishaDegree != null) { queryParameters["ea"] = ishaDegree.toString() }
+        if (karahaDegree != null) { queryParameters["ia"] = karahaDegree.toString() }
 
         var response = StringBuilder()
         var muwaqqitResponseStatusType = retrieveAPIFeedback(
@@ -397,10 +387,10 @@ object HttpAPIRequestUtil {
                 JSONObject(response.toString()).getJSONArray("list").toString(),
                 object : TypeToken<ArrayList<MuwaqqitPrayerTimeDayEntity?>?>() {}.type
             )
-            AppEnvironment.dbHelper!!.DeleteAllMuwaqqitPrayerTimesByDegrees(fajrDegree, ishaDegree)
+            AppEnvironment.dbHelper.deleteAllMuwaqqitPrayerTimesByDegrees(fajrDegree, ishaDegree, null)
 
             for (time in outputList) {
-                AppEnvironment.dbHelper!!.AddMuwaqqitPrayerTime(time, targetLocation)
+                AppEnvironment.dbHelper.addMuwaqqitPrayerTime(time, targetLocation)
                 if (todayDate == time.date) {
                     timesPackageEntity = time
                 }
@@ -417,8 +407,62 @@ object HttpAPIRequestUtil {
         return timesPackageEntity
     }
 
-    @Throws(Exception::class)
-    fun RetrieveTimeZoneByLocation(longitude: Double, latitude: Double): String? {
+    // endregion Muwaqqit
+
+    private fun getHttpResponseStatusTypeByResponseCode(statusCode: Int): EHttpResponseStatusType {
+
+        if (statusCode > 299) {
+            return if (statusCode == 429) EHttpResponseStatusType.TooManyRequests
+            else EHttpResponseStatusType.UnknownError
+        } else if (statusCode in 200..299) {
+            return EHttpResponseStatusType.Success
+        }
+
+        return EHttpResponseStatusType.None
+    }
+
+    private fun findPlaceFromGoogle(placeID: String): CustomPlaceEntity? {
+
+        val parameters = hashMapOf(
+            "place_id" to placeID,
+            "key" to BuildConfig.GP_API_KEY,
+        )
+
+        val response = java.lang.StringBuilder()
+
+        var googlePlacesApiRequestStatus = EHttpResponseStatusType.None
+
+        try
+        {
+            googlePlacesApiRequestStatus = HttpRequestUtil.retrieveAPIFeedback(
+                response,
+                GOOGLE_PLACES_URL,
+                EHttpRequestMethod.GET,
+                parameters
+            )
+        }
+        catch (e: Exception)
+        {
+            // DO STUFF
+        }
+
+        if (googlePlacesApiRequestStatus != EHttpResponseStatusType.Success)
+        {
+            return null
+        }
+
+        val jsonBaseObj = JSONObject(response.toString())
+        val jsonResultObj = jsonBaseObj.getJSONObject("result")
+        val jsonGeometryObj = jsonResultObj.getJSONObject("geometry")
+        val jsonLocationObj = jsonGeometryObj.getJSONObject("location")
+        val name = jsonResultObj.getString("name")
+        val longitude = jsonLocationObj.getDouble("lng")
+        val latitude = jsonLocationObj.getDouble("lat")
+
+        return CustomPlaceEntity(placeID, latitude, longitude, name)
+    }
+
+    fun retrieveTimeZoneByLocation(longitude: Double, latitude: Double): String? {
 
         val urlText = "$BING_MAPS_URL$latitude,$longitude"
         val parameters = hashMapOf(
@@ -456,12 +500,12 @@ object HttpAPIRequestUtil {
 
     fun retrieveAPIFeedback(
         responseContent: StringBuilder,
-        urlText: String?,
+        urlText: String,
         requestMethod: EHttpRequestMethod,
         queryParameters: Map<String, String>?
     ): EHttpResponseStatusType {
 
-        var urlText = urlText
+        var adaptedUrlText = urlText
         var conn: HttpURLConnection? = null
 
         var responseStatusType = EHttpResponseStatusType.None
@@ -479,10 +523,10 @@ object HttpAPIRequestUtil {
                 // remove & character at the end
                 val sb = StringBuffer(parameterPart)
                 sb.deleteCharAt(sb.length - 1)
-                urlText += sb.toString()
+                adaptedUrlText += sb.toString()
             }
 
-            val url = URL(urlText)
+            val url = URL(adaptedUrlText)
             conn = url.openConnection() as HttpURLConnection
 
             // Request setup
@@ -530,17 +574,5 @@ object HttpAPIRequestUtil {
         }
 
         return responseStatusType
-    }
-
-    fun getHttpResponseStatusTypeByResponseCode(statusCode: Int): EHttpResponseStatusType {
-
-        if (statusCode > 299) {
-            return if (statusCode == 429) EHttpResponseStatusType.TooManyRequests
-                else EHttpResponseStatusType.UnknownError
-        } else if (statusCode in 200..299) {
-            return EHttpResponseStatusType.Success
-        }
-
-        return EHttpResponseStatusType.None
     }
 }

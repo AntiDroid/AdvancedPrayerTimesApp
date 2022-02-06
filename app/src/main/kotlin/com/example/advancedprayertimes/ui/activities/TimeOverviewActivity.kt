@@ -1,6 +1,7 @@
 package com.example.advancedprayertimes.ui.activities
 
-import com.example.advancedprayertimes.logic.LocationUtil.RetrieveCityByLocation
+import android.annotation.SuppressLint
+import com.example.advancedprayertimes.logic.util.LocationUtil.RetrieveCityByLocation
 import com.example.advancedprayertimes.logic.PrayerTimeEntity.Companion.getPrayerByTime
 import androidx.appcompat.app.AppCompatActivity
 import com.example.advancedprayertimes.logic.enums.EPrayerTimeType
@@ -10,150 +11,111 @@ import com.google.android.libraries.places.widget.AutocompleteSupportFragment
 import android.os.Bundle
 import com.example.advancedprayertimes.logic.AppEnvironment
 import com.example.advancedprayertimes.logic.db.DBHelper
-import kotlin.Throws
-import org.json.JSONException
 import com.example.advancedprayertimes.logic.CustomPlaceEntity
-import com.example.advancedprayertimes.logic.enums.EHttpResponseStatusType
-import com.example.advancedprayertimes.logic.HttpAPIRequestUtil
-import com.example.advancedprayertimes.logic.enums.EHttpRequestMethod
-import org.json.JSONObject
+import com.example.advancedprayertimes.logic.util.HttpRequestUtil
 import android.os.Looper
 import android.widget.Toast
 import com.google.android.libraries.places.api.Places
 import com.google.android.libraries.places.api.model.Place
 import androidx.appcompat.widget.AppCompatEditText
 import com.google.android.libraries.places.widget.listener.PlaceSelectionListener
-import com.example.advancedprayertimes.logic.DataManagementUtil
+import com.example.advancedprayertimes.logic.util.DataManagementUtil
 import com.example.advancedprayertimes.logic.enums.EPrayerTimeMomentType
 import android.view.MotionEvent
 import android.content.Intent
 import android.graphics.Color
 import android.location.Address
-import android.location.Location
 import android.os.Handler
 import android.view.View
+import androidx.appcompat.widget.AppCompatImageButton
 import com.example.advancedprayertimes.BuildConfig
 import com.example.advancedprayertimes.R
 import com.example.advancedprayertimes.databinding.ActivityTimeOverviewBinding
-import com.example.advancedprayertimes.logic.api_entities.PrayerTimePackageAbstractClass
-import com.example.advancedprayertimes.logic.setting_entities.PrayerTimeBeginningEndSettingsEntity
 import com.example.advancedprayertimes.logic.CustomLocation
 import com.example.advancedprayertimes.logic.PrayerTimeEntity
-import com.example.advancedprayertimes.logic.enums.ESupportedAPIs
-import com.example.advancedprayertimes.logic.setting_entities.SubTimeSettingsEntity
+import com.example.advancedprayertimes.logic.extensions.toStringByFormat
 import com.google.android.gms.common.api.Status
+import com.google.android.material.snackbar.Snackbar
 import kotlinx.android.synthetic.main.activity_time_overview.*
 import java.lang.Exception
-import java.lang.StringBuilder
 import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
-import java.time.temporal.ChronoField
-import java.time.temporal.ChronoUnit
 import java.util.*
 
 class TimeOverviewActivity : AppCompatActivity()
 {
     private val prayerTimeTypeWithAssociatedTextView = HashMap<EPrayerTimeType, TextView>()
-
     private var _placesClient: PlacesClient? = null
 
     override fun onCreate(savedInstanceState: Bundle?)
     {
         super.onCreate(savedInstanceState)
 
-        setContentView(ActivityTimeOverviewBinding.inflate(getLayoutInflater()).root)
+        setContentView(ActivityTimeOverviewBinding.inflate(layoutInflater).root)
         AppEnvironment.dbHelper = DBHelper(this.applicationContext)
-
-        load_prayer_times_button.setOnClickListener { asyncLoadPrayerTimes() }
-
-        initiate_redrawing_of_prayer_graphic_button.setOnClickListener {
-            prayerTimeGraphicView.invalidate()
-            val today = Calendar.getInstance()
-
-            //prayTime.getPrayerTimes(today, 47.2820223, 11.420481, 1);
-            Thread(Runnable {
-//                    try
-//                    {
-//                        AlAdhanPrayerTimeDayEntity dayPrayerTimesPackageEntity = HttpAPIRequestUtil.RetrieveAlAdhanTimes(AppEnvironment.PlaceEntity.getLocation());
-//
-//                        String lol = dayPrayerTimesPackageEntity.getAsrTime().toString();
-//                    }
-//                    catch(Exception e)
-//                    {
-//                        e.printStackTrace();
-//                    }
-            }).start()
-        }
 
         configurePrayerTimeTextViews()
         configureGooglePlacesAPI()
+
+        load_prayer_times_button.setOnClickListener { asyncLoadPrayerTimes() }
+        initiate_redrawing_of_prayer_graphic_button.setOnClickListener { doDebuggingStuff() }
+        cacheButtonStuff.setOnClickListener { openCachyCache() }
     }
 
-    @Throws(JSONException::class)
-    private fun findPlaceFromGoogle(placeID: String): CustomPlaceEntity? {
-
-        val parameters = hashMapOf(
-            "place_id" to placeID,
-            "key" to BuildConfig.GP_API_KEY,
-        )
-
-        val urlText = "https://maps.googleapis.com/maps/api/place/details/json"
-        val response = StringBuilder()
-
-        var googlePlacesApiRequestStatus = EHttpResponseStatusType.None
-
-        try
-        {
-            googlePlacesApiRequestStatus = HttpAPIRequestUtil.retrieveAPIFeedback(
-                response,
-                urlText,
-                EHttpRequestMethod.GET,
-                parameters
-            )
+    private fun openCachyCache() {
+        try {
+            val myIntent = Intent(this, TimeCacheOverviewActivity::class.java)
+            this.startActivity(myIntent)
+        } catch (exception: Exception) {
+            doErrorToastyToast(getExceptionDisplayText(exception))
         }
-        catch (e: Exception)
-        {
-            // DO STUFF
-        }
-
-        if (googlePlacesApiRequestStatus != EHttpResponseStatusType.Success)
-        {
-            return null
-        }
-
-        val jsonBaseObj = JSONObject(response.toString())
-        val jsonResultObj = jsonBaseObj.getJSONObject("result")
-        val jsonGeometryObj = jsonResultObj.getJSONObject("geometry")
-        val jsonLocationObj = jsonGeometryObj.getJSONObject("location")
-        val name = jsonResultObj.getString("name")
-        val longitude = jsonLocationObj.getDouble("lng")
-        val latitude = jsonLocationObj.getDouble("lat")
-
-        return CustomPlaceEntity(placeID, latitude, longitude, name)
     }
 
-    private fun doErrorToastyToast(message: String?)
+    private fun doDebuggingStuff() {
+        prayerTimeGraphicView.invalidate()
+    }
+
+    private fun getExceptionDisplayText(exception: Exception) : String {
+        var displayText: String = exception.message ?: "ERROR"
+
+        if (exception.cause != null) {
+            displayText += "\n\n" + exception.cause!!.message
+        }
+
+        return displayText
+    }
+
+    /**
+     * Display the provided error message in the UI
+     */
+    private fun doErrorToastyToast(message: String)
     {
         Handler(Looper.getMainLooper()).post {
-            Toast.makeText(this.applicationContext, message, Toast.LENGTH_LONG).show()
+
+            fajrTextLabel.maxLines = 50
+            fajrTextLabel.maxHeight = 500
+            fajrTextLabel.maxEms = 500
+
+            // TODO: MAKE MULTILINE COMPATIBLE
+            Snackbar.make(fajrTextLabel, message, Snackbar.LENGTH_LONG).show()
+
+            //Toast.makeText(this.applicationContext, message, Toast.LENGTH_LONG).show()
             resetLoadingUIFeedback()
         }
     }
 
-    var errorMessage: StringBuilder? = null
-
+    /**
+     * Retrieve prayer time information based on prayer time settings,
+     * map the data correctly to the prayer time entities
+     * and then apply the entity informations to the UI elements.
+     */
     private fun loadPrayerTimes()
     {
-        errorMessage = StringBuilder()
-
-        if (AppEnvironment.GetPrayerTimeSettingsByPrayerTimeTypeHashMap().isEmpty())
-        {
+        if (AppEnvironment.GetPrayerTimeSettingsByPrayerTimeTypeHashMap().isEmpty()) {
             doErrorToastyToast("There are no prayer time settings!")
             return
         }
 
-        if (AppEnvironment.PlaceEntity?.location == null)
-        {
+        if (AppEnvironment.PlaceEntity?.location == null) {
             doErrorToastyToast("Location could not be retrieved!")
             return
         }
@@ -168,46 +130,24 @@ class TimeOverviewActivity : AppCompatActivity()
 
             retrieveTimeData(geoLocationAddress)
         }
-        catch (e: Exception)
-        {
-            var displayText = e.message
-
-            if (e.cause != null)
-            {
-                displayText += "\n\n" + e.cause!!.message
-            }
-
-            doErrorToastyToast(displayText)
+        catch (exception: Exception) {
+            doErrorToastyToast(getExceptionDisplayText(exception))
         }
 
         try
         {
-            mapTimeDataToTimesEntities()
+            AppEnvironment.mapTimeDataToTimesEntities()
         }
-        catch (e: Exception)
-        {
-            var displayText = e.message
-
-            if (e.cause != null)
-            {
-                displayText += "\n\n" + e.cause!!.message
-            }
-
-            doErrorToastyToast(displayText)
+        catch (exception: Exception) {
+            doErrorToastyToast(getExceptionDisplayText(exception))
         }
+
+        AppEnvironment.timeDate = LocalDateTime.now()
 
         Handler(Looper.getMainLooper()).post {
             syncTimeInformationToUserInterface()
             resetLoadingUIFeedback()
         }
-    }
-
-    private fun retrieveLocation(): Location {
-        val targetLocation = Location("")
-        targetLocation.latitude = 47.2820223 //your coords of course
-        targetLocation.longitude = 11.420481
-
-        return targetLocation
     }
 
     private fun configureGooglePlacesAPI() {
@@ -228,21 +168,21 @@ class TimeOverviewActivity : AppCompatActivity()
             )
         )
 
-//        val searchFieldEditText: AppCompatEditText =
-//            autocompleteSupportFragment.requireView().findViewById(R.id.places_autocomplete_search_input)
-//        val clearSearchFieldButton: AppCompatImageButton = autocompleteSupportFragment.requireView()
-//            .findViewById(R.id.places_autocomplete_clear_button)
-
         autocompleteSupportFragment.requireView().setBackgroundColor(Color.LTGRAY)
         autocompleteSupportFragment.requireView().setBackgroundResource(R.drawable.rounded_corner)
 
-//        searchFieldEditText.setTextColor(Color.BLACK)
-//
-//        clearSearchFieldButton.viewTreeObserver.addOnGlobalLayoutListener {
-//            if (clearSearchFieldButton.visibility != View.GONE) {
-//                clearSearchFieldButton.visibility = View.GONE
-//            }
-//        }
+        val searchFieldEditText: AppCompatEditText =
+            autocompleteSupportFragment.requireView().findViewById(R.id.places_autocomplete_search_input)
+        val clearSearchFieldButton: AppCompatImageButton =
+            autocompleteSupportFragment.requireView().findViewById(R.id.places_autocomplete_clear_button)
+
+        searchFieldEditText.setTextColor(Color.BLACK)
+
+        clearSearchFieldButton.viewTreeObserver.addOnGlobalLayoutListener {
+            if (clearSearchFieldButton.visibility != View.GONE) {
+                clearSearchFieldButton.visibility = View.GONE
+            }
+        }
 
         // Set up a PlaceSelectionListener to handle the response.
         autocompleteSupportFragment.setOnPlaceSelectedListener(object : PlaceSelectionListener {
@@ -255,38 +195,35 @@ class TimeOverviewActivity : AppCompatActivity()
                     )
                     AppEnvironment.PlaceEntity = CustomPlaceEntity(cityAddress!!)
                     Toast.makeText(applicationContext, place.name, Toast.LENGTH_SHORT).show()
-                } catch (e: Exception) {
-                    Toast.makeText(
-                        applicationContext,
-                        "UnknownError - Place could not be retrieved!",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                } catch (exception: Exception) {
+                    doErrorToastyToast("UnknownError - Place could not be retrieved!")
                 }
             }
 
             override fun onError(status: Status) {
-                AppEnvironment.PlaceEntity = null
-                Toast.makeText(applicationContext, "UnknownError", Toast.LENGTH_SHORT).show()
+                doErrorToastyToast("Unknown Error")
             }
         })
     }
 
     override fun onPause() {
-        val sharedPref =
-            getSharedPreferences(AppEnvironment.GLOBAL_SHARED_PREFERENCE_NAME, MODE_PRIVATE)
-        DataManagementUtil.SaveLocalData(sharedPref, displayedDateTextLabel.text.toString())
+
+        val sharedPref = getSharedPreferences(AppEnvironment.GLOBAL_SHARED_PREFERENCE_NAME, MODE_PRIVATE)
+        DataManagementUtil.SaveLocalData(sharedPref)
         super.onPause()
     }
 
     override fun onResume() {
-        val sharedPref =
-            getSharedPreferences(AppEnvironment.GLOBAL_SHARED_PREFERENCE_NAME, MODE_PRIVATE)
-        DataManagementUtil.RetrieveLocalData(sharedPref, displayedDateTextLabel)
+
+        val sharedPref = getSharedPreferences(AppEnvironment.GLOBAL_SHARED_PREFERENCE_NAME, MODE_PRIVATE)
+        DataManagementUtil.retrieveLocalData(sharedPref)
         syncTimeInformationToUserInterface()
         super.onResume()
     }
 
+    @SuppressLint("ClickableViewAccessibility")
     private fun configurePrayerTimeTextViews() {
+
         prayerTimeTypeWithAssociatedTextView[EPrayerTimeType.Fajr] = fajrTextLabel
         prayerTimeTypeWithAssociatedTextView[EPrayerTimeType.Duha] = duhaTextLabel
         prayerTimeTypeWithAssociatedTextView[EPrayerTimeType.Dhuhr] = dhuhrTextLabel
@@ -294,20 +231,17 @@ class TimeOverviewActivity : AppCompatActivity()
         prayerTimeTypeWithAssociatedTextView[EPrayerTimeType.Maghrib] = maghribTextLabel
         prayerTimeTypeWithAssociatedTextView[EPrayerTimeType.Isha] = ishaTextLabel
 
-        for ((key, prayerTimeTextLabel) in prayerTimeTypeWithAssociatedTextView) {
-            prayerTimeTextLabel.setOnClickListener { _: View? ->
-                openSettingsForSpecificPrayerTimeType(
-                    key
-                )
-            }
+        for ((prayerTimeType, prayerTimeTextLabel) in prayerTimeTypeWithAssociatedTextView) {
+            prayerTimeTextLabel.setOnClickListener { openSettingsForSpecificPrayerTimeType(prayerTimeType) }
         }
 
         for (prayerTimeType in EPrayerTimeType.values()) {
-            val beginningTextView =
-                getByPrayerTypeAndTimeType(prayerTimeType, EPrayerTimeMomentType.Beginning)
-            val endTextView = getByPrayerTypeAndTimeType(prayerTimeType, EPrayerTimeMomentType.End)
+
+            val beginningTextView = getSpecificPrayerTimeTextView(prayerTimeType, EPrayerTimeMomentType.Beginning)
+            val endTextView       = getSpecificPrayerTimeTextView(prayerTimeType, EPrayerTimeMomentType.End)
+            
             beginningTextView!!.setOnTouchListener { view: View, event: MotionEvent ->
-                doTouchStuff(
+                singleTouchLongTouchHandler(
                     view,
                     event,
                     prayerTimeType,
@@ -316,7 +250,7 @@ class TimeOverviewActivity : AppCompatActivity()
             }
             
             endTextView!!.setOnTouchListener { view: View, event: MotionEvent ->
-                doTouchStuff(
+                singleTouchLongTouchHandler(
                     view,
                     event,
                     prayerTimeType,
@@ -326,10 +260,7 @@ class TimeOverviewActivity : AppCompatActivity()
         }
     }
 
-    private fun getByPrayerTypeAndTimeType(
-        prayerTimeType: EPrayerTimeType,
-        prayerPointInTimeType: EPrayerTimeMomentType
-    ): TextView? {
+    private fun getSpecificPrayerTimeTextView(prayerTimeType: EPrayerTimeType, prayerPointInTimeType: EPrayerTimeMomentType): TextView? {
 
         return when (AbstractMap.SimpleEntry(prayerTimeType, prayerPointInTimeType)) {
 
@@ -362,14 +293,13 @@ class TimeOverviewActivity : AppCompatActivity()
     }
 
     private fun asyncLoadPrayerTimes() {
-        val asyncRetrievePrayerTimesThread = Thread { loadPrayerTimes() }
-        asyncRetrievePrayerTimesThread.start()
+        Thread { loadPrayerTimes() }.start()
         load_prayer_times_button.isEnabled = false
         progressBar.visibility = View.VISIBLE
     }
 
     var lastTouchBeginnTimePerTextViewHashMap: MutableMap<View, Long?> = HashMap()
-    private fun doTouchStuff(
+    private fun singleTouchLongTouchHandler(
         textView: View,
         event: MotionEvent,
         prayerTimeType: EPrayerTimeType,
@@ -379,8 +309,7 @@ class TimeOverviewActivity : AppCompatActivity()
         var dontPassEventOnToOtherListeners = false
 
         when (event.action) {
-            MotionEvent.ACTION_DOWN -> lastTouchBeginnTimePerTextViewHashMap[textView] =
-                System.currentTimeMillis()
+            MotionEvent.ACTION_DOWN -> lastTouchBeginnTimePerTextViewHashMap[textView] = System.currentTimeMillis()
             MotionEvent.ACTION_UP -> if (lastTouchBeginnTimePerTextViewHashMap[textView] != null) {
                 val milliSecondDifference =
                     System.currentTimeMillis() - lastTouchBeginnTimePerTextViewHashMap[textView]!!
@@ -419,219 +348,36 @@ class TimeOverviewActivity : AppCompatActivity()
 
     private fun openSettingsForSpecificPrayerTimeType(prayerTimeType: EPrayerTimeType) {
         try {
-            val myIntent = Intent(this@TimeOverviewActivity, PrayerSettingsActivity::class.java)
+            val myIntent = Intent(this, PrayerSettingsActivity::class.java)
             myIntent.putExtra(INTENT_EXTRA, prayerTimeType) //Optional parameters
-            this@TimeOverviewActivity.startActivity(myIntent)
-        } catch (e: Exception) {
-            e.printStackTrace()
+            this.startActivity(myIntent)
+        } catch (exception: Exception) {
+            doErrorToastyToast(getExceptionDisplayText(exception))
         }
     }
 
-    var diyanetTimesHashMap: Map<Map.Entry<EPrayerTimeType, EPrayerTimeMomentType>, PrayerTimePackageAbstractClass?> =
-        HashMap()
-    var muwaqqitTimesHashMap: Map<Map.Entry<EPrayerTimeType, EPrayerTimeMomentType>, PrayerTimePackageAbstractClass?> =
-        HashMap()
-    var alAdhanTimesHashMap: Map<Map.Entry<EPrayerTimeType, EPrayerTimeMomentType>, PrayerTimePackageAbstractClass?> =
-        HashMap()
-
+    /**
+     * UI feedback that signifies a current loading process will be deactivated.
+     */
     private fun resetLoadingUIFeedback() {
         load_prayer_times_button.isEnabled = true
         progressBar.visibility = View.INVISIBLE
     }
 
-    @Throws(Exception::class)
     private fun retrieveTimeData(cityAddress: Address?) {
 
         val toBeCalculatedPrayerTimes = AppEnvironment.GetPrayerTimeSettingsByPrayerTimeTypeHashMap()
 
-        val timeZone = HttpAPIRequestUtil.RetrieveTimeZoneByLocation(
+        val timeZone = HttpRequestUtil.retrieveTimeZoneByLocation(
             cityAddress!!.longitude,
             cityAddress.latitude
         )
 
         val targetLocation = CustomLocation(cityAddress.longitude, cityAddress.latitude, timeZone)
 
-        diyanetTimesHashMap = DataManagementUtil.RetrieveDiyanetTimeData(toBeCalculatedPrayerTimes, cityAddress)
-        muwaqqitTimesHashMap = DataManagementUtil.RetrieveMuwaqqitTimeData(toBeCalculatedPrayerTimes, targetLocation)
-        alAdhanTimesHashMap = DataManagementUtil.RetrieveAlAdhanTimeData(toBeCalculatedPrayerTimes, targetLocation)
-    }
-
-    private fun mapTimeDataToTimesEntities() {
-        for (prayerTimeEntity in PrayerTimeEntity.Prayers) {
-
-            val beginningTime = getCorrectBeginningAndEndTime(
-                prayerTimeEntity.prayerTimeType,
-                EPrayerTimeMomentType.Beginning
-            )
-
-            val endTime = getCorrectBeginningAndEndTime(
-                prayerTimeEntity.prayerTimeType,
-                EPrayerTimeMomentType.End
-            )
-
-            val subtimeOneTime = getCorrectSubTime(
-                prayerTimeEntity.prayerTimeType,
-                EPrayerTimeMomentType.SubTimeOne,
-                prayerTimeEntity
-            )
-
-            val subtimeTwoTime = getCorrectSubTime(
-                prayerTimeEntity.prayerTimeType,
-                EPrayerTimeMomentType.SubTimeTwo,
-                prayerTimeEntity
-            )
-
-            val subtimeThreeTime = getCorrectSubTime(
-                prayerTimeEntity.prayerTimeType,
-                EPrayerTimeMomentType.SubTimeThree,
-                prayerTimeEntity
-            )
-
-            prayerTimeEntity.beginningTime = beginningTime
-            prayerTimeEntity.endTime = endTime
-            prayerTimeEntity.subtime1BeginningTime = beginningTime
-            prayerTimeEntity.subtime1EndTime = subtimeOneTime
-            prayerTimeEntity.subtime2BeginningTime = subtimeOneTime
-            prayerTimeEntity.subtime2EndTime = subtimeTwoTime
-            prayerTimeEntity.subtime3BeginningTime = subtimeTwoTime
-            prayerTimeEntity.subtime3EndTime = subtimeThreeTime
-        }
-    }
-
-    private fun getCorrectBeginningAndEndTime(
-        prayerType: EPrayerTimeType,
-        prayerTypeTimeType: EPrayerTimeMomentType
-    ): LocalDateTime? {
-
-        val prayerSettings = AppEnvironment.prayerSettingsByPrayerType[prayerType]
-
-        if (prayerSettings != null
-            && (prayerTypeTimeType === EPrayerTimeMomentType.Beginning || prayerTypeTimeType === EPrayerTimeMomentType.End)
-        ) {
-            var prayerBeginningEndSettings: PrayerTimeBeginningEndSettingsEntity? = null
-
-            if (prayerTypeTimeType === EPrayerTimeMomentType.Beginning) {
-                prayerBeginningEndSettings = prayerSettings.beginningSettings
-            } else if (prayerTypeTimeType === EPrayerTimeMomentType.End) {
-                prayerBeginningEndSettings = prayerSettings.endSettings
-            }
-
-            var correctTime: LocalDateTime? = null
-
-            if (prayerBeginningEndSettings != null) {
-
-                // TODO: Isha-Ende muss Fajr des  *Folgetages* sein!
-                val prayerTimeWithType: AbstractMap.SimpleEntry<EPrayerTimeType, EPrayerTimeMomentType> =
-                    AbstractMap.SimpleEntry<EPrayerTimeType, EPrayerTimeMomentType>(prayerType, prayerTypeTimeType)
-
-                if (prayerBeginningEndSettings.api === ESupportedAPIs.Muwaqqit
-                    && muwaqqitTimesHashMap[prayerTimeWithType] != null
-                ) {
-                    correctTime = muwaqqitTimesHashMap[prayerTimeWithType]!!.GetTimeByType(prayerType, prayerTypeTimeType)
-                }
-                else if (prayerBeginningEndSettings.api === ESupportedAPIs.Diyanet
-                    && diyanetTimesHashMap[prayerTimeWithType] != null
-                ) {
-                    correctTime = diyanetTimesHashMap[prayerTimeWithType]!!.GetTimeByType(prayerType, prayerTypeTimeType)
-                }
-                else if (prayerBeginningEndSettings.api === ESupportedAPIs.AlAdhan
-                    && alAdhanTimesHashMap[prayerTimeWithType] != null
-                ) {
-                    correctTime = alAdhanTimesHashMap[prayerTimeWithType]!!.GetTimeByType(prayerType, prayerTypeTimeType)
-                }
-
-                if (correctTime != null) {
-                    val minuteAdjustment = prayerBeginningEndSettings.minuteAdjustment.toLong()
-
-                    // minute adjustment
-                    correctTime = correctTime.plusMinutes(minuteAdjustment)
-                    return correctTime
-                }
-            }
-        }
-        return null
-    }
-
-    private fun getCorrectSubTime(
-        prayerType: EPrayerTimeType,
-        prayerTypeTimeType: EPrayerTimeMomentType,
-        prayerTimeEntity: PrayerTimeEntity
-    ): LocalDateTime? {
-
-        val prayerSettings = AppEnvironment.prayerSettingsByPrayerType[prayerType]
-
-        if (prayerSettings != null
-            && prayerTypeTimeType != EPrayerTimeMomentType.Beginning
-            && prayerTypeTimeType != EPrayerTimeMomentType.End) {
-
-            var subTimeSettings: SubTimeSettingsEntity? =
-                when (prayerTypeTimeType) {
-                    EPrayerTimeMomentType.SubTimeOne,
-                    EPrayerTimeMomentType.SubTimeTwo,
-                    EPrayerTimeMomentType.SubTimeThree -> prayerSettings.subPrayer1Settings
-                    else -> null
-                }
-
-            if (subTimeSettings != null) {
-
-                val prayerTimeWithMomentType = AbstractMap.SimpleEntry<EPrayerTimeType, EPrayerTimeMomentType>(prayerType, prayerTypeTimeType)
-
-                when (prayerType) {
-
-                    EPrayerTimeType.Asr ->
-
-                        if (prayerTypeTimeType === EPrayerTimeMomentType.SubTimeOne && subTimeSettings.isEnabled1) {
-                            return muwaqqitTimesHashMap.get(prayerTimeWithMomentType)!!.mithlaynTime
-                        }
-                        else if (prayerTypeTimeType === EPrayerTimeMomentType.SubTimeTwo && subTimeSettings.isEnabled2) {
-                            return muwaqqitTimesHashMap.get(prayerTimeWithMomentType)!!.asrKarahaTime
-                        }
-
-                    EPrayerTimeType.Maghrib ->
-
-                        if (prayerTypeTimeType === EPrayerTimeMomentType.SubTimeOne && subTimeSettings.isEnabled1) {
-                            return alAdhanTimesHashMap.get(prayerTimeWithMomentType)?.ishtibaqAnNujumTime
-                        }
-
-                    EPrayerTimeType.Isha -> {
-
-                        if (prayerTimeEntity.Duration == 0L || PrayerTimeEntity.Maghrib.Duration == 0L) {
-                            return null
-                        }
-
-                        val timeBetweenIshaBeginningAndMaghribEnd =
-                            ChronoUnit.MILLIS.between(PrayerTimeEntity.Maghrib.endTime, prayerTimeEntity.beginningTime)
-
-                        val nightDuration = prayerTimeEntity.Duration + PrayerTimeEntity.Maghrib.Duration + timeBetweenIshaBeginningAndMaghribEnd
-
-                        if (prayerTypeTimeType !== EPrayerTimeMomentType.SubTimeThree && subTimeSettings.isEnabled1) {
-
-                            val thirdOfNight = nightDuration / 3
-
-                            if(prayerTypeTimeType == EPrayerTimeMomentType.SubTimeOne) {
-                                return PrayerTimeEntity.Maghrib
-                                    .beginningTime!!.plus(thirdOfNight, ChronoField.MILLI_OF_DAY.baseUnit)
-                            }
-                            else if(prayerTypeTimeType == EPrayerTimeMomentType.SubTimeTwo) {
-                                return PrayerTimeEntity.Maghrib
-                                    .beginningTime!!.plus(2 * thirdOfNight, ChronoField.MILLI_OF_DAY.baseUnit)
-                            }
-
-                        } else if (subTimeSettings.isEnabled2) {
-
-                            val halfOfNight = nightDuration / 2
-
-                            if(prayerTypeTimeType == EPrayerTimeMomentType.SubTimeThree) {
-                                return PrayerTimeEntity.Maghrib
-                                    .beginningTime!!.plus(halfOfNight, ChronoField.MILLI_OF_DAY.baseUnit)
-                            }
-                        }
-
-                    }
-                }
-            }
-        }
-        return null
+        DataManagementUtil.retrieveDiyanetTimeData(toBeCalculatedPrayerTimes, cityAddress)
+        DataManagementUtil.retrieveMuwaqqitTimeData(toBeCalculatedPrayerTimes, targetLocation)
+        DataManagementUtil.retrieveAlAdhanTimeData(toBeCalculatedPrayerTimes, targetLocation)
     }
 
     /**
@@ -640,10 +386,7 @@ class TimeOverviewActivity : AppCompatActivity()
     private fun syncTimeInformationToUserInterface() {
         try {
 
-            displayedDateTextLabel.text =
-                DateTimeFormatter.ofPattern("dd.MM.yyyy").format(
-                    LocalDateTime.now()
-                )
+            displayedDateTextLabel.text = AppEnvironment.timeDate!!.toStringByFormat("dd.MM.yyyy")
 
             var cityName: String? = "-"
 
@@ -651,62 +394,36 @@ class TimeOverviewActivity : AppCompatActivity()
                 cityName = AppEnvironment.PlaceEntity!!.name
             }
 
-            val autocompleteSupportFragment = googlePlaceSearchAutoCompleteFragment as AutocompleteSupportFragment
-
-            val editText: AppCompatEditText =
-                autocompleteSupportFragment.requireView().findViewById(R.id.places_autocomplete_search_input)
+            val editText: AppCompatEditText = googlePlaceSearchAutoCompleteFragment.requireView().findViewById(R.id.places_autocomplete_search_input)
 
             editText.setText(cityName)
 
             val defaultDisplayText: String = this.resources.getString(R.string.no_time_display_text);
 
-            for (prayerTimeEntity in PrayerTimeEntity.Prayers) {
+            for (prayerEntity in PrayerTimeEntity.Prayers) {
 
-                val beginningText: String = prayerTimeEntity.beginningTime?.format(timeFormat) ?: defaultDisplayText
+                // Beginning
+                val beginningText = prayerEntity.beginningTime?.toStringByFormat("HH:mm") ?: defaultDisplayText
+                getSpecificPrayerTimeTextView(prayerEntity.prayerTimeType, EPrayerTimeMomentType.Beginning)?.text = beginningText
 
-                getByPrayerTypeAndTimeType(
-                    prayerTimeEntity.prayerTimeType,
-                    EPrayerTimeMomentType.Beginning
-                )?.text = beginningText
-
-                val endText: String = prayerTimeEntity.endTime?.format(timeFormat) ?: defaultDisplayText
-
-                getByPrayerTypeAndTimeType(
-                    prayerTimeEntity.prayerTimeType,
-                    EPrayerTimeMomentType.End
-                )?.text = endText
-
-                // ##############################
-                // ##############################
+                // End
+                val endText = prayerEntity.endTime?.toStringByFormat("HH:mm") ?: defaultDisplayText
+                getSpecificPrayerTimeTextView(prayerEntity.prayerTimeType, EPrayerTimeMomentType.End)?.text = endText
 
                 // SubTimeOne
-                val subtime1EndText: String = prayerTimeEntity.subtime1EndTime?.format(timeFormat) ?: defaultDisplayText
-
-                getByPrayerTypeAndTimeType(
-                    prayerTimeEntity.prayerTimeType,
-                    EPrayerTimeMomentType.SubTimeOne
-                )?.text = subtime1EndText
+                val subtime1EndText: String = prayerEntity.subtime1EndTime?.toStringByFormat("HH:mm") ?: defaultDisplayText
+                getSpecificPrayerTimeTextView(prayerEntity.prayerTimeType, EPrayerTimeMomentType.SubTimeOne)?.text = subtime1EndText
 
                 // SubTimeTwo
-                val subtime2EndText: String = prayerTimeEntity.subtime2EndTime?.format(timeFormat) ?: defaultDisplayText
-
-                getByPrayerTypeAndTimeType(
-                    prayerTimeEntity.prayerTimeType,
-                    EPrayerTimeMomentType.SubTimeTwo
-                )?.text = subtime2EndText
+                val subtime2EndText: String = prayerEntity.subtime2EndTime?.toStringByFormat("HH:mm") ?: defaultDisplayText
+                getSpecificPrayerTimeTextView(prayerEntity.prayerTimeType, EPrayerTimeMomentType.SubTimeTwo)?.text = subtime2EndText
 
                 // SubTimeThree
-                val subtime3EndText: String = prayerTimeEntity.subtime3EndTime?.format(timeFormat) ?: defaultDisplayText
-
-                getByPrayerTypeAndTimeType(
-                    prayerTimeEntity.prayerTimeType,
-                    EPrayerTimeMomentType.SubTimeThree
-                )?.text = subtime3EndText
+                val subtime3EndText: String = prayerEntity.subtime3EndTime?.toStringByFormat("HH:mm") ?: defaultDisplayText
+                getSpecificPrayerTimeTextView(prayerEntity.prayerTimeType, EPrayerTimeMomentType.SubTimeThree)?.text = subtime3EndText
             }
 
-            val currentLocalDateTime = LocalDateTime.now()
-            prayerTimeGraphicView.displayPrayerEntity =
-                getPrayerByTime(currentLocalDateTime)
+            prayerTimeGraphicView.displayPrayerEntity = getPrayerByTime(LocalDateTime.now())
             prayerTimeGraphicView.invalidate()
         }
         catch (e: Exception) {
@@ -716,6 +433,5 @@ class TimeOverviewActivity : AppCompatActivity()
 
     companion object {
         var INTENT_EXTRA = "prayerTime"
-        private val timeFormat = DateTimeFormatter.ofPattern("HH:mm")
     }
 }

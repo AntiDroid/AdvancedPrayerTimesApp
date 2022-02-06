@@ -1,4 +1,4 @@
-package com.example.advancedprayertimes.logic
+package com.example.advancedprayertimes.logic.util
 
 import android.content.Context
 import android.location.Address
