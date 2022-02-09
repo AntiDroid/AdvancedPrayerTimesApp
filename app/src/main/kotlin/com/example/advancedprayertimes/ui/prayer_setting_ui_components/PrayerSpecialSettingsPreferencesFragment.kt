@@ -126,13 +126,9 @@ class PrayerSpecialSettingsPreferencesFragment (private val _prayerType: EPrayer
 
     private fun createAsrPreferences(settings: SubTimeSettingsEntity) {
 
-        isTwoShadowLengthsEnabledSwitchPreference = findPreference("isTwoShadowLengthsEnabled")
-        isKarahaTimeEnabledSwitchPreference = findPreference("isKarahaTimeEnabled")
-        karahaCalculationDegreeListPreference = findPreference("karahaCalculationDegree")
-
-        if (isTwoShadowLengthsEnabledSwitchPreference == null || isKarahaTimeEnabledSwitchPreference == null || karahaCalculationDegreeListPreference == null) {
-            return
-        }
+        isTwoShadowLengthsEnabledSwitchPreference = findPreference("isTwoShadowLengthsEnabled")  ?: return
+        isKarahaTimeEnabledSwitchPreference = findPreference("isKarahaTimeEnabled")  ?: return
+        karahaCalculationDegreeListPreference = findPreference("karahaCalculationDegree")  ?: return
 
         isTwoShadowLengthsEnabledSwitchPreference!!.isChecked = settings.isEnabled1
         isKarahaTimeEnabledSwitchPreference!!.isChecked = settings.isEnabled2
@@ -141,12 +137,8 @@ class PrayerSpecialSettingsPreferencesFragment (private val _prayerType: EPrayer
 
     private fun createMaghribPreferences(settings: SubTimeSettingsEntity) {
 
-        isIshtibaqTimeEnabled = findPreference("isIshtibaqTimeEnabled")
-        ishtibaqCalculationDegree = findPreference("ishtibaqCalculationDegree")
-
-        if (isIshtibaqTimeEnabled == null || ishtibaqCalculationDegree == null) {
-            return
-        }
+        isIshtibaqTimeEnabled = findPreference("isIshtibaqTimeEnabled") ?: return
+        ishtibaqCalculationDegree = findPreference("ishtibaqCalculationDegree") ?: return
 
         isIshtibaqTimeEnabled!!.isChecked = settings.isEnabled1
         ishtibaqCalculationDegree!!.value = settings.ishtibaqDegree.toString() + ""
@@ -154,12 +146,8 @@ class PrayerSpecialSettingsPreferencesFragment (private val _prayerType: EPrayer
 
     private fun createIshaPreferences(settings: SubTimeSettingsEntity) {
 
-        isThirdsOfNightEnabledSwitchPreference = findPreference("isThirdsOfNightEnabled")
-        isHalfsOfNightEnabledSwitchPreference = findPreference("isHalfsOfNightEnabled")
-
-        if (isThirdsOfNightEnabledSwitchPreference == null || isHalfsOfNightEnabledSwitchPreference == null) {
-            return
-        }
+        isThirdsOfNightEnabledSwitchPreference = findPreference("isThirdsOfNightEnabled") ?: return
+        isHalfsOfNightEnabledSwitchPreference = findPreference("isHalfsOfNightEnabled") ?: return
 
         isThirdsOfNightEnabledSwitchPreference!!.isChecked = settings.isEnabled1
         isHalfsOfNightEnabledSwitchPreference!!.isChecked = settings.isEnabled2

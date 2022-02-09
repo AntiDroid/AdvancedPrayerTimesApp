@@ -1,22 +1,22 @@
 package com.example.advancedprayertimes.ui.prayer_setting_ui_components
 
 import android.content.Context
-import com.example.advancedprayertimes.logic.util.DataManagementUtil.getTimeSettingsEntityKeyForSharedPreference
-import com.example.advancedprayertimes.logic.enums.EPrayerTimeType
-import androidx.preference.PreferenceFragmentCompat
-import android.content.SharedPreferences.OnSharedPreferenceChangeListener
-import com.example.advancedprayertimes.logic.enums.EPrayerTimeMomentType
-import android.os.Bundle
-import com.example.advancedprayertimes.R
-import com.example.advancedprayertimes.logic.enums.ESupportedAPIs
-import com.example.advancedprayertimes.logic.setting_entities.PrayerTimeBeginningEndSettingsEntity
-import com.example.advancedprayertimes.logic.AppEnvironment
 import android.content.SharedPreferences
+import android.content.SharedPreferences.OnSharedPreferenceChangeListener
+import android.os.Bundle
 import android.view.MenuItem
 import androidx.preference.ListPreference
 import androidx.preference.PreferenceCategory
+import androidx.preference.PreferenceFragmentCompat
+import com.example.advancedprayertimes.R
+import com.example.advancedprayertimes.logic.AppEnvironment
+import com.example.advancedprayertimes.logic.enums.EPrayerTimeMomentType
+import com.example.advancedprayertimes.logic.enums.EPrayerTimeType
+import com.example.advancedprayertimes.logic.enums.ESupportedAPIs
+import com.example.advancedprayertimes.logic.setting_entities.PrayerTimeBeginningEndSettingsEntity
+import com.example.advancedprayertimes.logic.util.DataManagementUtil.getTimeSettingsEntityKeyForSharedPreference
 import com.google.gson.Gson
-import java.util.AbstractMap
+import java.util.*
 import java.util.stream.Stream
 import kotlin.streams.asSequence
 
@@ -41,16 +41,11 @@ class PrayerBeginningEndSettingPreferencesFragment(
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
 
         setPreferencesFromResource(R.xml.prayer_beginning_end_settings_preferences, rootKey)
-        apiSettingsPreferenceCategory = findPreference(PREFERENCE_CATEGORY_API_SETTINGS)
-        apiSelectionListPreference = findPreference(PREFERENCE_NAME_API_SELECTION)
-        minuteAdjustmentListPreference = findPreference(PREFERENCE_NAME_MINUTE_ADJUSTMENT_SELECTION)
-        fajrDegreesListPreference = findPreference(PREFERENCE_NAME_FAJR_DEGREE_SELECTION)
-        ishaDegreesListPreference = findPreference(PREFERENCE_NAME_ISHA_DEGREE_SELECTION)
-
-        if (apiSelectionListPreference == null || minuteAdjustmentListPreference == null ||
-            fajrDegreesListPreference == null || ishaDegreesListPreference == null || apiSettingsPreferenceCategory == null) {
-            return
-        }
+        apiSettingsPreferenceCategory = findPreference(PREFERENCE_CATEGORY_API_SETTINGS) ?: return
+        apiSelectionListPreference = findPreference(PREFERENCE_NAME_API_SELECTION) ?: return
+        minuteAdjustmentListPreference = findPreference(PREFERENCE_NAME_MINUTE_ADJUSTMENT_SELECTION) ?: return
+        fajrDegreesListPreference = findPreference(PREFERENCE_NAME_FAJR_DEGREE_SELECTION) ?: return
+        ishaDegreesListPreference = findPreference(PREFERENCE_NAME_ISHA_DEGREE_SELECTION) ?: return
 
         configureAPISelector(apiSelectionListPreference!!)
         var selectedAPI = ESupportedAPIs.Undefined
@@ -134,7 +129,7 @@ class PrayerBeginningEndSettingPreferencesFragment(
         globalSharedPreference.edit().putString(
             getTimeSettingsEntityKeyForSharedPreference(prayerTypeWithMomentType.key),
             jsonString
-        ).commit()
+        ).apply()
     }
 
     // region methods

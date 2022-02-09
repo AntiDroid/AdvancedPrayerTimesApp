@@ -37,9 +37,9 @@ class PrayerSettingsActivity : AppCompatActivity() {
     }
 
     private fun configureTabs() {
-        viewPager.adapter = PrayerSettingsViewPagerAdapter(this, _prayerType!!)
+        viewPagerSetting.adapter = PrayerSettingsViewPagerAdapter(this, _prayerType!!)
 
-        TabLayoutMediator(tabLayout, viewPager) { tab: TabLayout.Tab, position: Int ->
+        TabLayoutMediator(tabLayoutSetting, viewPagerSetting) { tab: TabLayout.Tab, position: Int ->
             val tabTitle =
                 if (position < tabNames.size) {
                 tabNames[position]

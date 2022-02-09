@@ -13,10 +13,6 @@ class PrayerBeginningSettingsTabFragment : Fragment() {
 
     private lateinit var _prayerType: EPrayerTimeType
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-    }
-
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -43,10 +39,6 @@ class PrayerBeginningSettingsTabFragment : Fragment() {
                 .replace(R.id.settingsBeginning, prayerBeginningEndSettingPreferencesFragment)
                 .commit()
         }
-    }
-
-    override fun onStop() {
-        super.onStop()
     }
 
     companion object {

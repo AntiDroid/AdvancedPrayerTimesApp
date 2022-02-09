@@ -2,25 +2,26 @@ package com.example.advancedprayertimes.logic.api_entities
 
 import com.example.advancedprayertimes.logic.enums.EPrayerTimeType
 import com.example.advancedprayertimes.logic.enums.EPrayerTimeMomentType
-import java.time.LocalDateTime
+import java.time.LocalDate
+import java.time.LocalTime
 import java.util.AbstractMap
 
 abstract class PrayerTimePackageAbstractClass
 {
-    abstract var date: String?
-    abstract var fajrTime: LocalDateTime?
-    abstract var sunriseTime: LocalDateTime?
-    abstract var duhaTime: LocalDateTime?
-    abstract var dhuhrTime: LocalDateTime?
-    abstract var asrTime: LocalDateTime?
-    abstract var mithlaynTime: LocalDateTime?
-    abstract var asrKarahaTime: LocalDateTime?
-    abstract var maghribTime: LocalDateTime?
-    abstract var ishtibaqAnNujumTime: LocalDateTime?
-    abstract var ishaTime: LocalDateTime?
+    abstract var date: LocalDate?
+    abstract var fajrTime: LocalTime?
+    abstract var sunriseTime: LocalTime?
+    abstract var duhaTime: LocalTime?
+    abstract var dhuhrTime: LocalTime?
+    abstract var asrTime: LocalTime?
+    abstract var mithlaynTime: LocalTime?
+    abstract var asrKarahaTime: LocalTime?
+    abstract var maghribTime: LocalTime?
+    abstract var ishtibaqAnNujumTime: LocalTime?
+    abstract var ishaTime: LocalTime?
 
-    fun GetTimeByType(prayerType: EPrayerTimeType, prayerTypeTimeType: EPrayerTimeMomentType): LocalDateTime?
-    {
+    fun getTimeByType(prayerType: EPrayerTimeType, prayerTypeTimeType: EPrayerTimeMomentType): LocalTime? {
+
         return when(AbstractMap.SimpleEntry(prayerType, prayerTypeTimeType))
         {
             AbstractMap.SimpleEntry(EPrayerTimeType.Isha, EPrayerTimeMomentType.End),

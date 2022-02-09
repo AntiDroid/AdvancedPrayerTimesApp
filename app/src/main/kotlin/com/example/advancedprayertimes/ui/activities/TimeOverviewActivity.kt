@@ -1,44 +1,44 @@
 package com.example.advancedprayertimes.ui.activities
 
 import android.annotation.SuppressLint
-import com.example.advancedprayertimes.logic.util.LocationUtil.RetrieveCityByLocation
-import com.example.advancedprayertimes.logic.PrayerTimeEntity.Companion.getPrayerByTime
-import androidx.appcompat.app.AppCompatActivity
-import com.example.advancedprayertimes.logic.enums.EPrayerTimeType
-import android.widget.TextView
-import com.google.android.libraries.places.api.net.PlacesClient
-import com.google.android.libraries.places.widget.AutocompleteSupportFragment
-import android.os.Bundle
-import com.example.advancedprayertimes.logic.AppEnvironment
-import com.example.advancedprayertimes.logic.db.DBHelper
-import com.example.advancedprayertimes.logic.CustomPlaceEntity
-import com.example.advancedprayertimes.logic.util.HttpRequestUtil
-import android.os.Looper
-import android.widget.Toast
-import com.google.android.libraries.places.api.Places
-import com.google.android.libraries.places.api.model.Place
-import androidx.appcompat.widget.AppCompatEditText
-import com.google.android.libraries.places.widget.listener.PlaceSelectionListener
-import com.example.advancedprayertimes.logic.util.DataManagementUtil
-import com.example.advancedprayertimes.logic.enums.EPrayerTimeMomentType
-import android.view.MotionEvent
 import android.content.Intent
 import android.graphics.Color
 import android.location.Address
+import android.os.Bundle
 import android.os.Handler
+import android.os.Looper
+import android.view.MotionEvent
 import android.view.View
+import android.widget.TextView
+import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.AppCompatEditText
 import androidx.appcompat.widget.AppCompatImageButton
 import com.example.advancedprayertimes.BuildConfig
 import com.example.advancedprayertimes.R
 import com.example.advancedprayertimes.databinding.ActivityTimeOverviewBinding
+import com.example.advancedprayertimes.logic.AppEnvironment
 import com.example.advancedprayertimes.logic.CustomLocation
+import com.example.advancedprayertimes.logic.CustomPlaceEntity
 import com.example.advancedprayertimes.logic.PrayerTimeEntity
+import com.example.advancedprayertimes.logic.PrayerTimeEntity.Companion.getPrayerByTime
+import com.example.advancedprayertimes.logic.db.DBHelper
+import com.example.advancedprayertimes.logic.enums.EPrayerTimeMomentType
+import com.example.advancedprayertimes.logic.enums.EPrayerTimeType
 import com.example.advancedprayertimes.logic.extensions.toStringByFormat
+import com.example.advancedprayertimes.logic.util.DataManagementUtil
+import com.example.advancedprayertimes.logic.util.HttpRequestUtil
+import com.example.advancedprayertimes.logic.util.LocationUtil.RetrieveCityByLocation
 import com.google.android.gms.common.api.Status
+import com.google.android.libraries.places.api.Places
+import com.google.android.libraries.places.api.model.Place
+import com.google.android.libraries.places.api.net.PlacesClient
+import com.google.android.libraries.places.widget.AutocompleteSupportFragment
+import com.google.android.libraries.places.widget.listener.PlaceSelectionListener
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.android.synthetic.main.activity_time_overview.*
-import java.lang.Exception
 import java.time.LocalDateTime
+import java.time.LocalTime
 import java.util.*
 
 class TimeOverviewActivity : AppCompatActivity()
@@ -375,9 +375,9 @@ class TimeOverviewActivity : AppCompatActivity()
 
         val targetLocation = CustomLocation(cityAddress.longitude, cityAddress.latitude, timeZone)
 
-        DataManagementUtil.retrieveDiyanetTimeData(toBeCalculatedPrayerTimes, cityAddress)
-        DataManagementUtil.retrieveMuwaqqitTimeData(toBeCalculatedPrayerTimes, targetLocation)
-        DataManagementUtil.retrieveAlAdhanTimeData(toBeCalculatedPrayerTimes, targetLocation)
+        DataManagementUtil.retrieveDiyanetTimeData(toBeCalculatedPrayerTimes, cityAddress, checkBox.isChecked)
+        DataManagementUtil.retrieveMuwaqqitTimeData(toBeCalculatedPrayerTimes, targetLocation, checkBox.isChecked)
+        DataManagementUtil.retrieveAlAdhanTimeData(toBeCalculatedPrayerTimes, targetLocation, checkBox.isChecked)
     }
 
     /**
@@ -423,7 +423,7 @@ class TimeOverviewActivity : AppCompatActivity()
                 getSpecificPrayerTimeTextView(prayerEntity.prayerTimeType, EPrayerTimeMomentType.SubTimeThree)?.text = subtime3EndText
             }
 
-            prayerTimeGraphicView.displayPrayerEntity = getPrayerByTime(LocalDateTime.now())
+            prayerTimeGraphicView.displayPrayerEntity = getPrayerByTime(LocalTime.now())
             prayerTimeGraphicView.invalidate()
         }
         catch (e: Exception) {

@@ -6,6 +6,7 @@ import android.view.Gravity
 import android.widget.TableLayout
 import android.widget.TableRow
 import android.widget.TextView
+import androidx.core.view.size
 
 fun createTableLayout(context: Context, gradingData: Array<Array<String>>): TableLayout {
 
@@ -20,6 +21,7 @@ fun createTableLayout(context: Context, gradingData: Array<Array<String>>): Tabl
     // 2) create tableRow params
     val tableRowParams = TableRow.LayoutParams()
     tableRowParams.weight = 1f
+    tableRowParams.width = 50
 
     for (i in 0 until rowCount) {
 
@@ -33,11 +35,12 @@ fun createTableLayout(context: Context, gradingData: Array<Array<String>>): Tabl
             val textView = TextView(context)
             textView.gravity = Gravity.CENTER
             textView.setPadding(10, 10, 10, 10)
-            //textView.background = getResources().getDrawable(R.drawable.)
             textView.text = gradingData[i][j]
 
+            // first row is column row
             if (i == 0) {
-                textView.setBackgroundColor(Color.parseColor("#aeaeae"))
+                textView.setBackgroundColor(Color.GRAY)
+                textView.height = 100
             }
 
             tableRow.addView(textView, tableRowParams)

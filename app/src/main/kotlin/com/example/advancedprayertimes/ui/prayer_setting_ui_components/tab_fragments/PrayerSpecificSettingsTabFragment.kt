@@ -13,10 +13,6 @@ class PrayerSpecificSettingsTabFragment : Fragment() {
 
     private var _prayerType: EPrayerTimeType? = null
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-    }
-
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -42,10 +38,6 @@ class PrayerSpecificSettingsTabFragment : Fragment() {
                 .replace(R.id.settingsSubtimes, prayerSubtimeSettingsFragment)
                 .commit()
         }
-    }
-
-    override fun onStop() {
-        super.onStop()
     }
 
     companion object {

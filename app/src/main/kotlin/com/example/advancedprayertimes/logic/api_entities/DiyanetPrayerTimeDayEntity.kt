@@ -2,57 +2,62 @@ package com.example.advancedprayertimes.logic.api_entities
 
 import com.example.advancedprayertimes.logic.api_entities.PrayerTimePackageAbstractClass
 import com.google.gson.annotations.SerializedName
-import java.time.LocalDateTime
+import java.time.LocalDate
+import java.time.LocalTime
 import kotlin.NotImplementedError
 
 class DiyanetPrayerTimeDayEntity : PrayerTimePackageAbstractClass()
 {
     @SerializedName("MiladiTarihKisa")
-    override var date: String? = null
+    override var date: LocalDate? = null
 
     @SerializedName("Imsak")
-    override var fajrTime: LocalDateTime? = null
+    override var fajrTime: LocalTime? = null
 
     @SerializedName("Gunes")
-    override var sunriseTime: LocalDateTime? = null
+    override var sunriseTime: LocalTime? = null
 
     @SerializedName("Ogle")
-    override var dhuhrTime: LocalDateTime? = null
+    override var dhuhrTime: LocalTime? = null
 
     @SerializedName("Ikindi")
-    override var asrTime: LocalDateTime? = null
+    override var asrTime: LocalTime? = null
 
     @SerializedName("Aksam")
-    override var maghribTime: LocalDateTime? = null
+    override var maghribTime: LocalTime? = null
 
     @SerializedName("Yatsi")
-    override var ishaTime: LocalDateTime? = null
+    override var ishaTime: LocalTime? = null
 
-    override var duhaTime: LocalDateTime?
+    override var duhaTime: LocalTime?
         get() = null
         set(duhaTime)
         {
             throw NotImplementedError()
         }
 
-    override var mithlaynTime: LocalDateTime?
+    override var mithlaynTime: LocalTime?
         get() = null
         set(mithlaynTime)
         {
             throw NotImplementedError()
         }
 
-    override var asrKarahaTime: LocalDateTime?
+    override var asrKarahaTime: LocalTime?
         get() = null
         set(asrKarahaTime)
         {
             throw NotImplementedError()
         }
 
-    override var ishtibaqAnNujumTime: LocalDateTime?
+    override var ishtibaqAnNujumTime: LocalTime?
         get() = null
         set(ishtibaqAnNujumTime)
         {
             throw NotImplementedError()
         }
+
+    var ulkeNameEn: String? = null
+    var sehirNameEn: String? = null
+    var ilceNameEn: String? = null
 }

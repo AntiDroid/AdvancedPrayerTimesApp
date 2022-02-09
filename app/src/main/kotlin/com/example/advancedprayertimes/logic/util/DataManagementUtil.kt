@@ -1,27 +1,28 @@
 package com.example.advancedprayertimes.logic.util
 
-import com.example.advancedprayertimes.logic.AppEnvironment.BuildGSON
-import com.google.gson.Gson
-import com.example.advancedprayertimes.logic.enums.EPrayerTimeType
 import android.content.SharedPreferences
 import android.location.Address
 import com.example.advancedprayertimes.logic.*
-import kotlin.Throws
-import com.example.advancedprayertimes.logic.enums.EPrayerTimeMomentType
-import com.example.advancedprayertimes.logic.setting_entities.PrayerTimeBeginningEndSettingsEntity
+import com.example.advancedprayertimes.logic.AppEnvironment.buildGSON
 import com.example.advancedprayertimes.logic.api_entities.PrayerTimePackageAbstractClass
+import com.example.advancedprayertimes.logic.enums.EPrayerTimeMomentType
+import com.example.advancedprayertimes.logic.enums.EPrayerTimeType
 import com.example.advancedprayertimes.logic.enums.ESupportedAPIs
 import com.example.advancedprayertimes.logic.extensions.notContains
-import java.lang.Exception
+import com.example.advancedprayertimes.logic.setting_entities.PrayerTimeBeginningEndSettingsEntity
+import com.google.gson.Gson
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
-import java.util.AbstractMap
-import java.util.HashMap
+import java.util.*
 
 object DataManagementUtil {
 
-    private val gson = BuildGSON("HH:mm")
+    private val gson = buildGSON(
+        timeFormatString = "HH:mm",
+        dateFormatString = "",
+        dateTimeFormatString = ""
+    )
     private val timeFormat = DateTimeFormatter.ofPattern("HH:mm")
 
     fun getPrayerTimeEntityKeyForSharedPreference(prayerTimeType: EPrayerTimeType): String {
@@ -126,17 +127,18 @@ object DataManagementUtil {
     @Throws(Exception::class)
     fun retrieveDiyanetTimeData(
         toBeCalculatedPrayerTimes: Map<Map.Entry<EPrayerTimeType, EPrayerTimeMomentType>, PrayerTimeBeginningEndSettingsEntity>,
-        cityAddress: Address
+        cityAddress: Address,
+        useCache: Boolean
     ){
 
         val diyanetPrayerTimeTypesHashMap = toBeCalculatedPrayerTimes.filter { x -> x.value.api == ESupportedAPIs.Diyanet }
 
         // ADD ALL DIYANET TIME CALCULATIONS
-        AppEnvironment.diyanetTimesHashMap = if (diyanetPrayerTimeTypesHashMap.isNotEmpty()) {
+        AppEnvironment.diyanetTimesHashMap = if (diyanetPrayerTimeTypesHashMap.any()) {
 
             try {
 
-                val diyanetTime = HttpRequestUtil.retrieveDiyanetTimes(cityAddress)
+                val diyanetTime = HttpRequestUtil.retrieveDiyanetTimes(cityAddress, useCache)
 
                 if (diyanetTime != null) {
                     diyanetPrayerTimeTypesHashMap.keys.associateWith { diyanetTime }
@@ -159,7 +161,8 @@ object DataManagementUtil {
     @Throws(Exception::class)
     fun retrieveAlAdhanTimeData(
         toBeCalculatedPrayerTimes: Map<Map.Entry<EPrayerTimeType, EPrayerTimeMomentType>, PrayerTimeBeginningEndSettingsEntity>,
-        location: CustomLocation
+        location: CustomLocation,
+        useCaching: Boolean
     ){
 
         val alAdhanPrayerTimeTypesHashMap = toBeCalculatedPrayerTimes.filter { x -> x.value.api == ESupportedAPIs.AlAdhan }
@@ -167,7 +170,7 @@ object DataManagementUtil {
         val alAdhanPrayerTimesHashMap: MutableMap<Map.Entry<EPrayerTimeType, EPrayerTimeMomentType>, PrayerTimePackageAbstractClass> = HashMap()
 
         // ADD ALL ALADHAN TIME CALCULATIONS
-        if (alAdhanPrayerTimeTypesHashMap.isNotEmpty()) {
+        if (alAdhanPrayerTimeTypesHashMap.any()) {
 
             try {
                 for ((key, value) in alAdhanPrayerTimeTypesHashMap) {
@@ -176,7 +179,8 @@ object DataManagementUtil {
                         location,
                         value.fajrCalculationDegree,
                         value.ishaCalculationDegree,
-                        null
+                        null,
+                        useCaching
                     )
 
                     if (alAdhanTime != null) {
@@ -205,9 +209,10 @@ object DataManagementUtil {
             // any other muwaqqit request will suffice
             val ishtibaqTimePackage = HttpRequestUtil.retrieveAlAdhanTimes(
                 location,
-                10.0,
-                10.0,
-                ishtibaqDegree
+                null,
+                null,
+                ishtibaqDegree,
+                useCaching
             )
 
             if (ishtibaqTimePackage != null) {
@@ -226,9 +231,9 @@ object DataManagementUtil {
     @Throws(Exception::class)
     fun retrieveMuwaqqitTimeData(
         toBeCalculatedPrayerTimes: Map<Map.Entry<EPrayerTimeType, EPrayerTimeMomentType>, PrayerTimeBeginningEndSettingsEntity>,
-        location: CustomLocation
+        location: CustomLocation,
+        useCache: Boolean
     ){
-
         val muwaqqitTimesHashMap: MutableMap<Map.Entry<EPrayerTimeType, EPrayerTimeMomentType>, PrayerTimePackageAbstractClass> = HashMap()
 
         val toBeCalculatedMuwaqqitTimesMap = toBeCalculatedPrayerTimes
@@ -239,7 +244,7 @@ object DataManagementUtil {
             .toMutableMap()
 
         val toBeCalculatedMuwaqqitNonDegreeTimesMap = toBeCalculatedMuwaqqitTimesMap
-            .filter { x -> !PrayerTimeBeginningEndSettingsEntity.DEGREE_TYPES.notContains(x.key) }
+            .filter { x -> PrayerTimeBeginningEndSettingsEntity.DEGREE_TYPES.notContains(x.key) }
             .toMutableMap()
 
         val asrKarahaDegree: Double? =
@@ -259,7 +264,7 @@ object DataManagementUtil {
                 .toMutableMap()
 
             // CALCULATIONS FOR MERGABLE DEGREE TIMES
-            while (fajrDegreeMuwaqqitTimesHashMap.isNotEmpty() && ishaDegreeMuwaqqitTimesHashMap.isNotEmpty()) {
+            while (fajrDegreeMuwaqqitTimesHashMap.any() && ishaDegreeMuwaqqitTimesHashMap.any()) {
 
                 val fajrDegreeEntry = fajrDegreeMuwaqqitTimesHashMap.entries.first()
                 val ishaDegreeEntry = ishaDegreeMuwaqqitTimesHashMap.entries.first()
@@ -268,7 +273,8 @@ object DataManagementUtil {
                     location,
                     fajrDegreeEntry.value.fajrCalculationDegree,
                     ishaDegreeEntry.value.ishaCalculationDegree,
-                    asrKarahaDegree
+                    asrKarahaDegree,
+                    useCache
                 )
                     ?: throw Exception(
                         "Could not retrieve Fajr/Isha Muwaqqit prayer time data for an unknown reason!",
@@ -292,7 +298,8 @@ object DataManagementUtil {
                     location,
                     settingsEntity.fajrCalculationDegree,
                     settingsEntity.ishaCalculationDegree,
-                    asrKarahaDegree
+                    asrKarahaDegree,
+                    useCache
                 )
                     ?: throw Exception(
                         "Could not retrieve Non-Fajr/Isha Muwaqqit prayer time data for an unknown reason!",
@@ -302,11 +309,17 @@ object DataManagementUtil {
         }
 
         // ADD CALCULATIONS FOR NON DEGREE TIMES
-        if (toBeCalculatedMuwaqqitNonDegreeTimesMap.isNotEmpty()) {
+        if (toBeCalculatedMuwaqqitNonDegreeTimesMap.any()) {
 
             // any other muwaqqit request will suffice
             val nonDegreeMuwaqqitTimeEntity = muwaqqitTimesHashMap.values.firstOrNull()
-                ?: HttpRequestUtil.retrieveMuwaqqitTimes(location, null, null, asrKarahaDegree)
+                ?: HttpRequestUtil.retrieveMuwaqqitTimes(
+                    location,
+                    null,
+                    null,
+                    asrKarahaDegree,
+                    useCache
+                )
 
             if (nonDegreeMuwaqqitTimeEntity != null) {
                 for (prayerTimeType in toBeCalculatedMuwaqqitNonDegreeTimesMap.keys) {
@@ -318,14 +331,11 @@ object DataManagementUtil {
         if (asrKarahaDegree != null) {
 
             // any other muwaqqit request will suffice
-           val asrKarahaTimePackage =
-                muwaqqitTimesHashMap.values.firstOrNull()
-                    ?: HttpRequestUtil.retrieveMuwaqqitTimes(
-                        location,
-                        null,
-                        null,
-                        asrKarahaDegree
-                    )
+            var asrKarahaTimePackage = muwaqqitTimesHashMap.values.firstOrNull()
+
+            if(asrKarahaTimePackage == null) {
+                asrKarahaTimePackage = HttpRequestUtil.retrieveMuwaqqitTimes(location,null,null,asrKarahaDegree,useCache)
+            }
 
             if (asrKarahaTimePackage != null) {
                 // mithlayn

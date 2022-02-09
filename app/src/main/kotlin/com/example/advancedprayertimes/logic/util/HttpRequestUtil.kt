@@ -3,39 +3,38 @@ package com.example.advancedprayertimes.logic.util
 import android.location.Address
 import android.net.Uri
 import com.example.advancedprayertimes.BuildConfig
-import com.example.advancedprayertimes.logic.AppEnvironment
-import com.example.advancedprayertimes.logic.AppEnvironment.BuildGSON
+import com.example.advancedprayertimes.logic.AppEnvironment.buildGSON
 import com.example.advancedprayertimes.logic.CustomLocation
 import com.example.advancedprayertimes.logic.CustomPlaceEntity
-import com.example.advancedprayertimes.logic.api_entities.DiyanetPrayerTimeDayEntity
-import com.example.advancedprayertimes.logic.enums.EHttpResponseStatusType
-import com.example.advancedprayertimes.logic.enums.EHttpRequestMethod
-import com.example.advancedprayertimes.logic.api_entities.diyanet.DiyanetUlkeEntity
-import com.example.advancedprayertimes.logic.api_entities.diyanet.DiyanetIlceEntity
 import com.example.advancedprayertimes.logic.api_entities.AlAdhanPrayerTimeDayEntity
-import org.json.JSONObject
+import com.example.advancedprayertimes.logic.api_entities.DiyanetPrayerTimeDayEntity
 import com.example.advancedprayertimes.logic.api_entities.MuwaqqitPrayerTimeDayEntity
 import com.example.advancedprayertimes.logic.api_entities.diyanet.AbstractDiyanetSubEntity
+import com.example.advancedprayertimes.logic.api_entities.diyanet.DiyanetIlceEntity
 import com.example.advancedprayertimes.logic.api_entities.diyanet.DiyanetSehirEntity
-import com.example.advancedprayertimes.logic.extensions.parseToDateTime
+import com.example.advancedprayertimes.logic.api_entities.diyanet.DiyanetUlkeEntity
+import com.example.advancedprayertimes.logic.db.DBAlAdhanHelper
+import com.example.advancedprayertimes.logic.db.DBDiyanetHelper
+import com.example.advancedprayertimes.logic.db.DBMuwaqqitHelper
+import com.example.advancedprayertimes.logic.enums.EHttpRequestMethod
+import com.example.advancedprayertimes.logic.enums.EHttpResponseStatusType
+import com.example.advancedprayertimes.logic.extensions.parseToDate
 import com.example.advancedprayertimes.logic.extensions.parseToTime
 import com.example.advancedprayertimes.logic.extensions.toStringByFormat
 import com.google.firebase.crashlytics.buildtools.reloc.com.google.common.reflect.TypeToken
 import com.google.gson.Gson
+import org.json.JSONObject
 import java.io.BufferedReader
 import java.io.BufferedWriter
 import java.io.InputStreamReader
 import java.io.OutputStreamWriter
-import java.lang.Exception
 import java.net.HttpURLConnection
 import java.net.URL
 import java.nio.charset.StandardCharsets
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.util.ArrayList
 import java.util.concurrent.TimeUnit
 import kotlin.math.abs
-import kotlin.text.StringBuilder
 
 object HttpRequestUtil {
 
@@ -77,7 +76,7 @@ object HttpRequestUtil {
 
         for (diyanetSubEntity in typedResponseLst) {
 
-            AppEnvironment.dbHelper.createDiyanetSubEntityIfNotExist(
+            DBDiyanetHelper.createDiyanetSubEntityIfNotExist(
                 diyanetSubEntity = diyanetSubEntity,
                 parentID = parentID
             )
@@ -137,14 +136,18 @@ object HttpRequestUtil {
     }
 
     // Der JSON enthält direkt in der ersten Ebene die Gebetszeiteninformationen für alle Tage des jeweiligen Monats.
-    fun retrieveDiyanetTimes(cityAddress: Address): DiyanetPrayerTimeDayEntity? {
+    fun retrieveDiyanetTimes(cityAddress: Address, useCaching: Boolean): DiyanetPrayerTimeDayEntity? {
 
-        val gson = BuildGSON("HH:mm")
+        val gson = buildGSON(
+            timeFormatString = "HH:mm",
+            dateFormatString = "dd.MM.yyyy",
+            dateTimeFormatString = ""
+        )
         var ilceID: String? = null
 
-        if(AppEnvironment.useCaching)
+        if(useCaching)
         {
-            ilceID = AppEnvironment.dbHelper.GetDiyanetIlceIDByCountryAndCityName(
+            ilceID = DBDiyanetHelper.GetDiyanetIlceIDByCountryAndCityName(
                 cityAddress.countryName.uppercase(),
                 cityAddress.locality.uppercase()
             )
@@ -163,9 +166,13 @@ object HttpRequestUtil {
             )
         }
 
+        val todayDate = LocalDateTime.now().toStringByFormat("dd.MM.yyyy")
+
         // ######################
         val vakitlerList = StringBuilder()
         var timesPackageEntity: DiyanetPrayerTimeDayEntity? = null
+
+        //timesPackageEntity = DBDiyanetHelper.getDiyanetPrayerTimesByDateLocation(todayDate, cityAddress.longitude, cityAddress.latitude)
 
         try {
 
@@ -179,20 +186,25 @@ object HttpRequestUtil {
                 return null
             }
 
-            val todayDate = LocalDateTime.now().toStringByFormat("dd.MM.yyyy")
-
             // String json, Type typeOfT
             val outputList = gson.fromJson<List<DiyanetPrayerTimeDayEntity>>(
                 vakitlerList.toString(),
                 (object : TypeToken<ArrayList<DiyanetPrayerTimeDayEntity?>?>() {}.type)
             )
 
-            timesPackageEntity = outputList.firstOrNull { x -> todayDate == x.date }
+            for (diyanetSubEntity in outputList) {
+
+                DBDiyanetHelper.createDiyanetTimeIfNotExist(diyanetSubEntity, cityAddress.longitude, cityAddress.latitude)
+
+                if (todayDate == diyanetSubEntity.date!!.toStringByFormat("dd.MM.yyyy")) {
+                    timesPackageEntity = diyanetSubEntity
+                }
+            }
 
             //TODO: Diyanet API schickt manchmal erst Daten für spätere Tage
             if (timesPackageEntity == null) {
                 val tomorrowDate = LocalDateTime.now().plusDays(1).toStringByFormat("dd.MM.yyyy")
-                timesPackageEntity = outputList.firstOrNull { x -> tomorrowDate == x.date }
+                timesPackageEntity = outputList.firstOrNull { x -> tomorrowDate == x.date!!.toStringByFormat("dd.MM.yyyy") }
             }
 
         } catch (e: Exception) {
@@ -220,7 +232,8 @@ object HttpRequestUtil {
         targetLocation: CustomLocation?,
         fajrDegree: Double?,
         ishaDegree: Double?,
-        ishtibaqAngle: Double?
+        ishtibaqDegree: Double?,
+        useCaching: Boolean
     ): AlAdhanPrayerTimeDayEntity? {
 
         if (targetLocation == null) {
@@ -232,11 +245,29 @@ object HttpRequestUtil {
 
         val alAdhanJSONList = StringBuilder()
 
+        var returnTime: AlAdhanPrayerTimeDayEntity? = null
+
+        // TODO: Caching is not working as expected
+        if(useCaching) {
+            returnTime = DBAlAdhanHelper.getAlAdhanPrayerTimesByDateLocationAndDegrees(
+                LocalDate.now().toStringByFormat("dd-MM-yyyy"),
+                targetLocation.longitude,
+                targetLocation.latitude,
+                fajrDegree,
+                ishaDegree,
+                ishtibaqDegree
+            )
+        }
+
+        if(returnTime != null) {
+            return returnTime
+        }
+
         try {
 
             val fajrDegreeText = if(fajrDegree == null) { "null" } else { "" + abs(fajrDegree) }
             val ishaDegreeText = if(ishaDegree == null) { "null" } else { "" + abs(ishaDegree) }
-            val ishtibaqDegreeText = if(ishtibaqAngle == null) { "null" } else { "" + abs(ishtibaqAngle) }
+            val ishtibaqDegreeText = if(ishtibaqDegree == null) { "null" } else { "" + abs(ishtibaqDegree) }
 
             val queryParameters = hashMapOf(
                 "latitude" to targetLocation.latitude.toString(),
@@ -260,7 +291,6 @@ object HttpRequestUtil {
 
             val jsonObject = JSONObject(alAdhanJSONList.toString())
             val arrayListJson = jsonObject.getJSONArray("data")
-            val gson = BuildGSON("HH:mm")
 
             for (i in 0 until arrayListJson.length()) {
 
@@ -268,42 +298,59 @@ object HttpRequestUtil {
 
                 val timingsJSONObject = curJsonObject.getJSONObject("timings")
 
-                val dateString =
+                val date =
                     curJsonObject
                         .getJSONObject("date")
                         .getJSONObject("gregorian")
                         .getString("date")
+                        .parseToDate("dd-MM-yyyy")
 
-                val dateTimeFormat = "HH:mm dd-MM-yyyy"
+                val stuff =
+                    curJsonObject
+                        .getJSONObject("meta")
+                        .getJSONObject("method")
+                        .getJSONObject("params")
 
-                val fajrTime =              "${timingsJSONObject.getString("Fajr")      .substring(0, 5)} $dateString".parseToDateTime(dateTimeFormat)
-                val sunriseTime =           "${timingsJSONObject.getString("Sunrise")   .substring(0, 5)} $dateString".parseToDateTime(dateTimeFormat)
-                val dhuhrTime =             "${timingsJSONObject.getString("Dhuhr")     .substring(0, 5)} $dateString".parseToDateTime(dateTimeFormat)
-                val asrTime =               "${timingsJSONObject.getString("Asr")       .substring(0, 5)} $dateString".parseToDateTime(dateTimeFormat)
-                val maghribTime =           "${timingsJSONObject.getString("Sunset")    .substring(0, 5)} $dateString".parseToDateTime(dateTimeFormat)
-                val ishtibaqAnNujumTime =   "${timingsJSONObject.getString("Maghrib")   .substring(0, 5)} $dateString".parseToDateTime(dateTimeFormat)
-                val ishaTime =              "${timingsJSONObject.getString("Isha")      .substring(0, 5)} $dateString".parseToDateTime(dateTimeFormat)
+                val fajrAngle:Double? = if(stuff.getString("Fajr") != "null") stuff.getDouble("Fajr") * (-1) else null
+                val ishaAngle: Double? = if(stuff.getString("Isha") != "null") stuff.getDouble("Isha") * (-1) else null
+                val ishtibaqAngle: Double? = if(stuff.getString("Maghrib") != "null") stuff.getDouble("Maghrib") * (-1) else null
 
-                if (fajrTime.toLocalDate().isEqual(LocalDate.now())) {
+                val dateTimeFormat = "HH:mm"
 
-                    return AlAdhanPrayerTimeDayEntity(
-                        fajrTime = fajrTime,
-                        sunriseTime = sunriseTime,
-                        dhuhrTime = dhuhrTime,
-                        asrTime = asrTime,
-                        mithlaynTime = null,
-                        maghribTime = maghribTime,
-                        ishtibaqAnNujumTime = ishtibaqAnNujumTime,
-                        ishaTime = ishaTime
-                    )
+                val fajrTime =              timingsJSONObject.getString("Fajr")      .substring(0, 5).parseToTime(dateTimeFormat)
+                val sunriseTime =           timingsJSONObject.getString("Sunrise")   .substring(0, 5).parseToTime(dateTimeFormat)
+                val dhuhrTime =             timingsJSONObject.getString("Dhuhr")     .substring(0, 5).parseToTime(dateTimeFormat)
+                val asrTime =               timingsJSONObject.getString("Asr")       .substring(0, 5).parseToTime(dateTimeFormat)
+                val maghribTime =           timingsJSONObject.getString("Sunset")    .substring(0, 5).parseToTime(dateTimeFormat)
+                val ishtibaqAnNujumTime =   timingsJSONObject.getString("Maghrib")   .substring(0, 5).parseToTime(dateTimeFormat)
+                val ishaTime =              timingsJSONObject.getString("Isha")      .substring(0, 5).parseToTime(dateTimeFormat)
 
+                val time = AlAdhanPrayerTimeDayEntity(
+                    date = date,
+                    fajrTime = fajrTime,
+                    sunriseTime = sunriseTime,
+                    dhuhrTime = dhuhrTime,
+                    asrTime = asrTime,
+                    mithlaynTime = null,
+                    maghribTime = maghribTime,
+                    ishtibaqAnNujumTime = ishtibaqAnNujumTime,
+                    ishaTime = ishaTime,
+                    fajrAngle = fajrAngle,
+                    ishaAngle = ishaAngle,
+                    ishtibaqAngle = ishtibaqAngle,
+                )
+
+                DBAlAdhanHelper.createAlAdhanPrayerTimesByDateLocationAndDegreesIfNotExist(time, targetLocation)
+
+                if (date == LocalDate.now()) {
+                    returnTime = time
                 }
             }
         } catch (e: Exception) {
             throw Exception("Could not process Diyanet ulke information!", e)
         }
 
-        return null
+        return returnTime
     }
 
     // endregion AlAdhan
@@ -314,17 +361,16 @@ object HttpRequestUtil {
         targetLocation: CustomLocation,
         fajrDegree: Double?,
         ishaDegree: Double?,
-        karahaDegree: Double?
+        karahaDegree: Double?,
+        useCaching: Boolean
     ): MuwaqqitPrayerTimeDayEntity? {
 
-        val todayDate = LocalDateTime.now().toStringByFormat("yyyy-MM-dd")
-
         // TODO: CHECK TODAY DATE AS WELL
-        if (AppEnvironment.useCaching) {
+        if (useCaching) {
 
             val storedMuwaqqitTime =
-                AppEnvironment.dbHelper.getMuwaqqitPrayerTimesByDateLocationAndDegrees(
-                    todayDateString = todayDate,
+                DBMuwaqqitHelper.getMuwaqqitPrayerTimesByDateLocationAndDegrees(
+                    todayDateString = LocalDate.now().toStringByFormat("dd-MM-yyyy"),
                     longitude = targetLocation.longitude,
                     latitude = targetLocation.latitude,
                     fajrDegree = fajrDegree,
@@ -336,6 +382,8 @@ object HttpRequestUtil {
                 return storedMuwaqqitTime
             }
         }
+
+        val todayDate = LocalDate.now().toStringByFormat("yyyy-MM-dd")
 
         val queryParameters = hashMapOf(
             "d" to todayDate,
@@ -352,7 +400,7 @@ object HttpRequestUtil {
         var muwaqqitResponseStatusType = retrieveAPIFeedback(
             response,
             MUWAQQIT_JSON_URL,
-            EHttpRequestMethod.POST,
+            EHttpRequestMethod.GET,
             queryParameters
         )
 
@@ -370,7 +418,7 @@ object HttpRequestUtil {
             muwaqqitResponseStatusType = retrieveAPIFeedback(
                 response,
                 MUWAQQIT_JSON_URL,
-                EHttpRequestMethod.POST,
+                EHttpRequestMethod.GET,
                 queryParameters
             )
         }
@@ -382,16 +430,19 @@ object HttpRequestUtil {
         var timesPackageEntity: MuwaqqitPrayerTimeDayEntity? = null
 
         try {
-            val gson = BuildGSON("HH:mm:ss")
+            val gson = buildGSON(
+                timeFormatString = "HH:mm:ss",
+                dateFormatString = "yyyy-MM-dd",
+                dateTimeFormatString = ""
+            )
             val outputList = gson.fromJson<List<MuwaqqitPrayerTimeDayEntity>>(
                 JSONObject(response.toString()).getJSONArray("list").toString(),
                 object : TypeToken<ArrayList<MuwaqqitPrayerTimeDayEntity?>?>() {}.type
             )
-            AppEnvironment.dbHelper.deleteAllMuwaqqitPrayerTimesByDegrees(fajrDegree, ishaDegree, null)
 
             for (time in outputList) {
-                AppEnvironment.dbHelper.addMuwaqqitPrayerTime(time, targetLocation)
-                if (todayDate == time.date) {
+                DBMuwaqqitHelper.createMuwaqqitPrayerTimesByDateLocationAndDegreesIfNotExist(time, targetLocation)
+                if (todayDate == time.date!!.toStringByFormat("yyyy-MM-dd")) {
                     timesPackageEntity = time
                 }
             }
@@ -513,7 +564,7 @@ object HttpRequestUtil {
         try {
             var line: String?
 
-            if (requestMethod === EHttpRequestMethod.GET && queryParameters != null && queryParameters.isNotEmpty()) {
+            if (requestMethod === EHttpRequestMethod.GET && queryParameters != null && queryParameters.any()) {
                 var parameterPart = "?"
 
                 for ((key, value) in queryParameters) {
@@ -545,7 +596,7 @@ object HttpRequestUtil {
                 val os = conn.outputStream
                 val writer = BufferedWriter(OutputStreamWriter(os, StandardCharsets.UTF_8))
 
-                if (queryParameters.isNotEmpty()) {
+                if (queryParameters.any()) {
                     writer.write(query)
                 }
 

@@ -5,6 +5,7 @@ import android.graphics.*
 import com.example.advancedprayertimes.logic.PrayerTimeEntity
 import android.util.AttributeSet
 import android.view.View
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
@@ -82,14 +83,13 @@ class PrayerTimeGraphicView(context: Context?, attrs: AttributeSet?) : View(cont
 
         // TODO: Fix Isha
         timeShare =
-            if (displayPrayerEntity!!.endTime!!.isBefore(displayPrayerEntity!!.beginningTime) && currentDate.isBefore(
-                    displayPrayerEntity!!.beginningTime
+            if (displayPrayerEntity!!.endTime!!.atDate(LocalDate.now()).isBefore(displayPrayerEntity!!.beginningTime!!.atDate(LocalDate.now())) && currentDate.isBefore(
+                    displayPrayerEntity!!.beginningTime!!.atDate(LocalDate.now())
                 )
             ) {
                 ChronoUnit.MILLIS.between(
-                    displayPrayerEntity!!.beginningTime!!.minusDays(
-                        1
-                    ), currentDate
+                    displayPrayerEntity!!.beginningTime!!.atDate(LocalDate.now()).minusDays(1),
+                    currentDate
                 )
             } else {
                 ChronoUnit.MILLIS.between(

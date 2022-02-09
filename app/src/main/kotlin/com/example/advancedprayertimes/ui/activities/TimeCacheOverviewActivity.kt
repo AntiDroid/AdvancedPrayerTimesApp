@@ -1,13 +1,12 @@
 package com.example.advancedprayertimes.ui.activities
 
 import android.os.Bundle
-import android.widget.LinearLayout
 import androidx.appcompat.app.AppCompatActivity
 import com.example.advancedprayertimes.R
-import com.example.advancedprayertimes.logic.AppEnvironment
-import com.example.advancedprayertimes.logic.api_entities.MuwaqqitPrayerTimeDayEntity
-import com.example.advancedprayertimes.logic.extensions.toStringByFormat
-import com.example.advancedprayertimes.logic.util.*
+import com.example.advancedprayertimes.ui.time_cache_ui_components.TimeCacheViewPagerAdapter
+import com.google.android.material.tabs.TabLayout
+import com.google.android.material.tabs.TabLayoutMediator
+import kotlinx.android.synthetic.main.activity_cache_dev_view.*
 
 class TimeCacheOverviewActivity : AppCompatActivity() {
 
@@ -18,20 +17,29 @@ class TimeCacheOverviewActivity : AppCompatActivity() {
 
         this.supportActionBar?.hide()
 
-//        val gridView = findViewById<View>(R.id.gridView) as GridView
-//
-//        val arrayofName = listOf<String>("Talip", "Talip2")
-//
-//        val adapter: ArrayAdapter<String> = ArrayAdapter<String>(
-//            this,
-//            android.R.layout.simple_list_item_checked, arrayofName
-//        )
-//
-//        gridView.adapter = adapter
-//
-//        gridView.onItemClickListener = OnItemClickListener { _, v, _, _ ->
-//            Toast.makeText(applicationContext, (v as TextView).text, Toast.LENGTH_SHORT)
-//                .show()
-//        }
+        configureTabs()
+    }
+
+    private val tabNames: ArrayList<String> = object : ArrayList<String>() {
+        init {
+            add("Muwaqqit")
+            add("Diyanet")
+            add("AlAdhan")
+        }
+    }
+
+    private fun configureTabs() {
+        viewPagerCache.adapter = TimeCacheViewPagerAdapter(this)
+
+        TabLayoutMediator(tabLayoutCache, viewPagerCache) { tab: TabLayout.Tab, position: Int ->
+            val tabTitle =
+                if (position < tabNames.size) {
+                    tabNames[position]
+                } else {
+                    "Unknown: $position"
+                }
+
+            tab.text = tabTitle
+        }.attach()
     }
 }

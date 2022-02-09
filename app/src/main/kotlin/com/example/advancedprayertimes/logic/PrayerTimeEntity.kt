@@ -1,22 +1,21 @@
 package com.example.advancedprayertimes.logic
 
-import com.example.advancedprayertimes.logic.enums.EPrayerTimeType
 import com.example.advancedprayertimes.logic.enums.EPrayerTimeMomentType
-import kotlin.NotImplementedError
-import java.time.LocalDateTime
+import com.example.advancedprayertimes.logic.enums.EPrayerTimeType
+import java.time.LocalDate
+import java.time.LocalTime
 import java.time.temporal.ChronoUnit
-import java.util.*
 
 class PrayerTimeEntity private constructor(val prayerTimeType: EPrayerTimeType, val title: String)
 {
-    var beginningTime: LocalDateTime? = null
-    var endTime: LocalDateTime? = null
-    var subtime1BeginningTime: LocalDateTime? = null
-    var subtime1EndTime: LocalDateTime? = null
-    var subtime2BeginningTime: LocalDateTime? = null
-    var subtime2EndTime: LocalDateTime? = null
-    var subtime3BeginningTime: LocalDateTime? = null
-    var subtime3EndTime: LocalDateTime? = null
+    var beginningTime: LocalTime? = null
+    var endTime: LocalTime? = null
+    var subtime1BeginningTime: LocalTime? = null
+    var subtime1EndTime: LocalTime? = null
+    var subtime2BeginningTime: LocalTime? = null
+    var subtime2EndTime: LocalTime? = null
+    var subtime3BeginningTime: LocalTime? = null
+    var subtime3EndTime: LocalTime? = null
 
     // TODO: Fix Isha
     val durationMS: Long?
@@ -28,13 +27,13 @@ class PrayerTimeEntity private constructor(val prayerTimeType: EPrayerTimeType, 
 
             // TODO: Fix Isha
             return if(endTime!!.isBefore(beginningTime)) {
-                ChronoUnit.MILLIS.between(beginningTime, endTime!!.plusDays(1))
+                ChronoUnit.MILLIS.between(beginningTime!!.atDate(LocalDate.MIN), endTime!!.atDate(LocalDate.MIN).plusDays(1))
             } else {
                 ChronoUnit.MILLIS.between(beginningTime, endTime)
             }
         }
 
-    fun getTimeByMomentType(prayerTimeMomentType: EPrayerTimeMomentType): LocalDateTime?
+    fun getTimeByMomentType(prayerTimeMomentType: EPrayerTimeMomentType): LocalTime?
     {
         return when (prayerTimeMomentType)
         {
@@ -47,7 +46,7 @@ class PrayerTimeEntity private constructor(val prayerTimeType: EPrayerTimeType, 
         }
     }
 
-    fun setTimeByMomentType(prayerTimeMomentType: EPrayerTimeMomentType, date: LocalDateTime?)
+    fun setTimeByMomentType(prayerTimeMomentType: EPrayerTimeMomentType, date: LocalTime?)
     {
         when (prayerTimeMomentType)
         {
@@ -104,7 +103,7 @@ class PrayerTimeEntity private constructor(val prayerTimeType: EPrayerTimeType, 
                 return PrayerTimeEntity.Isha.durationMS!! + PrayerTimeEntity.Maghrib.durationMS!! + timeBetweenIshaBeginningAndMaghribEnd
             }
 
-        fun getPrayerByTime(time: LocalDateTime): PrayerTimeEntity?
+        fun getPrayerByTime(time: LocalTime): PrayerTimeEntity?
         {
             val targetPrayer: PrayerTimeEntity? =
                 Prayers.asSequence().filter { prayerTimeEntity: PrayerTimeEntity ->
